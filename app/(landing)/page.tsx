@@ -34,17 +34,12 @@ export default function LandingPage() {
               Go to Dashboard
             </Link>
           ) : (
-            <>
-              <Link href="/sign-in" className="text-sm font-semibold text-zinc-700 hover:text-indigo-600 transition-colors px-4">
-                Sign In
-              </Link>
-              <Link 
-                href="/sign-up" 
-                className="bg-indigo-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
-              >
-                Get Started
-              </Link>
-            </>
+            <Link 
+              href="/sign-in" 
+              className="bg-indigo-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+            >
+              Log In
+            </Link>
           )}
         </div>
       </header>
@@ -60,7 +55,7 @@ export default function LandingPage() {
         
         <div className="flex flex-col sm:flex-row gap-4 mb-20">
           <Link 
-            href="/sign-up" 
+            href="/sign-in" 
             className="flex items-center justify-center gap-2 bg-zinc-950 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-zinc-800 transition-all group"
           >
             Start for free
