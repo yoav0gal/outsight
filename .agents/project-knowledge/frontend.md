@@ -9,12 +9,14 @@
 
 ## Styling & Tailwind CSS
 - **Tailwind v4:** Use Tailwind CSS utility classes for styling. The project uses Tailwind v4 via `@tailwindcss/postcss`.
-- **shadcn/ui:** Leverage `shadcn/ui` components located in the project. Use them as the foundation for the UI and customize them via Tailwind classes.
+- **shadcn/ui:** Leverage `shadcn/ui` components located in `components/ui/`. Use them as the foundation for the UI and customize them via Tailwind classes.
 - **Class Merging:** Use `clsx` and `tailwind-merge` (often abstracted via a `cn()` utility) when constructing dynamic class names to avoid specificity conflicts.
 
 ## ⚠️ Multi-Language & RTL Development (CRITICAL)
 This project uses `next-intl` to manage translations and supports RTL (right-to-left) layouts out-of-the-box (e.g., for Hebrew).
-When developing the UI, because Tailwind's standard directional classes do NOT dynamically adapt to RTL document flow, **you must use logical properties**.
+- **Localization Files:** Translations are stored in `messages/en.json` and `messages/he.json`. ALWAYS add new keys to both files.
+- **Usage:** Use the `useTranslations` hook in client components and `getTranslations` in server components.
+- **Logical Properties:** Because Tailwind's standard directional classes do NOT dynamically adapt to RTL document flow, **you must use logical properties**.
 
 - **Margins:** Instead of `ml-*` use `ms-*` (margin-start). Instead of `mr-*` use `me-*` (margin-end).
 - **Padding:** Instead of `pl-*` use `ps-*` (padding-start). Instead of `pr-*` use `pe-*` (padding-end).

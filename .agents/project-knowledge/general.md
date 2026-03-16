@@ -23,3 +23,4 @@ This is a modern web application built with the following core technologies:
 ## Authentication (WorkOS)
 - **AuthKit:** Authentication is handled by `@workos-inc/authkit-nextjs`.
 - **Session Management:** Rely on WorkOS hooks/utilities to retrieve session data, user profiles, and manage login/logout flows. Do not implement custom JWT handling unless explicitly required.
+- **Middleware Convention:** This project uses `proxy.ts` instead of the standard `middleware.ts`. NEVER use `middleware.ts` in this project; always use `proxy.ts` for authentication and routing middleware logic.
