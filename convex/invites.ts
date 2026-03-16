@@ -1,6 +1,21 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { QueryCtx } from "./_generated/server";
+
+export const validate = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const invitation = await ctx.db
+      .query("invitations")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+
+    if (!invitation || invitation.status !== "pending") {
+      return false;
+    }
+    return true;
+  },
+});
 
 export const create = mutation({
   args: { email: v.optional(v.string()) },

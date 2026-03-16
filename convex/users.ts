@@ -43,6 +43,8 @@ export const store = mutation({
         practitionerId = invitation.practitionerId;
         // Mark invitation as accepted
         await ctx.db.patch(invitation._id, { status: "accepted" });
+      } else {
+        throw new Error("Invalid or already used invitation token.");
       }
     }
 
