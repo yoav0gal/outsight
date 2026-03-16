@@ -4,27 +4,42 @@ import { useTransition } from "react";
 import { useLocale } from "next-intl";
 import { setLanguage } from "@/app/actions/language";
 import { Globe } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function LanguageSwitcher() {
   const [isPending, startTransition] = useTransition();
   const locale = useLocale();
 
-  const toggleLanguage = () => {
-    const nextLocale = locale === "he" ? "en" : "he";
+  const handleLanguageChange = (nextLocale: "en" | "he") => {
+    if (locale === nextLocale) return;
     startTransition(() => {
       setLanguage(nextLocale);
     });
   };
 
   return (
-    <button
-      onClick={toggleLanguage}
-      disabled={isPending}
-      className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-indigo-600 transition-colors disabled:opacity-50"
-      title={locale === "he" ? "Switch to English" : "החלף לעברית"}
-    >
-      <Globe className="w-4 h-4" />
-      <span className="uppercase">{locale === "he" ? "En" : "He"}</span>
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={buttonVariants({ variant: "ghost", size: "icon" })}
+        disabled={isPending}
+      >
+        <Globe className="w-4 h-4 text-zinc-600 hover:text-indigo-600 transition-colors" />
+        <span className="sr-only">Toggle language</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="font-geist">
+        <DropdownMenuItem onClick={() => handleLanguageChange("en")}>
+          English
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleLanguageChange("he")}>
+          עברית
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
