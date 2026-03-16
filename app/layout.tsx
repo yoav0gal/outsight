@@ -4,6 +4,7 @@ import "./globals.css";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
+import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
@@ -40,9 +41,11 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextIntlClientProvider messages={messages}>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-        </NextIntlClientProvider>
+        <DirectionProvider direction={direction as "ltr" | "rtl"}>
+          <NextIntlClientProvider messages={messages}>
+            <ConvexClientProvider>{children}</ConvexClientProvider>
+          </NextIntlClientProvider>
+        </DirectionProvider>
       </body>
     </html>
   );
