@@ -2,10 +2,16 @@
   "authKit": {
     "dev": {
       "configure": {
-        "redirectUris": ["http://localhost:3000/callback"],
+        "redirectUris": [
+          "http://localhost:3000/callback"
+        ],
         "appHomepageUrl": "http://localhost:3000",
-        "corsOrigins": ["http://localhost:3000"],
-        "activeAuthenticationMethods": ["GoogleOAuth"]
+        "corsOrigins": [
+          "http://localhost:3000"
+        ],
+        "activeAuthenticationMethods": [
+          "GoogleOAuth"
+        ]
       },
       "localEnvVars": {
         "WORKOS_CLIENT_ID": "${authEnv.WORKOS_CLIENT_ID}",
@@ -15,10 +21,16 @@
     },
     "preview": {
       "configure": {
-        "redirectUris": ["https://${buildEnv.VERCEL_BRANCH_URL}/callback"],
+        "redirectUris": [
+          "https://${buildEnv.VERCEL_BRANCH_URL}/callback"
+        ],
         "appHomepageUrl": "https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}",
-        "corsOrigins": ["https://${buildEnv.VERCEL_BRANCH_URL}"],
-        "activeAuthenticationMethods": ["GoogleOAuth"]
+        "corsOrigins": [
+          "https://${buildEnv.VERCEL_BRANCH_URL}"
+        ],
+        "activeAuthenticationMethods": [
+          "GoogleOAuth"
+        ]
       }
     },
     "prod": {
@@ -28,8 +40,12 @@
           "https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}/callback"
         ],
         "appHomepageUrl": "https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}",
-        "corsOrigins": ["https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}"],
-        "activeAuthenticationMethods": ["GoogleOAuth"]
+        "corsOrigins": [
+          "https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}"
+        ],
+        "activeAuthenticationMethods": [
+          "GoogleOAuth"
+        ]
       }
     }
   }
