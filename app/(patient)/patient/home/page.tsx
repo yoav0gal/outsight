@@ -6,6 +6,8 @@ import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { LogOut, Heart, Smile } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PatientHome() {
   const { signOut } = useAuth();
@@ -21,13 +23,14 @@ export default function PatientHome() {
         </div>
         <div className="flex items-center gap-6">
           <LanguageSwitcher />
-          <button 
+          <Button 
+            variant="ghost"
             onClick={() => signOut()}
             className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-red-600 transition-colors"
           >
             <LogOut className="w-4 h-4 rtl:rotate-180" />
             {t("signOut")}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -44,20 +47,24 @@ export default function PatientHome() {
           {t("welcomeMessage")}
         </p>
 
-        <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm w-full">
-          <h3 className="font-bold text-zinc-900 mb-2">{t("gettingStarted")}</h3>
-          <p className="text-zinc-500 mb-6 italic">{t("gettingStartedQuote")}</p>
-          <div className="grid gap-4 text-start">
-            <div className="flex gap-4 items-start p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-              <div className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">1</div>
-              <p className="text-sm text-zinc-700 font-medium">{t("step1")}</p>
+        <Card className="border-zinc-200 shadow-sm w-full">
+          <CardHeader className="text-center">
+            <CardTitle className="text-zinc-900">{t("gettingStarted")}</CardTitle>
+            <p className="text-zinc-500 italic text-xs">{t("gettingStartedQuote")}</p>
+          </CardHeader>
+          <CardContent className="p-8 pt-0">
+            <div className="grid gap-4 text-start">
+              <div className="flex gap-4 items-start p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                <div className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                <p className="text-sm text-zinc-700 font-medium">{t("step1")}</p>
+              </div>
+              <div className="flex gap-4 items-start p-4 rounded-2xl bg-zinc-50 border border-zinc-100 opacity-50">
+                <div className="w-6 h-6 bg-zinc-400 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                <p className="text-sm text-zinc-700 font-medium">{t("step2")}</p>
+              </div>
             </div>
-            <div className="flex gap-4 items-start p-4 rounded-2xl bg-zinc-50 border border-zinc-100 opacity-50">
-              <div className="w-6 h-6 bg-zinc-400 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">2</div>
-              <p className="text-sm text-zinc-700 font-medium">{t("step2")}</p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

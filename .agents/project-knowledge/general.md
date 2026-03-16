@@ -15,6 +15,7 @@ This is a modern web application built with the following core technologies:
 - **Strict Typing:** Always use TypeScript. Avoid `any`. Use `unknown` if the type is truly uncertain, and perform necessary type narrowing.
 - **Interfaces vs Types:** Use `type` for unions and primitives. Use `interface` for object shapes and class structures.
 - **Path Aliases:** Use the configured path alias `@/` for absolute imports (e.g., `import { Button } from "@/components/ui/button"`). Do not use deep relative paths (like `../../../`).
+- **RTL-First Styling:** Always use logical properties (`start`/`end`) instead of physical properties (`left`/`right`) for all spacing, positioning, and alignment. See `frontend.md` for specific class mappings.
 
 ## File Naming
 - Components, contexts, and hooks: `camelCase` or `PascalCase` as appropriate (e.g., `useUser.ts`, `Button.tsx`).

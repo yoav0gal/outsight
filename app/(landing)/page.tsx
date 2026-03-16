@@ -7,6 +7,9 @@ import { Suspense } from "react";
 import { ArrowRight, ArrowLeft, ClipboardCheck, Users, ShieldCheck } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -37,14 +40,14 @@ export default function LandingPage() {
           {user ? (
             <Link 
               href="/dashboard" 
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+              className={cn(buttonVariants({ variant: "default", size: "default" }), "rounded-full font-semibold shadow-md shadow-indigo-100")}
             >
               {t("goToDashboard")}
             </Link>
           ) : (
             <Link 
               href="/sign-in" 
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+              className={cn(buttonVariants({ variant: "default", size: "default" }), "rounded-full font-semibold shadow-md shadow-indigo-100")}
             >
               {t("logIn")}
             </Link>
@@ -64,7 +67,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row gap-4 mb-20">
           <Link 
             href="/sign-in" 
-            className="flex items-center justify-center gap-2 bg-zinc-950 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-zinc-800 transition-all group"
+            className={cn(buttonVariants({ size: "lg" }), "bg-zinc-950 hover:bg-zinc-800 rounded-2xl text-lg font-bold group h-auto py-4 px-8")}
           >
             {t("startForFree")}
             {/* Standard arrow pushing in correct inline direction */}
@@ -74,34 +77,46 @@ export default function LandingPage() {
           </Link>
           <a 
             href="#demo" 
-            className="flex items-center justify-center bg-white text-zinc-950 border border-zinc-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-zinc-50 transition-all shadow-sm"
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }), "bg-white text-zinc-950 border-zinc-200 rounded-2xl text-lg font-bold hover:bg-zinc-50 shadow-sm h-auto py-4 px-8")}
           >
             {t("bookDemo")}
           </a>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 w-full">
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm text-start">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
-              <Users className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-3">{t("feature1Title")}</h3>
-            <p className="text-zinc-600">{t("feature1Desc")}</p>
-          </div>
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm text-start">
-            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center mb-6">
-              <ClipboardCheck className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-3">{t("feature2Title")}</h3>
-            <p className="text-zinc-600">{t("feature2Desc")}</p>
-          </div>
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm text-start">
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-6">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-3">{t("feature3Title")}</h3>
-            <p className="text-zinc-600">{t("feature3Desc")}</p>
-          </div>
+          <Card className="border-zinc-100 shadow-sm text-start bg-white">
+            <CardHeader>
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-2">
+                <Users className="w-6 h-6" />
+              </div>
+              <CardTitle className="text-xl font-bold">{t("feature1Title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-zinc-600">{t("feature1Desc")}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-zinc-100 shadow-sm text-start bg-white">
+            <CardHeader>
+              <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center mb-2">
+                <ClipboardCheck className="w-6 h-6" />
+              </div>
+              <CardTitle className="text-xl font-bold">{t("feature2Title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-zinc-600">{t("feature2Desc")}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-zinc-100 shadow-sm text-start bg-white">
+            <CardHeader>
+              <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-2">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <CardTitle className="text-xl font-bold">{t("feature3Title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-zinc-600">{t("feature3Desc")}</p>
+            </CardContent>
+          </Card>
         </div>
       </main>
 

@@ -7,6 +7,10 @@ import { UserPlus, Users, Link as LinkIcon, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PractitionerDashboard() {
   const { signOut } = useAuth();
@@ -39,13 +43,14 @@ export default function PractitionerDashboard() {
         </div>
         <div className="flex items-center gap-6">
           <LanguageSwitcher />
-          <button 
+          <Button 
+            variant="ghost"
             onClick={() => signOut()}
             className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-red-600 transition-colors"
           >
             <LogOut className="w-4 h-4 rtl:rotate-180" />
             {t("signOut")}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -55,14 +60,15 @@ export default function PractitionerDashboard() {
             <h1 className="text-3xl font-bold text-zinc-950">{t("myPatients")}</h1>
             <p className="text-zinc-600">{t("myPatientsDesc")}</p>
           </div>
-          <button 
+          <Button 
             onClick={handleGenerateInvite}
             disabled={loading}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 flex items-center gap-2 disabled:opacity-50"
+            size="lg"
+            className="rounded-xl font-bold shadow-md shadow-indigo-100 flex items-center gap-2"
           >
             <UserPlus className="w-5 h-5" />
             {t("addPatient")}
-          </button>
+          </Button>
         </div>
 
         {inviteLink && (
@@ -73,30 +79,42 @@ export default function PractitionerDashboard() {
             </h3>
             <p className="text-sm text-indigo-700 mb-4">{t("inviteLinkDesc")}</p>
             <div className="flex items-center gap-2 text-start">
-              <input 
+              <Input 
                 readOnly 
                 value={inviteLink}
                 dir="ltr"
-                className="flex-1 bg-white border border-indigo-200 rounded-lg px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-start"
+                className="flex-1 bg-white border-indigo-200 rounded-lg text-sm text-zinc-900 focus:ring-indigo-500 text-start"
               />
-              <button 
+              <Button 
+                variant="outline"
                 onClick={() => {
                   navigator.clipboard.writeText(inviteLink);
                   alert(t("copiedText"));
                 }}
-                className="bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-50 transition-all"
+                className="border-indigo-200 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-50 transition-all"
               >
                 {t("copy")}
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
         <div className="grid gap-4">
           {!patients ? (
-            <div className="py-20 text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-zinc-500">{t("loadingPatients")}</p>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="border-zinc-100 shadow-sm">
+                  <CardContent className="p-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4 w-full">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-3 w-1/3" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : patients.length === 0 ? (
             <div className="bg-white border border-dashed border-zinc-200 rounded-3xl py-20 text-center">
@@ -106,21 +124,26 @@ export default function PractitionerDashboard() {
             </div>
           ) : (
             patients.map((patient) => (
-              <div key={patient._id} className="bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm flex items-center justify-between hover:border-indigo-100 transition-colors cursor-pointer text-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center font-bold text-zinc-500 text-lg uppercase">
-                    {patient.name?.charAt(0) || "P"}
+              <Card 
+                key={patient._id} 
+                className="border-zinc-100 shadow-sm hover:border-indigo-100 transition-colors cursor-pointer"
+              >
+                <CardContent className="p-6 flex items-center justify-between text-start">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center font-bold text-zinc-500 text-lg uppercase">
+                      {patient.name?.charAt(0) || "P"}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-zinc-950">{patient.name || t("unnamedPatient")}</h4>
+                      <p className="text-sm text-zinc-500">{patient.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-zinc-950">{patient.name || t("unnamedPatient")}</h4>
-                    <p className="text-sm text-zinc-500">{patient.email}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">{t("activeStatus")}</span>
+                    <ArrowRight className="w-4 h-4 text-zinc-300 rtl:rotate-180" />
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">{t("activeStatus")}</span>
-                  <ArrowRight className="w-4 h-4 text-zinc-300 rtl:rotate-180" />
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))
           )}
         </div>

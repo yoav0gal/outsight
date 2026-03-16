@@ -14,16 +14,30 @@
 
 ## ⚠️ Multi-Language & RTL Development (CRITICAL)
 This project uses `next-intl` to manage translations and supports RTL (right-to-left) layouts out-of-the-box (e.g., for Hebrew).
-- **Localization Files:** Translations are stored in `messages/en.json` and `messages/he.json`. ALWAYS add new keys to both files.
-- **Usage:** Use the `useTranslations` hook in client components and `getTranslations` in server components.
-- **Logical Properties:** Because Tailwind's standard directional classes do NOT dynamically adapt to RTL document flow, **you must use logical properties**.
 
-- **Margins:** Instead of `ml-*` use `ms-*` (margin-start). Instead of `mr-*` use `me-*` (margin-end).
-- **Padding:** Instead of `pl-*` use `ps-*` (padding-start). Instead of `pr-*` use `pe-*` (padding-end).
-- **Positioning:** Use `start-*` and `end-*` instead of `left-*` and `right-*`.
-- **Borders:** Use `border-s-*` and `border-e-*` instead of `border-l-*` and `border-r-*`.
+### Logical Properties vs. Physical Properties
+Tailwind's standard directional classes do NOT dynamically adapt to RTL document flow. **You must use logical properties** to ensure the layout flips correctly.
 
-This ensures spacing will flip automatically based on the `<html dir="...">` attribute set in `app/layout.tsx`. Do not violate this rule.
+| Physical (Never Use) | Logical (Always Use) | Description |
+| :--- | :--- | :--- |
+| `ml-*`, `mr-*` | `ms-*`, `me-*` | Margin Start / End |
+| `pl-*`, `pr-*` | `ps-*`, `pe-*` | Padding Start / End |
+| `left-*`, `right-*` | `start-*`, `end-*` | Absolute Positioning |
+| `border-l-*`, `border-r-*` | `border-s-*`, `border-e-*` | Border Start / End |
+| `text-left`, `text-right` | `text-start`, `text-end` | Text Alignment |
+| `rounded-l-*`, `rounded-r-*` | `rounded-s-*`, `rounded-e-*` | Border Radius |
+
+### Directional Icons
+Icons that indicate direction (arrows, chevrons) must be flipped in RTL:
+- Use `rtl:rotate-180` to flip icons like `ArrowRight` or `ChevronRight`.
+- For icons that shouldn't flip (like a clock or a checkmark), keep them as is.
+
+### Animations
+Use logical animation utilities:
+- Use `slide-in-from-start` instead of `slide-in-from-left`.
+- Use `slide-in-from-end` instead of `slide-in-from-right`.
+
+This ensures spacing and layout will flip automatically based on the `<html dir="...">` attribute set in `app/layout.tsx`. Do not violate this rule.
 
 ## Error Handling
 - **Graceful Degradation:** Use `error.tsx` files in the Next.js App directory to catch render errors.
