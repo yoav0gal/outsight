@@ -1,0 +1,50 @@
+{
+  "LandingPage": {
+    "title": "Outsight",
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "goToDashboard": "Go to Dashboard",
+    "logIn": "Log In",
+    "heroTitleLine1": "The Modern Tool for",
+    "heroTitleLine2": "CBT Practitioners",
+    "heroSubtitle": "Streamline your practice, track patient progress, and manage exercises with ease. Built specifically for the needs of CBT therapy.",
+    "startForFree": "Start for free",
+    "bookDemo": "Book a demo",
+    "feature1Title": "Patient Management",
+    "feature1Desc": "Easily add patients and track their journey through the CBT process.",
+    "feature2Title": "Exercise Tracking",
+    "feature2Desc": "Assign thought records and behavioral experiments with a click.",
+    "feature3Title": "Secure & Compliant",
+    "feature3Desc": "Your patient data is protected with industry-standard encryption.",
+    "footer": "© 2024 Outsight. All rights reserved."
+  },
+  "PractitionerDashboard": {
+    "title": "Outsight Practitioner",
+    "signOut": "Sign Out",
+    "myPatients": "My Patients",
+    "myPatientsDesc": "Manage and track your patients' progress.",
+    "addPatient": "Add Patient",
+    "inviteLinkGenerated": "Patient Invitation Link Generated",
+    "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice.",
+    "copy": "Copy",
+    "copiedText": "Copied to clipboard!",
+    "failedInvite": "Failed to create invitation",
+    "loadingPatients": "Loading patients...",
+    "noPatients": "No patients yet",
+    "noPatientsDesc": "Click \"Add Patient\" to invite your first patient to the platform.",
+    "unnamedPatient": "Unnamed Patient",
+    "activeStatus": "Active"
+  },
+  "PatientHome": {
+    "title": "Outsight Patient",
+    "signOut": "Sign Out",
+    "hi": "Hi {name}! You're in.",
+    "defaultName": "there",
+    "welcomeMessage": "Welcome to Outsight. Your practitioner has added you to their practice. This is where you'll see your progress and exercises soon.",
+    "gettingStarted": "Getting Started",
+    "gettingStartedQuote": "\"The journey of a thousand miles begins with a single step.\"",
+    "step1": "Wait for your therapist to assign your first exercise.",
+    "step2": "Complete your thought records regularly."
+  }
+}

@@ -34,3 +34,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Multi-Language & RTL Development
+
+This project uses `next-intl` to manage translations and supports RTL (right-to-left) layouts out-of-the-box (e.g. for Hebrew). 
+When developing the UI, because Tailwind's `ml-*`, `mr-*`, `pl-*`, and `pr-*` classes do NOT dynamically adapt to RTL document flow, you must use **logical properties**:
+*   Instead of `ml-*` use `ms-*` (margin-start)
+*   Instead of `mr-*` use `me-*` (margin-end)
+*   Instead of `pl-*` use `ps-*` (padding-start)
+*   Instead of `pr-*` use `pe-*` (padding-end)
+
+This ensures spacing will flip automatically based on the `<html dir="...">` attribute set in `app/layout.tsx`.

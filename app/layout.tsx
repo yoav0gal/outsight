@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getLocale } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,17 +20,24 @@ export const metadata: Metadata = {
   description: "Advanced CBT Patient Management",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const messages = await getMessages();
+  const locale = await getLocale();
+  // Dynamically determine direction using native JS Intl API (fallback to ltr)
+  const direction = (new Intl.Locale(locale) as any).getTextInfo?.().direction || (locale === 'he' ? 'rtl' : 'ltr');
+
   return (
-    <html lang="en">
+    <html lang={locale} dir={direction}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
