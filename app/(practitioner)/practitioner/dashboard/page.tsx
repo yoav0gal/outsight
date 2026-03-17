@@ -2,19 +2,17 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useAuth } from "@workos-inc/authkit-nextjs/components";
-import { UserPlus, Users, Link as LinkIcon, LogOut } from "lucide-react";
+import { UserMenu } from "@/components/UserMenu";
+import { UserPlus, Users, Link as LinkIcon, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PractitionerDashboard() {
-  const { signOut } = useAuth();
   const patients = useQuery(api.users.listPatients);
   const createInvite = useMutation(api.invites.create);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -42,16 +40,8 @@ export default function PractitionerDashboard() {
           <Users className="w-6 h-6" />
           <span>{t("title")}</span>
         </div>
-        <div className="flex items-center gap-6">
-          <LanguageSwitcher />
-          <Button 
-            variant="ghost"
-            onClick={() => signOut()}
-            className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-red-600 transition-colors"
-          >
-            <LogOut className="w-4 h-4 rtl:rotate-180" />
-            {t("signOut")}
-          </Button>
+        <div className="flex items-center gap-4">
+          <UserMenu />
         </div>
       </header>
 
@@ -151,24 +141,5 @@ export default function PractitionerDashboard() {
         </div>
       </main>
     </div>
-  );
-}
-
-function ArrowRight({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className} 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-    </svg>
   );
 }

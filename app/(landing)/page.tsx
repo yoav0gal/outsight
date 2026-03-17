@@ -6,6 +6,7 @@ import { SyncUser } from "@/components/SyncUser";
 import { Suspense } from "react";
 import { ArrowRight, ArrowLeft, ClipboardCheck, Users, ShieldCheck } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { UserMenu } from "@/components/UserMenu";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,21 +37,18 @@ export default function LandingPage() {
           <a href="#" className="hover:text-indigo-600 transition-colors">{t("about")}</a>
         </nav>
         <div className="flex items-center gap-4">
-          <LanguageSwitcher />
           {user ? (
-            <Link 
-              href="/dashboard" 
-              className={cn(buttonVariants({ variant: "default", size: "default" }), "rounded-full font-semibold shadow-md shadow-indigo-100")}
-            >
-              {t("goToDashboard")}
-            </Link>
+            <UserMenu />
           ) : (
-            <Link 
-              href="/sign-in" 
-              className={cn(buttonVariants({ variant: "default", size: "default" }), "rounded-full font-semibold shadow-md shadow-indigo-100")}
-            >
-              {t("logIn")}
-            </Link>
+            <>
+              <LanguageSwitcher />
+              <Link 
+                href="/sign-in" 
+                className={cn(buttonVariants({ variant: "default", size: "default" }), "rounded-full font-semibold shadow-md shadow-indigo-100")}
+              >
+                {t("logIn")}
+              </Link>
+            </>
           )}
         </div>
       </header>

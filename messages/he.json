@@ -49,8 +49,9 @@
     "caughtUp": "הכל מעודכן!",
     "pendingQuestionnaires": "יש לך {count} שאלונים שממתינים למילוי",
     "takeQuestionnaire": "התחל שאלון",
-    "myQuestionnaires": "השאלונים שלי",
-    "history": "היסטוריה"
+    "myQuestionnaires": "ממתינים",
+    "history": "היסטוריה",
+    "noHistory": "אין תשובות עבר"
   },
   "PractitionerPatient": {
     "backToDashboard": "חזרה ללוח הבקרה",
@@ -101,6 +102,15 @@
       "pending": "לביצוע",
       "completed": "הושלם",
       "expired": "הוחמץ"
+    }
+  },
+  "UserMenu": {
+    "signOut": "התנתק",
+    "displayLanguage": "שפת תצוגה",
+    "practitioner": "מטפל",
+    "languages": {
+      "en": "English",
+      "he": "עברית"
     }
   }
 }

@@ -49,8 +49,9 @@
     "caughtUp": "You're all caught up!",
     "pendingQuestionnaires": "You have {count} pending questionnaires",
     "takeQuestionnaire": "Start Questionnaire",
-    "myQuestionnaires": "My Questionnaires",
-    "history": "History"
+    "myQuestionnaires": "Pending",
+    "history": "History",
+    "noHistory": "No past responses found."
   },
   "PractitionerPatient": {
     "backToDashboard": "Back to Dashboard",
@@ -101,6 +102,15 @@
       "pending": "To Do",
       "completed": "Completed",
       "expired": "Missed"
+    }
+  },
+  "UserMenu": {
+    "signOut": "Sign Out",
+    "displayLanguage": "Display language",
+    "practitioner": "Practitioner",
+    "languages": {
+      "en": "English",
+      "he": "עברית"
     }
   }
 }

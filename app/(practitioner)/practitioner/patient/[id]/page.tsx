@@ -6,9 +6,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { useAuth } from "@workos-inc/authkit-nextjs/components";
-import { ArrowLeft, FileText, History, User, Users, LogOut } from "lucide-react";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ArrowLeft, FileText, History, User, Users } from "lucide-react";
+import { UserMenu } from "@/components/UserMenu";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,7 +20,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { signOut } = useAuth();
   const t = useTranslations("PractitionerPatient");
   const tDashboard = useTranslations("PractitionerDashboard");
   const patientId = params.id as Id<"users">;
@@ -83,16 +81,8 @@ export default function PatientDetailsPage() {
           <Users className="w-6 h-6" />
           <span>{tDashboard("title")}</span>
         </div>
-        <div className="flex items-center gap-6">
-          <LanguageSwitcher />
-          <Button 
-            variant="ghost"
-            onClick={() => signOut()}
-            className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-red-600 transition-colors"
-          >
-            <LogOut className="w-4 h-4 rtl:rotate-180" />
-            {tDashboard("signOut")}
-          </Button>
+        <div className="flex items-center gap-4">
+          <UserMenu />
         </div>
       </header>
 
