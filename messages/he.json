@@ -112,9 +112,17 @@
   },
   "Questionnaire": {
     "submit": "הגש תשובות",
+    "back": "חזור",
+    "goBack": "חזרה",
+    "notFound": "השאלון לא נמצא",
     "next": "הבא",
     "previous": "הקודם",
     "requiredField": "שאלה זו חובה",
+    "typeAnswer": "הקלד את תשובתך כאן...",
+    "noAnswer": "לא סופקה תשובה",
+    "type": "סוג",
+    "options": "אפשרויות",
+    "submittedOn": "הוגש בתאריך {date}",
     "completed": "השאלון הושלם בהצלחה!",
     "status": {
       "pending": "לביצוע",

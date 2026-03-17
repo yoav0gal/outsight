@@ -112,9 +112,17 @@
   },
   "Questionnaire": {
     "submit": "Submit Answers",
+    "back": "Back",
+    "goBack": "Go Back",
+    "notFound": "Questionnaire Not Found",
     "next": "Next",
     "previous": "Previous",
     "requiredField": "This question is required",
+    "typeAnswer": "Type your answer here...",
+    "noAnswer": "No answer provided",
+    "type": "Type",
+    "options": "Options",
+    "submittedOn": "Submitted on {date}",
     "completed": "Questionnaire completed successfully!",
     "status": {
       "pending": "To Do",

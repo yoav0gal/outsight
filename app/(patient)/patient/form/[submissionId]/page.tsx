@@ -92,9 +92,9 @@ export default function QuestionnaireFormPage() {
     return (
       <main className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-        <h2 className="text-2xl font-bold text-zinc-900 mb-2">Questionnaire Not Found</h2>
+        <h2 className="text-2xl font-bold text-zinc-900 mb-2">{t("notFound")}</h2>
         <Button onClick={() => router.push("/patient/home")} variant="outline" className="mt-4 rounded-xl">
-          Go Back
+          {t("goBack")}
         </Button>
       </main>
     );
@@ -102,15 +102,15 @@ export default function QuestionnaireFormPage() {
 
   if (instance.status !== "pending") {
     return (
-      <main className="flex-1 w-full max-w-3xl mx-auto p-6 py-10 sm:py-16">
-        <div className="mb-6 flex items-center">
+      <main className="flex-1 w-full max-w-3xl mx-auto p-6 pt-0 pb-10 sm:pt-0 sm:pb-16">
+        <div className="mb-2 flex items-center">
           <Button 
             variant="ghost" 
             onClick={() => router.back()}
             className="flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
           >
             <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
-            <span>Back</span>
+            <span>{t("back")}</span>
           </Button>
         </div>
         <div className="mb-10 text-center sm:text-start">
@@ -136,7 +136,7 @@ export default function QuestionnaireFormPage() {
                   </CardHeader>
                   <CardContent className="px-6 pb-8 sm:px-8 bg-zinc-50/50">
                     <div className="p-4 bg-white rounded-xl border border-zinc-200 text-zinc-700 font-medium">
-                      {answer !== undefined ? String(answer) : <span className="text-zinc-400 italic">No answer provided</span>}
+                      {answer !== undefined ? String(answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
                     </div>
                   </CardContent>
                 </Card>
@@ -144,19 +144,19 @@ export default function QuestionnaireFormPage() {
             })}
           </div>
         </main>
-  );
-}
+    );
+  }
 
   return (
-    <main className="flex-1 w-full max-w-3xl mx-auto p-6 py-10 sm:py-16">
-      <div className="mb-6 flex items-center">
+    <main className="flex-1 w-full max-w-3xl mx-auto p-6 pt-0 pb-10 sm:pt-0 sm:pb-16">
+      <div className="mb-2 flex items-center">
         <Button 
           variant="ghost" 
           onClick={() => router.back()}
           className="flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
         >
           <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
-          <span>Back</span>
+          <span>{t("back")}</span>
         </Button>
       </div>
       <div className="mb-10 text-center sm:text-start animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -191,7 +191,7 @@ export default function QuestionnaireFormPage() {
                   <Input 
                     value={answers[question.id] || ""}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                    placeholder="Type your answer here..."
+                    placeholder={t("typeAnswer")}
                     className="h-14 rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm"
                   />
                 )}
@@ -200,7 +200,7 @@ export default function QuestionnaireFormPage() {
                   <Textarea 
                     value={answers[question.id] || ""}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                    placeholder="Type your answer here..."
+                    placeholder={t("typeAnswer")}
                     className="min-h-[120px] rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm resize-y p-4"
                   />
                 )}

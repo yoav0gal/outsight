@@ -20,6 +20,8 @@ export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("PractitionerPatient");
+  const tQ = useTranslations("Questionnaire");
+  const tCT = useTranslations("CreateTemplate");
   const patientId = params.id as Id<"users">;
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
@@ -30,6 +32,7 @@ export default function PatientDetailsPage() {
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
+  const [selectedViewTemplate, setSelectedViewTemplate] = useState<any | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [selectedFrequency, setSelectedFrequency] = useState<"once" | "daily" | "weekly">("weekly");
   const [isAssigning, setIsAssigning] = useState(false);
@@ -224,7 +227,11 @@ export default function PatientDetailsPage() {
                 assignments.map((assignment) => {
                   const tpl = templates?.find((t) => t._id === assignment.templateId);
                   return (
-                    <Card key={assignment._id} className="border-zinc-200/60 shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+                    <Card 
+                      key={assignment._id} 
+                      className="border-zinc-200/60 shadow-sm hover:shadow-md transition-shadow rounded-2xl cursor-pointer"
+                      onClick={() => setSelectedViewTemplate(tpl)}
+                    >
                       <CardContent className="p-6 flex flex-col items-start gap-4">
                         <div className="space-y-1 w-full text-start">
                           <h4 className="font-bold text-zinc-900 line-clamp-1">{tpl?.title || "Loading..."}</h4>
@@ -300,6 +307,45 @@ export default function PatientDetailsPage() {
               </div>
             </div>
 
+            {/* View Template Dialog */}
+            <Dialog open={!!selectedViewTemplate} onOpenChange={(open) => !open && setSelectedViewTemplate(null)}>
+              <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[85vh] overflow-y-auto">
+                {selectedViewTemplate && (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="text-xl">{selectedViewTemplate.title}</DialogTitle>
+                      <DialogDescription>
+                        {selectedViewTemplate.description}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                      {selectedViewTemplate.questions.map((q: any, i: number) => (
+                        <div key={q.id} className="space-y-2">
+                          <h4 className="font-semibold text-zinc-900 text-sm flex gap-2">
+                            <span className="text-indigo-500">{i + 1}.</span> {q.prompt}
+                        {q.required && <span className="text-red-500">*</span>}
+                      </h4>
+                      <div className="bg-zinc-50 px-3 py-2 rounded-lg border border-zinc-100 text-zinc-500 text-xs">
+                        {tQ("type")}: <span className="font-mono">{tCT(`types.${q.type}`)}</span>
+                        {q.options && (
+                          <div className="mt-2 space-y-1">
+                            <p className="font-semibold text-[10px] uppercase tracking-wider text-zinc-400">{tQ("options")}:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {q.options.map((opt: string, j: number) => (
+                                <span key={j} className="bg-white px-2 py-0.5 rounded border border-zinc-200">{opt}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </DialogContent>
+            </Dialog>
+
             {/* View Submission Dialog */}
             <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
               <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[85vh] overflow-y-auto">
@@ -308,7 +354,7 @@ export default function PatientDetailsPage() {
                     <DialogHeader>
                       <DialogTitle className="text-xl">{selectedSubmission.template?.title}</DialogTitle>
                       <DialogDescription>
-                        Submitted on {new Date(selectedSubmission.submittedAt || selectedSubmission.createdAt).toLocaleString()}
+                        {tQ("submittedOn", { date: new Date(selectedSubmission.submittedAt || selectedSubmission.createdAt).toLocaleString() })}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
