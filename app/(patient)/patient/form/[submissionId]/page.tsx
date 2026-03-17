@@ -6,10 +6,10 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -71,7 +71,7 @@ export default function QuestionnaireFormPage() {
         answers: formattedAnswers,
       });
 
-      router.push("/patient/home");
+      router.push("/patient/history");
     } catch (err) {
       console.error(err);
       setError("Failed to submit answers.");
@@ -82,49 +82,48 @@ export default function QuestionnaireFormPage() {
 
   if (instance === undefined) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-      </div>
+      </main>
     );
   }
 
   if (instance === null || !instance.template) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-8 text-center">
+      <main className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
         <h2 className="text-2xl font-bold text-zinc-900 mb-2">Questionnaire Not Found</h2>
         <Button onClick={() => router.push("/patient/home")} variant="outline" className="mt-4 rounded-xl">
           Go Back
         </Button>
-      </div>
+      </main>
     );
   }
 
   if (instance.status !== "pending") {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
-        <header className="bg-white border-b border-zinc-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <main className="flex-1 w-full max-w-3xl mx-auto p-6 py-10 sm:py-16">
+        <div className="mb-6 flex items-center">
           <Button 
             variant="ghost" 
             onClick={() => router.back()}
-            className="w-fit flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
+            className="flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
           >
             <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+            <span>Back</span>
           </Button>
-        </header>
+        </div>
+        <div className="mb-10 text-center sm:text-start">
+          <Badge className={`mb-4 ${instance.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {t(`status.${instance.status}`)}
+          </Badge>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-950 mb-4 tracking-tight">
+            {instance.template.title}
+          </h1>
+        </div>
 
-        <main className="flex-1 w-full max-w-3xl mx-auto p-6 py-10 sm:py-16">
-          <div className="mb-10 text-center sm:text-start">
-            <Badge className={`mb-4 ${instance.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {t(`status.${instance.status}`)}
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-950 mb-4 tracking-tight">
-              {instance.template.title}
-            </h1>
-          </div>
-
-          <div className="space-y-8">
-            {instance.template.questions.map((question, index) => {
+        <div className="space-y-8">
+          {instance.template.questions.map((question, index) => {
               const answer = instance.answers?.find(a => a.questionId === question.id)?.value;
               
               return (
@@ -145,24 +144,22 @@ export default function QuestionnaireFormPage() {
             })}
           </div>
         </main>
-      </div>
-    );
-  }
+  );
+}
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-zinc-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+    <main className="flex-1 w-full max-w-3xl mx-auto p-6 py-10 sm:py-16">
+      <div className="mb-6 flex items-center">
         <Button 
           variant="ghost" 
           onClick={() => router.back()}
-          className="w-fit flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
+          className="flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
         >
           <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+          <span>Back</span>
         </Button>
-      </header>
-
-      <main className="flex-1 w-full max-w-3xl mx-auto p-6 py-10 sm:py-16">
-        <div className="mb-10 text-center sm:text-start animate-in fade-in slide-in-from-bottom-4 duration-500">
+      </div>
+      <div className="mb-10 text-center sm:text-start animate-in fade-in slide-in-from-bottom-4 duration-500">
           <Badge className="mb-4 bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
             {t(`status.${instance.status}`)}
           </Badge>
@@ -283,6 +280,5 @@ export default function QuestionnaireFormPage() {
           </Button>
         </div>
       </main>
-    </div>
   );
 }

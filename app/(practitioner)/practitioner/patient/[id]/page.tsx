@@ -6,11 +6,10 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, FileText, History, User, Users } from "lucide-react";
-import { UserMenu } from "@/components/UserMenu";
+import { ArrowLeft, FileText, History, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -21,7 +20,6 @@ export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("PractitionerPatient");
-  const tDashboard = useTranslations("PractitionerDashboard");
   const patientId = params.id as Id<"users">;
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
@@ -57,7 +55,7 @@ export default function PatientDetailsPage() {
 
   if (patient === undefined) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     );
@@ -65,7 +63,7 @@ export default function PatientDetailsPage() {
 
   if (patient === null) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-8 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <h2 className="text-2xl font-bold text-zinc-900 mb-2">Patient Not Found</h2>
         <Button onClick={() => router.back()} variant="outline">
           {t("backToDashboard")}
@@ -75,18 +73,7 @@ export default function PatientDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-zinc-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2 font-bold text-xl text-indigo-600">
-          <Users className="w-6 h-6" />
-          <span>{tDashboard("title")}</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <UserMenu />
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-5xl mx-auto w-full p-6 sm:p-10">
+    <main className="flex-1 max-w-5xl mx-auto w-full p-6 sm:p-10">
         <div className="flex flex-col gap-6 mb-8">
           <Button 
             variant="ghost" 
@@ -346,6 +333,5 @@ export default function PatientDetailsPage() {
           </TabsContent>
         </Tabs>
       </main>
-    </div>
   );
 }

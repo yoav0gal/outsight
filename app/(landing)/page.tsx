@@ -4,7 +4,7 @@ import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import Link from "next/link";
 import { SyncUser } from "@/components/SyncUser";
 import { Suspense } from "react";
-import { ArrowRight, ArrowLeft, ClipboardCheck, Users, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowLeft, ClipboardCheck, Users, ShieldCheck, Signpost } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { UserMenu } from "@/components/UserMenu";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -27,10 +27,10 @@ export default function LandingPage() {
       </Suspense>
 
       <header className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto w-full">
-        <div className="flex items-center gap-2 font-bold text-2xl tracking-tight text-indigo-600">
-          <ClipboardCheck className="w-8 h-8" />
+        <Link href="/" className="flex items-center gap-2 font-bold text-2xl tracking-tight text-indigo-600">
+          <Signpost className="w-8 h-8" />
           <span>{t("title")}</span>
-        </div>
+        </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-600">
           <a href="#" className="hover:text-indigo-600 transition-colors">{t("features")}</a>
           <a href="#" className="hover:text-indigo-600 transition-colors">{t("pricing")}</a>

@@ -37,7 +37,7 @@ export function SyncUser() {
   useEffect(() => {
     if (userData) {
       if (userData.role === "practitioner") {
-        router.push("/practitioner/dashboard");
+        router.push("/practitioner/my-patients");
       } else if (userData.role === "patient") {
         router.push("/patient/home");
       }

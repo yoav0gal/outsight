@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { UserMenu } from "@/components/UserMenu";
 import { UserPlus, Users, Link as LinkIcon, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -12,12 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function PractitionerDashboard() {
+export default function PractitionerMyPatients() {
   const patients = useQuery(api.users.listPatients);
   const createInvite = useMutation(api.invites.create);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const t = useTranslations("PractitionerDashboard");
+  const t = useTranslations("PractitionerMyPatients");
 
   const handleGenerateInvite = async () => {
     setLoading(true);
@@ -34,18 +33,7 @@ export default function PractitionerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
-      <header className="bg-white border-b border-zinc-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2 font-bold text-xl text-indigo-600">
-          <Users className="w-6 h-6" />
-          <span>{t("title")}</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <UserMenu />
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl mx-auto w-full p-8">
+    <main className="flex-1 max-w-6xl mx-auto w-full p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-zinc-950">{t("myPatients")}</h1>
@@ -140,6 +128,5 @@ export default function PractitionerDashboard() {
           )}
         </div>
       </main>
-    </div>
   );
 }

@@ -11,6 +11,48 @@ async function getCurrentUser(ctx: QueryCtx) {
 }
 
 // 1. Templates
+export const createTemplate = mutation({
+  args: {
+    title: v.string(),
+    description: v.optional(v.string()),
+    questions: v.array(
+      v.object({
+        id: v.string(),
+        type: v.union(
+          v.literal("short_text"),
+          v.literal("long_text"),
+          v.literal("multiple_choice"),
+          v.literal("boolean"),
+          v.literal("numeric_scale")
+        ),
+        prompt: v.string(),
+        required: v.boolean(),
+        options: v.optional(v.array(v.string())),
+        scaleConfig: v.optional(
+          v.object({
+            min: v.number(),
+            max: v.number(),
+            minLabel: v.optional(v.string()),
+            maxLabel: v.optional(v.string()),
+          })
+        ),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const templateId = await ctx.db.insert("questionnaireTemplates", {
+      title: args.title,
+      description: args.description,
+      practitionerId: user._id,
+      questions: args.questions,
+    });
+    return templateId;
+  },
+});
+
 export const listTemplates = query({
   args: {},
   handler: async (ctx) => {

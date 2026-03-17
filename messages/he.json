@@ -1,4 +1,14 @@
 {
+  "PractitionerNavBar": {
+    "title": "Outsight",
+    "myPatients": "המטופלים שלי",
+    "questionnaires": "שאלונים"
+  },
+  "PatientNavBar": {
+    "title": "Outsight",
+    "home": "לביצוע",
+    "history": "היסטוריה"
+  },
   "LandingPage": {
     "title": "Outsight",
     "features": "מאפיינים",
@@ -19,8 +29,8 @@
     "feature3Desc": "המידע של המטופלים שלך מוגן באמצעות הצפנה בתקנים המחמירים ביותר בתעשייה.",
     "footer": "© 2026 Outsight. כל הזכויות שמורות."
   },
-  "PractitionerDashboard": {
-    "title": " מטפלים",
+  "PractitionerMyPatients": {
+    "title": "Outsight",
     "signOut": "התנתק",
     "myPatients": "המטופלים שלי",
     "myPatientsDesc": "נהל ועקוב אחר ההתקדמות של המטופלים שלך.",
@@ -36,8 +46,16 @@
     "unnamedPatient": "מטופל ללא שם",
     "activeStatus": "פעיל"
   },
+  "PractitionerQuestionnaires": {
+    "title": "שאלונים",
+    "description": "נהל את תבניות השאלונים שלך",
+    "createTemplate": "יצירת תבנית שאלון",
+    "noTemplates": "עדיין אין תבניות",
+    "noTemplatesDesc": "צור את התבנית הראשונה שלך כדי להקצות אותה למטופלים.",
+    "questionsCount": "{count} שאלות"
+  },
   "PatientHome": {
-    "title": "Outsight מטופלים",
+    "title": "Outsight",
     "signOut": "התנתק",
     "hi": "היי {name}! הגעת.",
     "defaultName": "שם",
@@ -112,5 +130,35 @@
       "en": "English",
       "he": "עברית"
     }
+  },
+  "CreateTemplate": {
+    "title": "יצירת תבנית שאלון חדשה",
+    "description": "עצב שאלון חדש כדי להקצות למטופלים שלך.",
+    "templateName": "שם התבנית",
+    "templateDesc": "תיאור",
+    "questions": "שאלות",
+    "addQuestion": "הוסף שאלה",
+    "questionPrompt": "תוכן השאלה",
+    "questionType": "סוג השאלה",
+    "required": "שאלת חובה",
+    "removeQuestion": "הסר",
+    "types": {
+      "short_text": "טקסט קצר",
+      "long_text": "טקסט ארוך",
+      "multiple_choice": "בחירה מרובה",
+      "boolean": "כן / לא",
+      "numeric_scale": "סולם מספרי"
+    },
+    "options": "אפשרויות",
+    "addOption": "הוסף אפשרות",
+    "removeOption": "הסר אפשרות",
+    "min": "ערך מינימלי",
+    "max": "ערך מקסימלי",
+    "minLabel": "תווית למינימום (אופציונלי)",
+    "maxLabel": "תווית למקסימום (אופציונלי)",
+    "save": "שמור תבנית",
+    "cancel": "ביטול",
+    "success": "התבנית נוצרה בהצלחה!",
+    "error": "יצירת התבנית נכשלה"
   }
 }

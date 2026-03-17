@@ -1,4 +1,14 @@
 {
+  "PractitionerNavBar": {
+    "title": "Outsight",
+    "myPatients": "My Patients",
+    "questionnaires": "Questionnaires"
+  },
+  "PatientNavBar": {
+    "title": "Outsight",
+    "home": "To Do",
+    "history": "History"
+  },
   "LandingPage": {
     "title": "Outsight",
     "features": "Features",
@@ -19,8 +29,8 @@
     "feature3Desc": "Your patient data is protected with industry-standard encryption.",
     "footer": "© 2024 Outsight. All rights reserved."
   },
-  "PractitionerDashboard": {
-    "title": "Outsight Practitioner",
+  "PractitionerMyPatients": {
+    "title": "Outsight",
     "signOut": "Sign Out",
     "myPatients": "My Patients",
     "myPatientsDesc": "Manage and track your patients' progress.",
@@ -36,8 +46,16 @@
     "unnamedPatient": "Unnamed Patient",
     "activeStatus": "Active"
   },
+  "PractitionerQuestionnaires": {
+    "title": "Questionnaires",
+    "description": "Manage your questionnaire templates",
+    "createTemplate": "Create Template",
+    "noTemplates": "No templates yet",
+    "noTemplatesDesc": "Create your first template to assign to patients.",
+    "questionsCount": "{count} Questions"
+  },
   "PatientHome": {
-    "title": "Outsight Patient",
+    "title": "Outsight",
     "signOut": "Sign Out",
     "hi": "Hi {name}! You're in.",
     "defaultName": "there",
@@ -112,5 +130,35 @@
       "en": "English",
       "he": "עברית"
     }
+  },
+  "CreateTemplate": {
+    "title": "Create Questionnaire Template",
+    "description": "Design a new questionnaire to assign to your patients.",
+    "templateName": "Template Name",
+    "templateDesc": "Description",
+    "questions": "Questions",
+    "addQuestion": "Add Question",
+    "questionPrompt": "Question Prompt",
+    "questionType": "Type",
+    "required": "Required",
+    "removeQuestion": "Remove",
+    "types": {
+      "short_text": "Short Text",
+      "long_text": "Long Text",
+      "multiple_choice": "Multiple Choice",
+      "boolean": "Yes / No",
+      "numeric_scale": "Numeric Scale"
+    },
+    "options": "Options",
+    "addOption": "Add Option",
+    "removeOption": "Remove Option",
+    "min": "Minimum Value",
+    "max": "Maximum Value",
+    "minLabel": "Minimum Label (Optional)",
+    "maxLabel": "Maximum Label (Optional)",
+    "save": "Save Template",
+    "cancel": "Cancel",
+    "success": "Template created successfully!",
+    "error": "Failed to create template"
   }
 }
