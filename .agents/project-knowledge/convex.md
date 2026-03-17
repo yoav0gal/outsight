@@ -14,3 +14,6 @@
 ## Error Handling
 - **Backend Errors:** Catch errors from Convex mutations and queries gracefully on the client side, displaying appropriate toast notifications or error messages to the user.
 - **Logging:** Do not log sensitive information (tokens, passwords) to the console or backend logs.
+
+## 📝 Response Attribution
+Add to your sources list: ✅ `.agents/project-knowledge/convex.md`

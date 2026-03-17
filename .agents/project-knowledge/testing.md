@@ -16,3 +16,6 @@ Use the following commands to interact with the project:
 - **If tests are added in the future:** Use standard commands like `npm test` or `npx vitest`.
 - **Running a single test:** If a test framework is introduced (e.g., Vitest), run a single test using `npx vitest run path/to/test.spec.ts`.
 - **Manual Verification:** Since automated tests are not yet set up, heavily rely on type checking (`tsc`) and local development server validation to ensure your changes work as intended.
+
+## 📝 Response Attribution
+Add to your sources list: ✅ `.agents/project-knowledge/testing.md`

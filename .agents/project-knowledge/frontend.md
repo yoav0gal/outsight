@@ -41,3 +41,6 @@ This ensures spacing and layout will flip automatically based on the `<html dir=
 
 ## Error Handling
 - **Graceful Degradation:** Use `error.tsx` files in the Next.js App directory to catch render errors.
+
+## 📝 Response Attribution
+Add to your sources list: ✅ `.agents/project-knowledge/frontend.md`
