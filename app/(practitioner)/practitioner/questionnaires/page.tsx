@@ -10,12 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 
 export default function PractitionerQuestionnaires() {
   const templates = useQuery(api.questionnaires.listTemplates);
   const t = useTranslations("PractitionerQuestionnaires");
-  const tQ = useTranslations("Questionnaire");
-  const tCT = useTranslations("CreateTemplate");
   const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
 
   return (
@@ -83,39 +82,15 @@ export default function PractitionerQuestionnaires() {
         </div>
 
         <Dialog open={!!selectedTemplate} onOpenChange={(open) => !open && setSelectedTemplate(null)}>
-          <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[700px] rounded-[2rem] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
             {selectedTemplate && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="text-xl">{selectedTemplate.title}</DialogTitle>
-                  <DialogDescription>
-                    {selectedTemplate.description}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6 py-4">
-                  {selectedTemplate.questions.map((q: any, i: number) => (
-                    <div key={q.id} className="space-y-2">
-                      <h4 className="font-semibold text-zinc-900 text-sm flex gap-2">
-                        <span className="text-indigo-500">{i + 1}.</span> {q.prompt}
-                        {q.required && <span className="text-red-500">*</span>}
-                      </h4>
-                      <div className="bg-zinc-50 px-3 py-2 rounded-lg border border-zinc-100 text-zinc-500 text-xs">
-                        {tQ("type")}: <span className="font-mono">{tCT(`types.${q.type}`)}</span>
-                        {q.options && (
-                          <div className="mt-2 space-y-1">
-                            <p className="font-semibold text-[10px] uppercase tracking-wider text-zinc-400">{tQ("options")}:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {q.options.map((opt: string, j: number) => (
-                                <span key={j} className="bg-white px-2 py-0.5 rounded border border-zinc-200">{opt}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
+              <div className="p-8 sm:p-12 bg-zinc-50/30">
+                <QuestionnairePreview 
+                  questions={selectedTemplate.questions}
+                  title={selectedTemplate.title}
+                  description={selectedTemplate.description}
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>

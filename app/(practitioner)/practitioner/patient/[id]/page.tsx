@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 
 export default function PatientDetailsPage() {
   const params = useParams();
@@ -309,70 +310,39 @@ export default function PatientDetailsPage() {
 
             {/* View Template Dialog */}
             <Dialog open={!!selectedViewTemplate} onOpenChange={(open) => !open && setSelectedViewTemplate(null)}>
-              <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[85vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[700px] rounded-[2rem] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
                 {selectedViewTemplate && (
-                  <>
-                    <DialogHeader>
-                      <DialogTitle className="text-xl">{selectedViewTemplate.title}</DialogTitle>
-                      <DialogDescription>
-                        {selectedViewTemplate.description}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-6 py-4">
-                      {selectedViewTemplate.questions.map((q: any, i: number) => (
-                        <div key={q.id} className="space-y-2">
-                          <h4 className="font-semibold text-zinc-900 text-sm flex gap-2">
-                            <span className="text-indigo-500">{i + 1}.</span> {q.prompt}
-                        {q.required && <span className="text-red-500">*</span>}
-                      </h4>
-                      <div className="bg-zinc-50 px-3 py-2 rounded-lg border border-zinc-100 text-zinc-500 text-xs">
-                        {tQ("type")}: <span className="font-mono">{tCT(`types.${q.type}`)}</span>
-                        {q.options && (
-                          <div className="mt-2 space-y-1">
-                            <p className="font-semibold text-[10px] uppercase tracking-wider text-zinc-400">{tQ("options")}:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {q.options.map((opt: string, j: number) => (
-                                <span key={j} className="bg-white px-2 py-0.5 rounded border border-zinc-200">{opt}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                      ))}
-                    </div>
-                  </>
+                  <div className="p-8 sm:p-12 bg-zinc-50/30">
+                    <QuestionnairePreview 
+                      questions={selectedViewTemplate.questions}
+                      title={selectedViewTemplate.title}
+                      description={selectedViewTemplate.description}
+                    />
+                  </div>
                 )}
               </DialogContent>
             </Dialog>
 
             {/* View Submission Dialog */}
             <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-              <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[85vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[700px] rounded-[2rem] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
                 {selectedSubmission && (
-                  <>
-                    <DialogHeader>
-                      <DialogTitle className="text-xl">{selectedSubmission.template?.title}</DialogTitle>
-                      <DialogDescription>
+                  <div className="p-8 sm:p-12 bg-zinc-50/30">
+                    <header className="mb-12 text-center sm:text-start">
+                      <Badge className={`mb-4 ${selectedSubmission.status === 'completed' ? 'bg-green-100 text-green-700 border-none' : 'bg-red-100 text-red-700 border-none'}`}>
+                        {t(`questionnaires.status.${selectedSubmission.status}`)}
+                      </Badge>
+                      <h2 className="text-4xl font-black text-zinc-950 mb-2 tracking-tight">{selectedSubmission.template?.title}</h2>
+                      <p className="text-zinc-500 font-medium">
                         {tQ("submittedOn", { date: new Date(selectedSubmission.submittedAt || selectedSubmission.createdAt).toLocaleString() })}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-6 py-4">
-                      {selectedSubmission.template?.questions.map((q: any, i: number) => {
-                        const ans = selectedSubmission.answers?.find((a: any) => a.questionId === q.id)?.value;
-                        return (
-                          <div key={q.id} className="space-y-2">
-                            <h4 className="font-semibold text-zinc-900 text-sm flex gap-2">
-                              <span className="text-indigo-500">{i + 1}.</span> {q.prompt}
-                            </h4>
-                            <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-100 text-zinc-700 text-sm">
-                              {ans !== undefined ? String(ans) : <span className="text-zinc-400 italic">No answer provided</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
+                      </p>
+                    </header>
+                    
+                    <QuestionnairePreview 
+                      questions={selectedSubmission.template?.questions || []}
+                      answers={Object.fromEntries(selectedSubmission.answers?.map((a: any) => [a.questionId, a.value]) || [])}
+                    />
+                  </div>
                 )}
               </DialogContent>
             </Dialog>
