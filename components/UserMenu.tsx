@@ -37,7 +37,13 @@ export function UserMenu() {
   };
 
   const handleSignOut = () => {
-    signOut();
+    const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    
+    if (isLocalhost) {
+      signOut({ returnTo: "http://localhost:3000" });
+    } else {
+      signOut();
+    }
   };
 
   if (user === undefined) {
