@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { UserPlus, Users, Link as LinkIcon, LogOut } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
@@ -124,26 +125,27 @@ export default function PractitionerDashboard() {
             </div>
           ) : (
             patients.map((patient) => (
-              <Card 
-                key={patient._id} 
-                className="border-zinc-100 shadow-sm hover:border-indigo-100 transition-colors cursor-pointer"
-              >
-                <CardContent className="p-6 flex items-center justify-between text-start">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center font-bold text-zinc-500 text-lg uppercase">
-                      {patient.name?.charAt(0) || "P"}
+              <Link key={patient._id} href={`/practitioner/patient/${patient._id}`}>
+                <Card 
+                  className="border-zinc-100 shadow-sm hover:border-indigo-100 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <CardContent className="p-6 flex items-center justify-between text-start">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center font-bold text-zinc-500 text-lg uppercase">
+                        {patient.name?.charAt(0) || "P"}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-950">{patient.name || t("unnamedPatient")}</h4>
+                        <p className="text-sm text-zinc-500">{patient.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-zinc-950">{patient.name || t("unnamedPatient")}</h4>
-                      <p className="text-sm text-zinc-500">{patient.email}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">{t("activeStatus")}</span>
+                      <ArrowRight className="w-4 h-4 text-zinc-300 rtl:rotate-180" />
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">{t("activeStatus")}</span>
-                    <ArrowRight className="w-4 h-4 text-zinc-300 rtl:rotate-180" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))
           )}
         </div>

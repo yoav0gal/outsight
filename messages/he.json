@@ -45,6 +45,62 @@
     "gettingStarted": "מתחילים",
     "gettingStartedQuote": "\"מסע של אלף מייל מתחיל בצעד אחד.\"",
     "step1": "המתן עד שהמטפל שלך יקצה את התרגיל הראשון שלך.",
-    "step2": "השלם את יומני המחשבות שלך באופן קבוע."
+    "step2": "השלם את יומני המחשבות שלך באופן קבוע.",
+    "caughtUp": "הכל מעודכן!",
+    "pendingQuestionnaires": "יש לך {count} שאלונים שממתינים למילוי",
+    "takeQuestionnaire": "התחל שאלון",
+    "myQuestionnaires": "השאלונים שלי",
+    "history": "היסטוריה"
+  },
+  "PractitionerPatient": {
+    "backToDashboard": "חזרה ללוח הבקרה",
+    "unnamed": "מטופל ללא שם",
+    "tabs": {
+      "overview": "סקירה",
+      "history": "היסטוריה",
+      "questionnaires": "שאלונים"
+    },
+    "overview": {
+      "title": "פרטי מטופל"
+    },
+    "questionnaires": {
+      "assign": "הקצה שאלון",
+      "active": "הקצאות פעילות",
+      "history": "תשובות עבר",
+      "frequency": {
+        "once": "פעם אחת",
+        "daily": "יומי",
+        "weekly": "שבועי"
+      },
+      "status": {
+        "active": "פעיל",
+        "pending": "ממתין",
+        "completed": "הושלם",
+        "expired": "פג תוקף"
+      },
+      "noActive": "אין הקצאות פעילות",
+      "noHistory": "אין תשובות עבר"
+    },
+    "assignModal": {
+      "title": "הקצאת שאלון",
+      "description": "בחר תבנית באיזו תדירות על המטופל למלא אותה.",
+      "template": "תבנית",
+      "selectTemplate": "בחר תבנית",
+      "frequency": "תדירות",
+      "cancel": "ביטול",
+      "submit": "הקצה"
+    }
+  },
+  "Questionnaire": {
+    "submit": "הגש תשובות",
+    "next": "הבא",
+    "previous": "הקודם",
+    "requiredField": "שאלה זו חובה",
+    "completed": "השאלון הושלם בהצלחה!",
+    "status": {
+      "pending": "לביצוע",
+      "completed": "הושלם",
+      "expired": "הוחמץ"
+    }
   }
 }

@@ -88,6 +88,23 @@ export const listPatients = query({
   },
 });
 
+export const getPatient = query({
+  args: { id: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const patient = await ctx.db.get(args.id);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      throw new Error("Patient not found or unauthorized");
+    }
+
+    return patient;
+  },
+});
+
 async function getCurrentUser(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;

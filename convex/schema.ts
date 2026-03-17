@@ -16,4 +16,66 @@ export default defineSchema({
     email: v.optional(v.string()), // Optional: target email
     status: v.union(v.literal("pending"), v.literal("accepted")),
   }).index("by_token", ["token"]),
+
+  questionnaireTemplates: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    practitionerId: v.optional(v.id("users")), // System-wide if undefined
+    questions: v.array(
+      v.object({
+        id: v.string(), // Unique identifier for the question
+        type: v.union(
+          v.literal("short_text"),
+          v.literal("long_text"),
+          v.literal("multiple_choice"),
+          v.literal("boolean"),
+          v.literal("numeric_scale")
+        ),
+        prompt: v.string(),
+        required: v.boolean(),
+        options: v.optional(v.array(v.string())), // For multiple_choice
+        scaleConfig: v.optional(
+          v.object({
+            min: v.number(),
+            max: v.number(),
+            minLabel: v.optional(v.string()),
+            maxLabel: v.optional(v.string()),
+          })
+        ), // For numeric_scale
+      })
+    ),
+  }),
+
+  questionnaireAssignments: defineTable({
+    patientId: v.id("users"),
+    practitionerId: v.id("users"),
+    templateId: v.id("questionnaireTemplates"),
+    frequency: v.union(v.literal("once"), v.literal("daily"), v.literal("weekly")),
+    status: v.union(v.literal("active"), v.literal("completed"), v.literal("cancelled")),
+    createdAt: v.number(), // Date.now()
+  })
+    .index("by_patient", ["patientId"])
+    .index("by_practitioner", ["practitionerId"])
+    .index("by_status", ["status"]),
+
+  questionnaireInstances: defineTable({
+    assignmentId: v.id("questionnaireAssignments"),
+    patientId: v.id("users"),
+    templateId: v.id("questionnaireTemplates"), // Denormalized for easier querying
+    status: v.union(v.literal("pending"), v.literal("completed"), v.literal("expired")),
+    answers: v.optional(
+      v.array(
+        v.object({
+          questionId: v.string(),
+          value: v.union(v.string(), v.number(), v.boolean(), v.array(v.string())),
+        })
+      )
+    ),
+    createdAt: v.number(), // Date.now()
+    expiresAt: v.optional(v.number()),
+    submittedAt: v.optional(v.number()),
+  })
+    .index("by_patient", ["patientId"])
+    .index("by_assignment", ["assignmentId"])
+    .index("by_status", ["status"]),
 });

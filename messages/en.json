@@ -45,6 +45,62 @@
     "gettingStarted": "Getting Started",
     "gettingStartedQuote": "\"The journey of a thousand miles begins with a single step.\"",
     "step1": "Wait for your therapist to assign your first exercise.",
-    "step2": "Complete your thought records regularly."
+    "step2": "Complete your thought records regularly.",
+    "caughtUp": "You're all caught up!",
+    "pendingQuestionnaires": "You have {count} pending questionnaires",
+    "takeQuestionnaire": "Start Questionnaire",
+    "myQuestionnaires": "My Questionnaires",
+    "history": "History"
+  },
+  "PractitionerPatient": {
+    "backToDashboard": "Back to Dashboard",
+    "unnamed": "Unnamed Patient",
+    "tabs": {
+      "overview": "Overview",
+      "history": "History",
+      "questionnaires": "Questionnaires"
+    },
+    "overview": {
+      "title": "Patient Details"
+    },
+    "questionnaires": {
+      "assign": "Prescribe Questionnaire",
+      "active": "Active Prescriptions",
+      "history": "Past Responses",
+      "frequency": {
+        "once": "Once",
+        "daily": "Daily",
+        "weekly": "Weekly"
+      },
+      "status": {
+        "active": "Active",
+        "pending": "Pending",
+        "completed": "Completed",
+        "expired": "Expired"
+      },
+      "noActive": "No active prescriptions",
+      "noHistory": "No past responses"
+    },
+    "assignModal": {
+      "title": "Prescribe Questionnaire",
+      "description": "Select a template and how often the patient should fill it out.",
+      "template": "Template",
+      "selectTemplate": "Select a template",
+      "frequency": "Frequency",
+      "cancel": "Cancel",
+      "submit": "Prescribe"
+    }
+  },
+  "Questionnaire": {
+    "submit": "Submit Answers",
+    "next": "Next",
+    "previous": "Previous",
+    "requiredField": "This question is required",
+    "completed": "Questionnaire completed successfully!",
+    "status": {
+      "pending": "To Do",
+      "completed": "Completed",
+      "expired": "Missed"
+    }
   }
 }

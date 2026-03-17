@@ -44,9 +44,8 @@ For *every* task, you must load and adhere to the general rules:
 
 ### 2. 🎨 Frontend & UI Tasks
 When working on React components, Next.js App Router (pages, layouts), styling, or UI interactions:
-- **Load:** `.agents/project-knowledge/frontend.md`
-- *What's inside:* Next.js Server/Client components, Tailwind v4, shadcn/ui.
-- **CRITICAL:** Covers Multi-Language & RTL Development (logical properties like `ms-*`, `pe-*`) with `next-intl`.
+- **Load:** `.agents/project-knowledge/frontend.md` and `.agents/project-knowledge/design.md`
+- *What's inside:* Next.js Server/Client components, Tailwind v4, shadcn/ui, design aesthetics, and strict guidelines for Multi-Language & RTL Development (logical properties like `ms-*`, `pe-*`) with `next-intl`.
 
 ### 3. 🗄️ Backend & Database Tasks (Convex)
 When modifying the database schema, queries, mutations, or backend logic:
