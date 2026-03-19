@@ -90,4 +90,17 @@ export default defineSchema({
     .index("by_patient", ["patientId"])
     .index("by_assignment", ["assignmentId"])
     .index("by_status", ["status"]),
+
+  sessionReviews: defineTable({
+    patientId: v.id("users"),
+    practitionerId: v.id("users"),
+    sessionNumber: v.number(),
+    sessionDate: v.number(),
+    title: v.optional(v.string()),
+    review: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_patient", ["patientId"])
+    .index("by_practitioner_patient", ["practitionerId", "patientId"]),
 });

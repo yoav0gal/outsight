@@ -132,6 +132,43 @@
     "overview": {
       "title": "Patient Details"
     },
+    "history": {
+      "title": "Session History",
+      "description": "Track completed meetings, keep a clean running log, and come back to previous session notes before the next appointment.",
+      "add": "Add session review",
+      "addFirst": "Add first session review",
+      "editTitle": "Edit session review",
+      "emptyTitle": "No session reviews yet",
+      "emptyDescription": "Start documenting your work with this patient after each meeting so you can see the full treatment rhythm in one place.",
+      "totalSessions": "Total sessions",
+      "lastSession": "Last session",
+      "sessionsLabel": "sessions",
+      "sessionNumber": "Session {number}",
+      "sessionDate": "Session date",
+      "sessionTitle": "Session title",
+      "sessionTitlePlaceholder": "Optional short title for this session",
+      "review": "Session review",
+      "reviewPlaceholder": "Summarize what you covered, progress you noticed, and what to revisit next time.",
+      "save": "Save review",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "updatedAt": "Updated {date}",
+      "untitled": "Session review",
+      "noLastSession": "No sessions recorded",
+      "validation": {
+        "reviewRequired": "Please add a session review before saving.",
+        "invalidDate": "Please select a valid session date."
+      },
+      "success": {
+        "created": "Session review created.",
+        "updated": "Session review updated."
+      },
+      "errors": {
+        "create": "Failed to create session review.",
+        "update": "Failed to update session review."
+      }
+    },
     "questionnaires": {
       "assign": "Prescribe Questionnaire",
       "active": "Active Prescriptions",
