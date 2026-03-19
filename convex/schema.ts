@@ -21,6 +21,10 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     practitionerId: v.optional(v.id("users")), // System-wide if undefined
+    source: v.optional(v.union(v.literal("system"), v.literal("practitioner"))),
+    originTemplateId: v.optional(v.id("questionnaireTemplates")),
+    tags: v.optional(v.array(v.string())),
+    archivedAt: v.optional(v.number()),
     questions: v.array(
       v.object({
         id: v.string(), // Unique identifier for the question
@@ -44,7 +48,15 @@ export default defineSchema({
         ), // For numeric_scale
       })
     ),
-  }),
+  }).index("by_practitioner", ["practitionerId"]),
+
+  clinicQuestionnaireTemplates: defineTable({
+    practitionerId: v.id("users"),
+    templateId: v.id("questionnaireTemplates"),
+    addedAt: v.number(),
+  })
+    .index("by_practitioner", ["practitionerId"])
+    .index("by_practitioner_template", ["practitionerId", "templateId"]),
 
   questionnaireAssignments: defineTable({
     patientId: v.id("users"),

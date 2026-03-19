@@ -48,11 +48,61 @@
   },
   "PractitionerQuestionnaires": {
     "title": "Questionnaires",
-    "description": "Manage your questionnaire templates",
+    "eyebrow": "Questions Hub",
+    "description": "Keep your clinic-ready questionnaires in one place, browse the full template library, and save only what you want available for assignment.",
     "createTemplate": "Create Template",
     "noTemplates": "No templates yet",
     "noTemplatesDesc": "Create your first template to assign to patients.",
-    "questionsCount": "{count} Questions"
+    "questionsCount": "{count} Questions",
+    "clinic": {
+      "title": "In Your Clinic",
+      "badge": "Clinic library",
+      "description": "These are the questionnaires your clinic can assign right now.",
+      "count": "{count} saved",
+      "emptyTitle": "Nothing saved to your clinic yet",
+      "emptyDescription": "Browse the explorer below and save templates you want available for assignment."
+    },
+    "explorer": {
+      "title": "Template Explorer",
+      "badge": "Template explorer",
+      "description": "Browse every available template, filter by tags, and save the right ones into your clinic.",
+      "count": "{count} results",
+      "searchPlaceholder": "Search by template name",
+      "allTags": "All tags",
+      "emptyTitle": "No templates match these filters",
+      "emptyDescription": "Try another name or clear the active tag filter."
+    },
+    "archived": {
+      "title": "Archived",
+      "badge": "Archived templates",
+      "description": "Review templates you retired from active clinic use. They stay readable but cannot be newly assigned.",
+      "count": "{count} archived",
+      "emptyTitle": "No archived templates yet",
+      "emptyDescription": "Archive a custom template to remove it from active clinic and explorer flows without losing history."
+    },
+    "preview": {
+      "saved": "At Your Clinic",
+      "inClinic": "At Your Clinic",
+      "saveToClinic": "Save to clinic",
+      "removeFromClinic": "Remove from clinic",
+      "deleteTemplate": "Delete template",
+      "deleteConfirmTitle": "Delete this template?",
+      "deleteConfirmDescription": "This will permanently delete the template and it cannot be restored.",
+      "deleteConfirmWithClinic": "This will permanently delete the template, and if it is saved in your clinic it will be removed from there too.",
+      "cancelDelete": "Cancel",
+      "confirmDelete": "Delete template",
+      "deleteError": "Failed to delete template",
+      "archive": "Archive",
+      "archiveError": "Failed to archive template",
+      "restore": "Restore",
+      "restoreError": "Failed to restore template",
+      "edit": "Edit template",
+      "makeEditable": "Make editable copy",
+      "system": "System",
+      "custom": "Custom",
+      "archived": "Archived",
+      "noDescription": "No description yet."
+    }
   },
   "PatientHome": {
     "title": "Outsight",
@@ -72,7 +122,7 @@
     "noHistory": "No past responses found."
   },
   "PractitionerPatient": {
-    "backToDashboard": "Back to Dashboard",
+    "backToDashboard": "Back to My Patients",
     "unnamed": "Unnamed Patient",
     "tabs": {
       "overview": "Overview",
@@ -102,9 +152,12 @@
     },
     "assignModal": {
       "title": "Prescribe Questionnaire",
-      "description": "Select a template and how often the patient should fill it out.",
+      "description": "Select a clinic template and how often the patient should fill it out.",
       "template": "Template",
       "selectTemplate": "Select a template",
+      "searchTemplate": "Search clinic templates",
+      "searchDescription": "Only templates saved under In Your Clinic can be assigned.",
+      "noTemplates": "No clinic templates found",
       "frequency": "Frequency",
       "cancel": "Cancel",
       "submit": "Prescribe"
@@ -142,8 +195,20 @@
   "CreateTemplate": {
     "title": "Create Questionnaire Template",
     "description": "Design a new questionnaire to assign to your patients.",
+    "editTitle": "Edit Questionnaire Template",
+    "editDescription": "Update the copied or custom questionnaire and keep it ready for your clinic.",
     "templateName": "Template Name",
     "templateDesc": "Description",
+    "tags": "Tags",
+    "noTagsSelected": "No tags selected yet.",
+    "customTagPlaceholder": "Type a custom tag",
+    "addCustomTag": "Add tag",
+    "removeTag": "Remove {tag}",
+    "systemTagsReadonly": "System tags are read-only",
+    "duplicateName": "A template with this name already exists in your clinic.",
+    "loadingTemplate": "Loading template...",
+    "invalidTemplate": "This template could not be opened.",
+    "invalidTemplateDescription": "It may not exist anymore or you may not have access to it.",
     "questions": "Questions",
     "addQuestion": "Add Question",
     "questionPrompt": "Question Prompt",
@@ -164,9 +229,14 @@
     "max": "Maximum Value",
     "minLabel": "Minimum Label (Optional)",
     "maxLabel": "Maximum Label (Optional)",
+    "backToMyPatients": "Back to My Patients",
+    "backToQuestionnaires": "Back to Questionnaires",
     "save": "Save Template",
+    "update": "Update Template",
     "cancel": "Cancel",
     "success": "Template created successfully!",
-    "error": "Failed to create template"
+    "updatedSuccess": "Template updated successfully!",
+    "error": "Failed to create template",
+    "updatedError": "Failed to update template"
   }
 }

@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useRouter } from "next/navigation";
+import { Id } from "@/convex/_generated/dataModel";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, X } from "lucide-react";
 
 type QuestionType = "short_text" | "long_text" | "multiple_choice" | "boolean" | "numeric_scale";
 
@@ -30,15 +32,133 @@ interface Question {
   };
 }
 
+function normalizeTemplateTitle(title: string) {
+  return title.trim().replace(/\s+/g, " ");
+}
+
+function normalizeTemplateDescription(description: string) {
+  return description.trim();
+}
+
+function normalizeTemplateTags(tags: string[]) {
+  return [...tags]
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeQuestions(questions: Question[]) {
+  return questions.map((question) => {
+    if (question.type === "multiple_choice") {
+      return {
+        ...question,
+        options: question.options ?? [],
+        scaleConfig: undefined,
+      };
+    }
+
+    if (question.type === "numeric_scale") {
+      return {
+        ...question,
+        options: undefined,
+        scaleConfig: question.scaleConfig ?? { min: 1, max: 10, minLabel: "", maxLabel: "" },
+      };
+    }
+
+    return {
+      ...question,
+      options: undefined,
+      scaleConfig: undefined,
+    };
+  });
+}
+
 export default function CreateTemplatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("CreateTemplate");
   const createTemplate = useMutation(api.questionnaires.createTemplate);
+  const updateTemplate = useMutation(api.questionnaires.updateTemplate);
+  const availableTags = useQuery(api.questionnaires.listTemplateTags);
+  const visibleTemplates = useQuery(api.questionnaires.listTemplates);
+  const rawTemplateId = searchParams.get("templateId");
+  const templateId =
+    rawTemplateId && visibleTemplates?.some((template) => template._id === rawTemplateId)
+      ? (rawTemplateId as Id<"questionnaireTemplates">)
+      : null;
+  const existingTemplate = useQuery(
+    api.questionnaires.getTemplate,
+    templateId ? { templateId } : "skip"
+  );
+  const isEditing = !!rawTemplateId;
+  const isResolvingTemplate = !!rawTemplateId && visibleTemplates === undefined;
+  const hasInvalidTemplateId = !!rawTemplateId && visibleTemplates !== undefined && !templateId;
+  const isLoadingTemplate = !!templateId && existingTemplate === undefined;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [customTag, setCustomTag] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [titleError, setTitleError] = useState("");
+
+  useEffect(() => {
+    if (!existingTemplate) return;
+
+    setTitle(existingTemplate.title);
+    setDescription(existingTemplate.description || "");
+    setTags(existingTemplate.tags || []);
+    setQuestions(existingTemplate.questions);
+  }, [existingTemplate]);
+
+  const isSystemTemplate = existingTemplate?.source === "system";
+
+  const hasTemplateChanges = () => {
+    if (!existingTemplate) return true;
+
+    return JSON.stringify({
+      title: normalizeTemplateTitle(title),
+      description: normalizeTemplateDescription(description),
+      tags: normalizeTemplateTags(tags),
+      questions: normalizeQuestions(questions),
+    }) !== JSON.stringify({
+      title: normalizeTemplateTitle(existingTemplate.title),
+      description: normalizeTemplateDescription(existingTemplate.description || ""),
+      tags: normalizeTemplateTags(existingTemplate.tags || []),
+      questions: normalizeQuestions(existingTemplate.questions),
+    });
+  };
+
+  const toggleTag = (tag: string) => {
+    if (isSystemTemplate) return;
+
+    setTags((currentTags) =>
+      currentTags.includes(tag)
+        ? currentTags.filter((currentTag) => currentTag !== tag)
+        : [...currentTags, tag]
+    );
+  };
+
+  const addCustomTag = () => {
+    if (isSystemTemplate) return;
+
+    const normalizedTag = customTag.trim();
+    if (!normalizedTag) return;
+
+    const exists = tags.some(
+      (tag) => tag.trim().toLocaleLowerCase() === normalizedTag.toLocaleLowerCase()
+    );
+    if (!exists) {
+      setTags((currentTags) => [...currentTags, normalizedTag]);
+    }
+    setCustomTag("");
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    if (isSystemTemplate) return;
+    setTags((currentTags) => currentTags.filter((tag) => tag !== tagToRemove));
+  };
 
   const handleAddQuestion = () => {
     setQuestions([
@@ -89,6 +209,11 @@ export default function CreateTemplatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || questions.length === 0) return;
+    if (isEditing && !templateId) {
+      alert(t("invalidTemplate"));
+      router.push("/practitioner/questionnaires");
+      return;
+    }
     
     // Ensure data is clean
     const cleanedQuestions = questions.map(q => {
@@ -102,30 +227,95 @@ export default function CreateTemplatePage() {
       return cleanQ;
     });
 
+    if (isEditing && existingTemplate && !hasTemplateChanges()) {
+      router.push("/practitioner/questionnaires");
+      return;
+    }
+
     setIsSubmitting(true);
+    setTitleError("");
     try {
-      await createTemplate({
-        title,
-        description,
-        questions: cleanedQuestions,
-      });
-      alert(t("success"));
-      router.push("/practitioner/my-patients");
+      if (templateId && !isSystemTemplate) {
+        await updateTemplate({
+          templateId,
+          title,
+          description,
+          tags,
+          questions: cleanedQuestions,
+        });
+      } else {
+        await createTemplate({
+          title,
+          description,
+          tags,
+          questions: cleanedQuestions,
+        });
+      }
+
+      alert(isEditing ? t("updatedSuccess") : t("success"));
+      router.push("/practitioner/questionnaires");
     } catch (error) {
       console.error(error);
-      alert(t("error"));
+      if (error instanceof Error && error.message.includes("already exists")) {
+        setTitleError(t("duplicateName"));
+      }
+      alert(isEditing ? t("updatedError") : t("error"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isResolvingTemplate || isLoadingTemplate) {
+    return (
+      <main className="flex-1 max-w-4xl mx-auto w-full p-8">
+        <Card className="border-zinc-200 shadow-sm">
+          <CardContent className="p-6 text-sm text-zinc-500">{t("loadingTemplate")}</CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  if (hasInvalidTemplateId || (isEditing && !existingTemplate)) {
+    return (
+      <main className="flex-1 max-w-4xl mx-auto w-full p-8">
+        <Card className="border-zinc-200 shadow-sm">
+          <CardContent className="flex flex-col items-start gap-4 p-6">
+            <div>
+              <h1 className="text-xl font-semibold text-zinc-950">{t("invalidTemplate")}</h1>
+              <p className="mt-2 text-sm text-zinc-500">{t("invalidTemplateDescription")}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/practitioner/questionnaires")}
+            >
+              {t("backToQuestionnaires")}
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 max-w-4xl mx-auto w-full p-8">
+        <div className="mb-6">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.back()}
+            className="w-fit flex items-center gap-2 text-zinc-500 hover:text-indigo-600 -ms-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+            {t("backToQuestionnaires")}
+          </Button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-8">
           <Card className="border-zinc-200 shadow-sm">
             <CardHeader>
-              <CardTitle>{t("title")}</CardTitle>
-              <CardDescription>{t("description")}</CardDescription>
+              <CardTitle>{isEditing ? t("editTitle") : t("title")}</CardTitle>
+              <CardDescription>{isEditing ? t("editDescription") : t("description")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -133,10 +323,17 @@ export default function CreateTemplatePage() {
                 <Input 
                   id="title" 
                   value={title} 
-                  onChange={(e) => setTitle(e.target.value)} 
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (titleError) setTitleError("");
+                  }}
                   placeholder={t("templateName")} 
                   required 
+                  aria-invalid={!!titleError}
                 />
+                {titleError ? (
+                  <p className="text-sm text-red-600">{titleError}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">{t("templateDesc")}</Label>
@@ -147,6 +344,83 @@ export default function CreateTemplatePage() {
                   placeholder={t("templateDesc")} 
                   rows={3}
                 />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>{t("tags")}</Label>
+                  {isSystemTemplate ? (
+                    <span className="text-xs font-medium text-zinc-500">
+                      {t("systemTagsReadonly")}
+                    </span>
+                  ) : null}
+                </div>
+
+                {tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700"
+                      >
+                        <span>{tag}</span>
+                        {!isSystemTemplate ? (
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            className="ms-2 rounded-full text-zinc-500 transition-colors hover:text-zinc-900"
+                            aria-label={t("removeTag", { tag })}
+                          >
+                            <X className="size-3" />
+                          </button>
+                        ) : null}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-500">{t("noTagsSelected")}</p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  {(availableTags ?? []).map((tag) => (
+                    <Button
+                      key={tag}
+                      type="button"
+                      variant={tags.includes(tag) ? "secondary" : "outline"}
+                      onClick={() => toggleTag(tag)}
+                      className="rounded-full px-4"
+                      disabled={isSystemTemplate}
+                    >
+                      {tag}
+                    </Button>
+                  ))}
+                </div>
+
+                {!isSystemTemplate ? (
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      value={customTag}
+                      onChange={(event) => setCustomTag(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addCustomTag();
+                        }
+                      }}
+                      placeholder={t("customTagPlaceholder")}
+                      className="h-11 rounded-xl border-zinc-200 bg-white"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addCustomTag}
+                      className="h-11 rounded-xl"
+                    >
+                      <Plus className="size-4" />
+                      {t("addCustomTag")}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -303,14 +577,14 @@ export default function CreateTemplatePage() {
           </div>
 
           <div className="flex justify-end gap-4 pt-4 border-t border-zinc-200">
-            <Button type="button" variant="outline" onClick={() => router.push("/practitioner/my-patients")} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={() => router.push("/practitioner/questionnaires")} disabled={isSubmitting}>
               {t("cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting || title.trim() === "" || questions.length === 0} className="font-bold">
-              {t("save")}
+              {isEditing ? t("update") : t("save")}
             </Button>
           </div>
         </form>
-      </main>
+    </main>
   );
 }

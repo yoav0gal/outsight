@@ -1,12 +1,17 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Signpost, Users, FileText } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 
-export function PractitionerNavBar() {
+interface PractitionerNavBarProps {
+  children: ReactNode;
+}
+
+export function PractitionerNavBar({ children }: PractitionerNavBarProps) {
   const t = useTranslations("PractitionerNavBar");
   const pathname = usePathname();
 
@@ -29,7 +34,7 @@ export function PractitionerNavBar() {
   ];
 
   return (
-    <>
+    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
       <header className="bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-8">
           <Link href="/practitioner/my-patients" className="flex items-center gap-2 font-black text-2xl text-indigo-600 tracking-tight">
@@ -58,6 +63,8 @@ export function PractitionerNavBar() {
         </div>
       </header>
 
+      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+
       {/* Bottom Navigation - Mobile Primary */}
       <nav className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-lg border-t border-zinc-200 px-6 py-3 pb-safe-offset-3 z-30 flex items-center justify-around md:hidden">
         {navItems.map((item) => {
@@ -78,9 +85,6 @@ export function PractitionerNavBar() {
           );
         })}
       </nav>
-
-      {/* Spacer for fixed bottom nav */}
-      <div className="h-20 md:hidden" />
-    </>
+    </div>
   );
 }

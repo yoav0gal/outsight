@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,25 +16,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuestionnairePreview } from "@/components/QuestionnairePreview";
+import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
 
 export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("PractitionerPatient");
   const tQ = useTranslations("Questionnaire");
-  const tCT = useTranslations("CreateTemplate");
   const patientId = params.id as Id<"users">;
+  type TemplateDoc = Doc<"questionnaireTemplates">;
+  type AnswerDoc = NonNullable<Doc<"questionnaireInstances">["answers"]>[number];
+  interface HistoryInstance extends Doc<"questionnaireInstances"> {
+    template: TemplateDoc | null;
+  }
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
   const assignments = useQuery(api.questionnaires.listPatientAssignments, { patientId });
   const templates = useQuery(api.questionnaires.listTemplates);
+  const clinicTemplates = useQuery(api.questionnaires.listClinicTemplates);
   const history = useQuery(api.questionnaires.listPatientHistory, { patientId });
   const assignMutation = useMutation(api.questionnaires.assign);
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
-  const [selectedViewTemplate, setSelectedViewTemplate] = useState<any | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [selectedSubmission, setSelectedSubmission] = useState<HistoryInstance | null>(null);
+  const [selectedViewTemplate, setSelectedViewTemplate] = useState<TemplateDoc | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Id<"questionnaireTemplates"> | "">("");
   const [selectedFrequency, setSelectedFrequency] = useState<"once" | "daily" | "weekly">("weekly");
   const [isAssigning, setIsAssigning] = useState(false);
 
@@ -163,24 +169,23 @@ export default function PatientDetailsPage() {
                   <div className="grid gap-6 py-4">
                     <div className="grid gap-2">
                       <Label htmlFor="template" className="text-sm font-semibold">{t("assignModal.template")}</Label>
-                      <Select value={selectedTemplate} onValueChange={(val) => setSelectedTemplate(val || "")}>
-                        <SelectTrigger id="template" className="rounded-lg h-12 border-zinc-200">
-                          <SelectValue placeholder={t("assignModal.selectTemplate")}>
-                            {(value: string) => templates?.find((tpl) => tpl._id === value)?.title || t("assignModal.selectTemplate")}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          {templates?.map((tpl) => (
-                            <SelectItem key={tpl._id} value={tpl._id} className="rounded-lg">
-                              {tpl.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <TemplateSearchPicker
+                        options={clinicTemplates ?? []}
+                        value={selectedTemplate}
+                        onChange={(value) => setSelectedTemplate(value as Id<"questionnaireTemplates">)}
+                        placeholder={t("assignModal.selectTemplate")}
+                        searchPlaceholder={t("assignModal.searchTemplate")}
+                        emptyLabel={t("assignModal.noTemplates")}
+                        title={t("assignModal.title")}
+                        description={t("assignModal.searchDescription")}
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="frequency" className="text-sm font-semibold">{t("assignModal.frequency")}</Label>
-                      <Select value={selectedFrequency} onValueChange={(val: any) => setSelectedFrequency(val)}>
+                      <Select
+                        value={selectedFrequency}
+                        onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly")}
+                      >
                         <SelectTrigger id="frequency" className="rounded-lg h-12 border-zinc-200">
                           <SelectValue>
                             {(value: string) => value ? t(`questionnaires.frequency.${value}`) : ""}
@@ -231,7 +236,7 @@ export default function PatientDetailsPage() {
                     <Card 
                       key={assignment._id} 
                       className="border-zinc-200/60 shadow-sm hover:shadow-md transition-shadow rounded-2xl cursor-pointer"
-                      onClick={() => setSelectedViewTemplate(tpl)}
+                      onClick={() => setSelectedViewTemplate(tpl ?? null)}
                     >
                       <CardContent className="p-6 flex flex-col items-start gap-4">
                         <div className="space-y-1 w-full text-start">
@@ -340,7 +345,12 @@ export default function PatientDetailsPage() {
                     
                     <QuestionnairePreview 
                       questions={selectedSubmission.template?.questions || []}
-                      answers={Object.fromEntries(selectedSubmission.answers?.map((a: any) => [a.questionId, a.value]) || [])}
+                      answers={Object.fromEntries(
+                        (selectedSubmission.answers ?? []).map((answer: AnswerDoc) => [
+                          answer.questionId,
+                          answer.value,
+                        ])
+                      )}
                     />
                   </div>
                 )}

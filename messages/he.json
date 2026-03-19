@@ -48,11 +48,61 @@
   },
   "PractitionerQuestionnaires": {
     "title": "שאלונים",
-    "description": "נהל את תבניות השאלונים שלך",
+    "eyebrow": "מרכז השאלונים",
+    "description": "שמור את השאלונים שמוכנים לשימוש בקליניקה, עיין בכל מאגר התבניות, ובחר אילו תבניות יהיו זמינות להקצאה.",
     "createTemplate": "יצירת תבנית שאלון",
     "noTemplates": "עדיין אין תבניות",
     "noTemplatesDesc": "צור את התבנית הראשונה שלך כדי להקצות אותה למטופלים.",
-    "questionsCount": "{count} שאלות"
+    "questionsCount": "{count} שאלות",
+    "clinic": {
+      "title": "בקליניקה שלך",
+      "badge": "ספריית הקליניקה",
+      "description": "אלה השאלונים שהקליניקה שלך יכולה להקצות כרגע.",
+      "count": "{count} שמורים",
+      "emptyTitle": "עדיין לא נשמרו תבניות לקליניקה",
+      "emptyDescription": "עיין במאגר התבניות למטה ושמור את מה שתרצה שיהיה זמין להקצאה."
+    },
+    "explorer": {
+      "title": "מאגר התבניות",
+      "badge": "מאגר תבניות",
+      "description": "עבור על כל התבניות הזמינות, סנן לפי תגיות, ושמור את המתאימות לקליניקה שלך.",
+      "count": "{count} תוצאות",
+      "searchPlaceholder": "חיפוש לפי שם תבנית",
+      "allTags": "כל התגיות",
+      "emptyTitle": "לא נמצאו תבניות עבור הסינון הזה",
+      "emptyDescription": "נסה שם אחר או נקה את סינון התגיות הפעיל."
+    },
+    "archived": {
+      "title": "בארכיון",
+      "badge": "תבניות בארכיון",
+      "description": "עיין בתבניות שהוצאו משימוש פעיל בקליניקה. הן נשארות זמינות לצפייה אך לא ניתנות להקצאה חדשה.",
+      "count": "{count} בארכיון",
+      "emptyTitle": "עדיין אין תבניות בארכיון",
+      "emptyDescription": "העבר תבנית מותאמת לארכיון כדי להסיר אותה מהקליניקה ומהמאגר הפעיל בלי לאבד היסטוריה."
+    },
+    "preview": {
+      "saved": "בקליניקה שלך",
+      "inClinic": "בקליניקה שלך",
+      "saveToClinic": "שמור לקליניקה",
+      "removeFromClinic": "הסר מהקליניקה",
+      "deleteTemplate": "מחק תבנית",
+      "deleteConfirmTitle": "למחוק את התבנית?",
+      "deleteConfirmDescription": "הפעולה תמחק את התבנית לצמיתות ולא ניתן יהיה לשחזר אותה.",
+      "deleteConfirmWithClinic": "התבנית תימחק לצמיתות, ואם היא שמורה בקליניקה שלך היא תוסר גם משם.",
+      "cancelDelete": "ביטול",
+      "confirmDelete": "מחק תבנית",
+      "deleteError": "מחיקת התבנית נכשלה",
+      "archive": "העבר לארכיון",
+      "archiveError": "העברה לארכיון נכשלה",
+      "restore": "שחזר",
+      "restoreError": "שחזור התבנית נכשל",
+      "edit": "עריכת תבנית",
+      "makeEditable": "צור עותק לעריכה",
+      "system": "מערכת",
+      "custom": "מותאם אישית",
+      "archived": "בארכיון",
+      "noDescription": "עדיין אין תיאור."
+    }
   },
   "PatientHome": {
     "title": "Outsight",
@@ -72,7 +122,7 @@
     "noHistory": "אין תשובות עבר"
   },
   "PractitionerPatient": {
-    "backToDashboard": "חזרה ללוח הבקרה",
+    "backToDashboard": "חזרה למטופלים שלי",
     "unnamed": "מטופל ללא שם",
     "tabs": {
       "overview": "סקירה",
@@ -102,9 +152,12 @@
     },
     "assignModal": {
       "title": "הקצאת שאלון",
-      "description": "בחר תבנית באיזו תדירות על המטופל למלא אותה.",
+      "description": "בחר תבנית מהקליניקה ובאיזו תדירות על המטופל למלא אותה.",
       "template": "תבנית",
       "selectTemplate": "בחר תבנית",
+      "searchTemplate": "חפש בתבניות הקליניקה",
+      "searchDescription": "אפשר להקצות רק תבניות שנשמרו תחת \"בקליניקה שלך\".",
+      "noTemplates": "לא נמצאו תבניות בקליניקה",
       "frequency": "תדירות",
       "cancel": "ביטול",
       "submit": "הקצה"
@@ -142,8 +195,20 @@
   "CreateTemplate": {
     "title": "יצירת תבנית שאלון חדשה",
     "description": "עצב שאלון חדש כדי להקצות למטופלים שלך.",
+    "editTitle": "עריכת תבנית שאלון",
+    "editDescription": "עדכן את השאלון המותאם או את העותק שיצרת והשאר אותו מוכן לשימוש בקליניקה.",
     "templateName": "שם התבנית",
     "templateDesc": "תיאור",
+    "tags": "תגיות",
+    "noTagsSelected": "עדיין לא נבחרו תגיות.",
+    "customTagPlaceholder": "הקלד תגית מותאמת אישית",
+    "addCustomTag": "הוסף תגית",
+    "removeTag": "הסר את {tag}",
+    "systemTagsReadonly": "תגיות מערכת הן לקריאה בלבד",
+    "duplicateName": "כבר קיימת בקליניקה שלך תבנית עם השם הזה.",
+    "loadingTemplate": "טוען תבנית...",
+    "invalidTemplate": "לא ניתן לפתוח את התבנית הזו.",
+    "invalidTemplateDescription": "ייתכן שהיא כבר לא קיימת או שאין לך גישה אליה.",
     "questions": "שאלות",
     "addQuestion": "הוסף שאלה",
     "questionPrompt": "תוכן השאלה",
@@ -164,9 +229,14 @@
     "max": "ערך מקסימלי",
     "minLabel": "תווית למינימום (אופציונלי)",
     "maxLabel": "תווית למקסימום (אופציונלי)",
+    "backToMyPatients": "חזרה למטופלים שלי",
+    "backToQuestionnaires": "חזרה לשאלונים",
     "save": "שמור תבנית",
+    "update": "עדכן תבנית",
     "cancel": "ביטול",
     "success": "התבנית נוצרה בהצלחה!",
-    "error": "יצירת התבנית נכשלה"
+    "updatedSuccess": "התבנית עודכנה בהצלחה!",
+    "error": "יצירת התבנית נכשלה",
+    "updatedError": "עדכון התבנית נכשל"
   }
 }
