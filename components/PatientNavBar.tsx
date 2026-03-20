@@ -72,8 +72,6 @@ export function PatientNavBar() {
           );
         })}
       </nav>
-      {/* Spacer for fixed bottom nav */}
-      <div className="h-20 md:hidden" />
     </>
   );
 }

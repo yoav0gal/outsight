@@ -8,7 +8,7 @@ export default function PatientLayout({
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
       <PatientNavBar />
-      {children}
+      <main className="flex-1 pb-20 md:pb-0">{children}</main>
     </div>
   );
 }
