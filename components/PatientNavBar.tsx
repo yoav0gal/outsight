@@ -1,12 +1,17 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Signpost, ClipboardList, History } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
-export function PatientNavBar() {
+interface PatientNavBarProps {
+  children: ReactNode;
+}
+
+export function PatientNavBar({ children }: PatientNavBarProps) {
   const t = useTranslations("PatientNavBar");
   const pathname = usePathname();
 
@@ -16,8 +21,7 @@ export function PatientNavBar() {
   ];
 
   return (
-    <>
-      {/* Top Bar - Brand & Profile */}
+    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans">
       <header className="bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-8">
           <Link href="/patient/home" className="flex items-center gap-2 font-black text-2xl text-indigo-600 tracking-tight">
@@ -51,7 +55,8 @@ export function PatientNavBar() {
         </div>
       </header>
 
-      {/* Bottom Navigation - Mobile Primary */}
+      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+
       <nav className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-lg border-t border-zinc-200 px-6 py-3 pb-safe-offset-3 z-30 flex items-center justify-around md:hidden">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -72,6 +77,6 @@ export function PatientNavBar() {
           );
         })}
       </nav>
-    </>
+    </div>
   );
 }

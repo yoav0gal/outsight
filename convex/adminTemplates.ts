@@ -15,6 +15,7 @@ const questionValidator = v.object({
     v.literal("short_text"),
     v.literal("long_text"),
     v.literal("multiple_choice"),
+    v.literal("cards"),
     v.literal("boolean"),
     v.literal("numeric_scale")
   ),

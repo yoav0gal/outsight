@@ -2,6 +2,7 @@ export type QuestionType =
   | "short_text"
   | "long_text"
   | "multiple_choice"
+  | "cards"
   | "boolean"
   | "numeric_scale";
 
@@ -56,7 +57,7 @@ export function normalizeTemplateTags(tags: string[]) {
 
 export function normalizeQuestions(questions: TemplateQuestion[]) {
   return questions.map((question) => {
-    if (question.type === "multiple_choice") {
+    if (question.type === "multiple_choice" || question.type === "cards") {
       return {
         ...question,
         options:

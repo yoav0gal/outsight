@@ -8,6 +8,7 @@ const questionValidator = v.object({
     v.literal("short_text"),
     v.literal("long_text"),
     v.literal("multiple_choice"),
+    v.literal("cards"),
     v.literal("boolean"),
     v.literal("numeric_scale")
   ),
@@ -151,6 +152,10 @@ function isHistoryInstance<T extends { status: "pending" | "completed" | "expire
   instance: T
 ): instance is T & { status: "completed" | "expired" } {
   return instance.status !== "pending";
+}
+
+function isArchivedAssignment(assignment: { status: "active" | "archived" | "completed" | "cancelled" }) {
+  return assignment.status === "archived";
 }
 
 function normalizeTags(tags: string[] | undefined) {
@@ -740,10 +745,12 @@ export const listPatientAssignments = query({
       throw new Error("Unauthorized");
     }
 
-    return await ctx.db
+    const assignments = await ctx.db
       .query("questionnaireAssignments")
       .withIndex("by_patient", (q) => q.eq("patientId", args.patientId))
       .collect();
+
+    return assignments.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 
@@ -897,7 +904,7 @@ export const listPractitionerPatientTemplateHistory = query({
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
 
-    const [template, instances, historyView] = await Promise.all([
+    const [template, instances, historyView, assignments] = await Promise.all([
       ctx.db.get(args.templateId),
       ctx.db
         .query("questionnaireInstances")
@@ -909,9 +916,13 @@ export const listPractitionerPatientTemplateHistory = query({
           q
             .eq("practitionerId", user._id)
             .eq("patientId", args.patientId)
-            .eq("templateId", args.templateId)
+          .eq("templateId", args.templateId)
         )
         .unique(),
+      ctx.db
+        .query("questionnaireAssignments")
+        .withIndex("by_patient", (q) => q.eq("patientId", args.patientId))
+        .collect(),
     ]);
 
     const history = instances
@@ -922,6 +933,9 @@ export const listPractitionerPatientTemplateHistory = query({
       .sort((a, b) => getInstanceHistoryTimestamp(b) - getInstanceHistoryTimestamp(a));
 
     const lastEntryAt = history[0] ? getInstanceHistoryTimestamp(history[0]) : null;
+    const assignment = assignments
+      .filter((item) => item.templateId === args.templateId)
+      .sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
 
     return {
       template,
@@ -932,7 +946,98 @@ export const listPractitionerPatientTemplateHistory = query({
         (instance) =>
           getInstanceHistoryTimestamp(instance) > (historyView?.lastViewedAt ?? 0)
       ).length,
+      assignment,
     };
+  },
+});
+
+export const archiveQuestionnaireAssignment = mutation({
+  args: { assignmentId: v.id("questionnaireAssignments") },
+  handler: async (ctx, args) => {
+    const practitioner = await getCurrentUser(ctx);
+    if (!practitioner || practitioner.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const assignment = await ctx.db.get(args.assignmentId);
+    if (!assignment || assignment.practitionerId !== practitioner._id) {
+      throw new Error("Assignment not found or unauthorized");
+    }
+
+    if (!isArchivedAssignment(assignment)) {
+      await ctx.db.patch(args.assignmentId, {
+        status: "archived",
+        archivedAt: Date.now(),
+      });
+    }
+
+    const instances = await ctx.db
+      .query("questionnaireInstances")
+      .withIndex("by_assignment", (q) => q.eq("assignmentId", args.assignmentId))
+      .collect();
+
+    for (const instance of instances) {
+      if (instance.status === "pending") {
+        await ctx.db.delete(instance._id);
+      }
+    }
+  },
+});
+
+export const unarchiveQuestionnaireAssignment = mutation({
+  args: { assignmentId: v.id("questionnaireAssignments") },
+  handler: async (ctx, args) => {
+    const practitioner = await getCurrentUser(ctx);
+    if (!practitioner || practitioner.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const assignment = await ctx.db.get(args.assignmentId);
+    if (!assignment || assignment.practitionerId !== practitioner._id) {
+      throw new Error("Assignment not found or unauthorized");
+    }
+
+    await ctx.db.patch(args.assignmentId, {
+      status: "active",
+      archivedAt: undefined,
+    });
+  },
+});
+
+export const deleteQuestionnaireAssignment = mutation({
+  args: { assignmentId: v.id("questionnaireAssignments") },
+  handler: async (ctx, args) => {
+    const practitioner = await getCurrentUser(ctx);
+    if (!practitioner || practitioner.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const assignment = await ctx.db.get(args.assignmentId);
+    if (!assignment || assignment.practitionerId !== practitioner._id) {
+      throw new Error("Assignment not found or unauthorized");
+    }
+
+    const instances = await ctx.db
+      .query("questionnaireInstances")
+      .withIndex("by_assignment", (q) => q.eq("assignmentId", args.assignmentId))
+      .collect();
+
+    for (const instance of instances) {
+      await ctx.db.delete(instance._id);
+    }
+
+    const historyViews = await ctx.db
+      .query("questionnaireHistoryViews")
+      .withIndex("by_practitioner_patient_template", (q) =>
+        q.eq("practitionerId", practitioner._id).eq("patientId", assignment.patientId).eq("templateId", assignment.templateId)
+      )
+      .collect();
+
+    for (const historyView of historyViews) {
+      await ctx.db.delete(historyView._id);
+    }
+
+    await ctx.db.delete(args.assignmentId);
   },
 });
 

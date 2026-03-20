@@ -6,7 +6,16 @@ import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, BellRing, CalendarDays, ClipboardPenLine, FileText, History } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  BellRing,
+  CalendarDays,
+  ClipboardPenLine,
+  FileText,
+  History,
+} from "lucide-react";
 
 import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
 import { Badge } from "@/components/ui/badge";
@@ -73,12 +82,29 @@ function buildSessionForm(review?: SessionReviewDoc | null): SessionReviewFormSt
   };
 }
 
+function buildPatientQuestionnaireUrl(
+  patientId: Id<"users">,
+  searchParams: URLSearchParams,
+  questionnairesView: "active" | "archived"
+) {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set("tab", "questionnaires");
+
+  if (questionnairesView === "archived") {
+    params.set("questionnairesView", "archived");
+  } else {
+    params.delete("questionnairesView");
+  }
+
+  const query = params.toString();
+  return query ? `/practitioner/patient/${patientId}?${query}` : `/practitioner/patient/${patientId}`;
+}
+
 export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("PractitionerPatient");
-  const tQ = useTranslations("Questionnaire");
   const patientId = params.id as Id<"users">;
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
@@ -90,6 +116,7 @@ export default function PatientDetailsPage() {
   const assignMutation = useMutation(api.questionnaires.assign);
   const createSessionReview = useMutation(api.sessionReviews.createSessionReview);
   const updateSessionReview = useMutation(api.sessionReviews.updateSessionReview);
+  const unarchiveQuestionnaireAssignment = useMutation(api.questionnaires.unarchiveQuestionnaireAssignment);
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Id<"questionnaireTemplates"> | "">("");
@@ -100,6 +127,18 @@ export default function PatientDetailsPage() {
   const [sessionForm, setSessionForm] = useState<SessionReviewFormState>(buildSessionForm());
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isSavingSession, setIsSavingSession] = useState(false);
+  const [isRestoringAssignmentId, setIsRestoringAssignmentId] = useState<Id<"questionnaireAssignments"> | null>(null);
+
+  const questionnairesView = searchParams.get("questionnairesView") === "archived" ? "archived" : "active";
+  const activeAssignments = (assignments ?? []).filter((assignment) => assignment.status === "active");
+  const archivedAssignments = (assignments ?? []).filter((assignment) => assignment.status === "archived");
+  const visibleAssignments = questionnairesView === "archived" ? archivedAssignments : activeAssignments;
+  const questionnaireViewLabel =
+    questionnairesView === "archived" ? t("questionnaires.archivedTitle") : t("questionnaires.active");
+  const questionnaireViewDescription =
+    questionnairesView === "archived"
+      ? t("questionnaires.archivedDescription")
+      : t("questionnaires.activeDescription");
 
   const openCreateSessionDialog = () => {
     setSelectedSessionReview(null);
@@ -192,6 +231,23 @@ export default function PatientDetailsPage() {
       alert(selectedSessionReview ? t("history.errors.update") : t("history.errors.create"));
     } finally {
       setIsSavingSession(false);
+    }
+  };
+
+  const goToQuestionnaireView = (view: "active" | "archived") => {
+    router.push(buildPatientQuestionnaireUrl(patientId, new URLSearchParams(searchParams.toString()), view));
+  };
+
+  const handleRestoreQuestionnaire = async (assignmentId: Id<"questionnaireAssignments">) => {
+    setIsRestoringAssignmentId(assignmentId);
+    try {
+      await unarchiveQuestionnaireAssignment({ assignmentId });
+      goToQuestionnaireView("active");
+    } catch (error) {
+      console.error(error);
+      alert(t("questionnaires.restoreError"));
+    } finally {
+      setIsRestoringAssignmentId(null);
     }
   };
 
@@ -391,70 +447,101 @@ export default function PatientDetailsPage() {
         </TabsContent>
 
         <TabsContent value="questionnaires" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-2xl font-bold text-zinc-900">{t("questionnaires.active")}</h2>
-
-            <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
-              <DialogTrigger
-                render={
-                  <Button size="lg" className="rounded-xl font-bold shadow-md shadow-indigo-100">
-                    <FileText className="me-2 h-5 w-5" />
-                    {t("questionnaires.assign")}
-                  </Button>
-                }
-              />
-              <DialogContent className="rounded-2xl sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">{t("assignModal.title")}</DialogTitle>
-                  <DialogDescription>{t("assignModal.description")}</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-6 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="template" className="text-sm font-semibold">
-                      {t("assignModal.template")}
-                    </Label>
-                    <TemplateSearchPicker
-                      options={clinicTemplates ?? []}
-                      value={selectedTemplate}
-                      onChange={(value) => setSelectedTemplate(value as Id<"questionnaireTemplates">)}
-                      placeholder={t("assignModal.selectTemplate")}
-                      searchPlaceholder={t("assignModal.searchTemplate")}
-                      emptyLabel={t("assignModal.noTemplates")}
-                      title={t("assignModal.title")}
-                      description={t("assignModal.searchDescription")}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="frequency" className="text-sm font-semibold">
-                      {t("assignModal.frequency")}
-                    </Label>
-                    <Select
-                      value={selectedFrequency}
-                      onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly")}
-                    >
-                      <SelectTrigger id="frequency" className="h-12 rounded-lg border-zinc-200">
-                        <SelectValue>{(value: string) => (value ? t(`questionnaires.frequency.${value}`) : "")}</SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {(["once", "daily", "weekly"] as const).map((freq) => (
-                          <SelectItem key={freq} value={freq} className="rounded-lg">
-                            {t(`questionnaires.frequency.${freq}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          <div className="flex flex-col gap-4 rounded-[2rem] border border-zinc-200/60 bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-2xl font-bold text-zinc-900">{questionnaireViewLabel}</h2>
+                  <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
+                    {visibleAssignments.length} {questionnairesView === "archived" ? t("questionnaires.archivedBadge") : t("questionnaires.activeBadge")}
+                  </Badge>
                 </div>
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button variant="ghost" onClick={() => setIsAssignOpen(false)} className="rounded-xl">
-                    {t("assignModal.cancel")}
-                  </Button>
-                  <Button onClick={handleAssign} disabled={!selectedTemplate || isAssigning} className="rounded-xl">
-                    {isAssigning ? "..." : t("assignModal.submit")}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                <p className="max-w-2xl text-sm leading-6 text-zinc-500">{questionnaireViewDescription}</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  className="rounded-xl border-zinc-200 text-zinc-600 hover:text-zinc-950"
+                  onClick={() => goToQuestionnaireView(questionnairesView === "archived" ? "active" : "archived")}
+                  aria-label={
+                    questionnairesView === "archived"
+                      ? t("questionnaires.returnToActive")
+                      : t("questionnaires.openArchived")
+                  }
+                >
+                  {questionnairesView === "archived" ? (
+                    <ArchiveRestore className="size-4" />
+                  ) : (
+                    <Archive className="size-4" />
+                  )}
+                </Button>
+
+                <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+                  <DialogTrigger
+                    render={
+                      <Button size="lg" className="rounded-xl font-bold shadow-md shadow-indigo-100">
+                        <FileText className="me-2 h-5 w-5" />
+                        {t("questionnaires.assign")}
+                      </Button>
+                    }
+                  />
+                  <DialogContent className="rounded-2xl sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl">{t("assignModal.title")}</DialogTitle>
+                      <DialogDescription>{t("assignModal.description")}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-6 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="template" className="text-sm font-semibold">
+                          {t("assignModal.template")}
+                        </Label>
+                        <TemplateSearchPicker
+                          options={clinicTemplates ?? []}
+                          value={selectedTemplate}
+                          onChange={(value) => setSelectedTemplate(value as Id<"questionnaireTemplates">)}
+                          placeholder={t("assignModal.selectTemplate")}
+                          searchPlaceholder={t("assignModal.searchTemplate")}
+                          emptyLabel={t("assignModal.noTemplates")}
+                          title={t("assignModal.title")}
+                          description={t("assignModal.searchDescription")}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="frequency" className="text-sm font-semibold">
+                          {t("assignModal.frequency")}
+                        </Label>
+                        <Select
+                          value={selectedFrequency}
+                          onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly")}
+                        >
+                          <SelectTrigger id="frequency" className="h-12 rounded-lg border-zinc-200">
+                            <SelectValue>{(value: string) => (value ? t(`questionnaires.frequency.${value}`) : "")}</SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            {(["once", "daily", "weekly"] as const).map((freq) => (
+                              <SelectItem key={freq} value={freq} className="rounded-lg">
+                                {t(`questionnaires.frequency.${freq}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                      <Button variant="ghost" onClick={() => setIsAssignOpen(false)} className="rounded-xl">
+                        {t("assignModal.cancel")}
+                      </Button>
+                      <Button onClick={handleAssign} disabled={!selectedTemplate || isAssigning} className="rounded-xl">
+                        {isAssigning ? "..." : t("assignModal.submit")}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -467,13 +554,17 @@ export default function PatientDetailsPage() {
                   </CardContent>
                 </Card>
               ))
-            ) : assignments.length === 0 ? (
+            ) : visibleAssignments.length === 0 ? (
               <div className="col-span-full rounded-3xl border border-dashed border-zinc-200 bg-white py-16 text-center">
                 <FileText className="mx-auto mb-3 h-10 w-10 text-zinc-300" />
-                <p className="font-medium text-zinc-500">{t("questionnaires.noActive")}</p>
+                <p className="font-medium text-zinc-500">
+                  {questionnairesView === "archived"
+                    ? t("questionnaires.noArchived")
+                    : t("questionnaires.noActive")}
+                </p>
               </div>
             ) : (
-              assignments.map((assignment) => {
+              visibleAssignments.map((assignment) => {
                 const tpl = templates?.find((template) => template._id === assignment.templateId);
                 const summary = historyByTemplateId.get(assignment.templateId);
                 const metaLabel = summary?.lastEntryAt
@@ -508,9 +599,13 @@ export default function PatientDetailsPage() {
                       <div className="mt-auto flex w-full items-center gap-2">
                         <Badge
                           variant="secondary"
-                          className="rounded-lg bg-indigo-50 capitalize text-indigo-700 hover:bg-indigo-100"
+                          className={`rounded-lg capitalize ${
+                            assignment.status === "archived"
+                              ? "bg-amber-50 text-amber-700 hover:bg-amber-50"
+                              : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                          }`}
                         >
-                          {t(`questionnaires.frequency.${assignment.frequency}`)}
+                          {t(`questionnaires.status.${assignment.status}`)}
                         </Badge>
                         <Badge
                           variant="outline"
@@ -518,6 +613,23 @@ export default function PatientDetailsPage() {
                         >
                           {t(`questionnaires.status.${assignment.status}`)}
                         </Badge>
+                        {assignment.status === "archived" ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-lg border-zinc-200"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleRestoreQuestionnaire(assignment._id);
+                            }}
+                            disabled={isRestoringAssignmentId === assignment._id}
+                          >
+                            <ArchiveRestore className="me-2 h-4 w-4" />
+                            {isRestoringAssignmentId === assignment._id
+                              ? t("questionnaires.restoring")
+                              : t("questionnaires.restorePrescription")}
+                          </Button>
+                        ) : null}
                         {summary ? (
                           <Badge variant="secondary" className="rounded-lg bg-zinc-100 text-zinc-700">
                             {t("questionnaires.entriesCount", { count: summary.totalEntries })}

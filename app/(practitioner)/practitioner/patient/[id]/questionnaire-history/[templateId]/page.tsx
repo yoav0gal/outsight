@@ -6,15 +6,26 @@ import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, BellRing, Calendar, ChevronRight, FileText, History } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  BellRing,
+  Calendar,
+  ChevronRight,
+  FileText,
+  History,
+  Trash2,
+} from "lucide-react";
 
 import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type HistoryInstance = Doc<"questionnaireInstances">;
+type AssignmentDoc = Doc<"questionnaireAssignments">;
 
 export default function PractitionerPatientQuestionnaireHistoryPage() {
   const params = useParams();
@@ -25,6 +36,10 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
   const templateId = params.templateId as Id<"questionnaireTemplates">;
   const [selectedSubmission, setSelectedSubmission] = useState<HistoryInstance | null>(null);
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
   const templateHistory = useQuery(api.questionnaires.listPractitionerPatientTemplateHistory, {
@@ -32,6 +47,9 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     templateId,
   });
   const markViewed = useMutation(api.questionnaires.markPractitionerPatientTemplateHistoryViewed);
+  const archiveQuestionnaireAssignment = useMutation(api.questionnaires.archiveQuestionnaireAssignment);
+  const unarchiveQuestionnaireAssignment = useMutation(api.questionnaires.unarchiveQuestionnaireAssignment);
+  const deleteQuestionnaireAssignment = useMutation(api.questionnaires.deleteQuestionnaireAssignment);
 
   useEffect(() => {
     if (!templateHistory?.lastEntryAt || !templateHistory.unreadEntries) return;
@@ -43,6 +61,60 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     });
   }, [markViewed, patientId, templateHistory?.lastEntryAt, templateHistory?.unreadEntries, templateId]);
 
+  const goToQuestionnairesView = (view: "active" | "archived") => {
+    const url =
+      view === "archived"
+        ? `/practitioner/patient/${patientId}?tab=questionnaires&questionnairesView=archived`
+        : `/practitioner/patient/${patientId}?tab=questionnaires`;
+    router.push(url);
+  };
+
+  const handleArchivePrescription = async () => {
+    if (!assignment) return;
+
+    setIsArchiving(true);
+    try {
+      await archiveQuestionnaireAssignment({ assignmentId: assignment._id });
+      goToQuestionnairesView("archived");
+    } catch (error) {
+      console.error(error);
+      alert(t("questionnaires.archiveError"));
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleRestorePrescription = async () => {
+    if (!assignment) return;
+
+    setIsRestoring(true);
+    try {
+      await unarchiveQuestionnaireAssignment({ assignmentId: assignment._id });
+      goToQuestionnairesView("active");
+    } catch (error) {
+      console.error(error);
+      alert(t("questionnaires.restoreError"));
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleDeletePrescription = async () => {
+    if (!assignment) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteQuestionnaireAssignment({ assignmentId: assignment._id });
+      setIsDeleteDialogOpen(false);
+      goToQuestionnairesView(assignment.status === "archived" ? "archived" : "active");
+    } catch (error) {
+      console.error(error);
+      alert(t("questionnaires.deleteError"));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (patient === undefined || templateHistory === undefined) {
     return (
       <main className="flex flex-1 items-center justify-center">
@@ -50,6 +122,9 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
       </main>
     );
   }
+
+  const assignment = (templateHistory as { assignment?: AssignmentDoc | null }).assignment;
+  const hasHistory = templateHistory.history.length > 0;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-10">
@@ -86,11 +161,44 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
             })}
           </p>
         ) : null}
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button className="rounded-xl font-bold" onClick={() => setIsPrescriptionOpen(true)}>
             <FileText className="me-2 h-4 w-4" />
             {t("questionnaires.viewPrescription")}
           </Button>
+
+          {assignment?.status === "archived" ? (
+            <Button
+              variant="outline"
+              className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+              onClick={handleRestorePrescription}
+              disabled={isRestoring}
+            >
+              <ArchiveRestore className="me-2 h-4 w-4" />
+              {isRestoring ? t("questionnaires.restoring") : t("questionnaires.restorePrescription")}
+            </Button>
+          ) : assignment ? (
+            <Button
+              variant="outline"
+              className="rounded-xl border-zinc-200 text-zinc-600"
+              onClick={handleArchivePrescription}
+              disabled={isArchiving}
+            >
+              <Archive className="me-2 h-4 w-4" />
+              {isArchiving ? t("questionnaires.archiving") : t("questionnaires.archivePrescription")}
+            </Button>
+          ) : null}
+
+          <Button
+            variant="destructive"
+            className="rounded-xl"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={isDeleting || !assignment}
+          >
+            <Trash2 className="me-2 h-4 w-4" />
+            {isDeleting ? t("questionnaires.deleting") : t("questionnaires.deletePrescription")}
+          </Button>
+
           <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
             {t("questionnaires.entriesCount", { count: templateHistory.history.length })}
           </Badge>
@@ -165,6 +273,57 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
               />
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[520px]">
+          <div className="rounded-[2rem] border border-zinc-100 bg-white p-8 sm:p-10">
+            <DialogHeader className="space-y-3 text-start">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-2xl font-bold tracking-tight text-zinc-950">
+                {hasHistory
+                  ? t("questionnaires.deleteConfirmTitleWithHistory")
+                  : t("questionnaires.deleteConfirmTitle")}
+              </DialogTitle>
+              <DialogDescription className="max-w-xl text-sm leading-6 text-zinc-600">
+                {hasHistory
+                  ? t("questionnaires.deleteConfirmDescriptionWithHistory", {
+                      count: templateHistory.history.length,
+                    })
+                  : t("questionnaires.deleteConfirmDescription")}
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="mt-8 gap-3 sm:justify-between">
+              <Button variant="ghost" className="rounded-xl text-zinc-600" onClick={() => setIsDeleteDialogOpen(false)}>
+                {t("questionnaires.cancelDelete")}
+              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                {hasHistory ? (
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                    onClick={handleArchivePrescription}
+                    disabled={isArchiving}
+                  >
+                    <Archive className="me-2 h-4 w-4" />
+                    {isArchiving ? t("questionnaires.archiving") : t("questionnaires.archiveInstead")}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="destructive"
+                  className="rounded-xl px-6 font-bold"
+                  onClick={handleDeletePrescription}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? t("questionnaires.deleting") : t("questionnaires.confirmDelete")}
+                </Button>
+              </div>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

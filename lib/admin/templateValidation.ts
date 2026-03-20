@@ -26,6 +26,7 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
     "short_text",
     "long_text",
     "multiple_choice",
+    "cards",
     "boolean",
     "numeric_scale",
   ];
@@ -46,13 +47,13 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
     throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid required flag`);
   }
   const questionType = type as QuestionType;
-  if (questionType === "multiple_choice") {
+  if (questionType === "multiple_choice" || questionType === "cards") {
     if (!Array.isArray(candidate.options) || candidate.options.length < 2) {
-      throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: multiple choice requires at least two options`);
+      throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: choice questions require at least two options`);
     }
     const options = candidate.options.map((option) => {
       if (typeof option !== "string" || !option.trim()) {
-        throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid multiple choice option`);
+        throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid choice option`);
       }
       return option;
     });

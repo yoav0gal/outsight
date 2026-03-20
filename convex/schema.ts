@@ -32,12 +32,13 @@ export default defineSchema({
           v.literal("short_text"),
           v.literal("long_text"),
           v.literal("multiple_choice"),
+          v.literal("cards"),
           v.literal("boolean"),
           v.literal("numeric_scale")
         ),
         prompt: v.string(),
         required: v.boolean(),
-        options: v.optional(v.array(v.string())), // For multiple_choice
+        options: v.optional(v.array(v.string())), // For multiple choice / cards
         scaleConfig: v.optional(
           v.object({
             min: v.number(),
@@ -63,8 +64,14 @@ export default defineSchema({
     practitionerId: v.id("users"),
     templateId: v.id("questionnaireTemplates"),
     frequency: v.union(v.literal("once"), v.literal("daily"), v.literal("weekly")),
-    status: v.union(v.literal("active"), v.literal("completed"), v.literal("cancelled")),
+    status: v.union(
+      v.literal("active"),
+      v.literal("archived"),
+      v.literal("completed"),
+      v.literal("cancelled")
+    ),
     createdAt: v.number(), // Date.now()
+    archivedAt: v.optional(v.number()),
   })
     .index("by_patient", ["patientId"])
     .index("by_practitioner", ["practitionerId"])

@@ -347,7 +347,7 @@ export function TemplateEditorForm({
                           onValueChange={(value) => {
                             const nextType = value as QuestionType;
                             const updates: Partial<TemplateQuestion> = { type: nextType };
-                            if (nextType === "multiple_choice" && !question.options) {
+                            if ((nextType === "multiple_choice" || nextType === "cards") && !question.options) {
                               updates.options = ["Option 1", "Option 2"];
                             }
                             if (nextType === "numeric_scale" && !question.scaleConfig) {
@@ -363,6 +363,7 @@ export function TemplateEditorForm({
                             <SelectItem value="short_text">{t("types.short_text")}</SelectItem>
                             <SelectItem value="long_text">{t("types.long_text")}</SelectItem>
                             <SelectItem value="multiple_choice">{t("types.multiple_choice")}</SelectItem>
+                            <SelectItem value="cards">{t("types.cards")}</SelectItem>
                             <SelectItem value="boolean">{t("types.boolean")}</SelectItem>
                             <SelectItem value="numeric_scale">{t("types.numeric_scale")}</SelectItem>
                           </SelectContent>
@@ -383,7 +384,7 @@ export function TemplateEditorForm({
                       </Label>
                     </div>
 
-                    {question.type === "multiple_choice" ? (
+                    {question.type === "multiple_choice" || question.type === "cards" ? (
                       <div className="space-y-3 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
                         <Label className="font-bold">{t("options")}</Label>
                         {(question.options || []).map((option, optionIndex) => (
