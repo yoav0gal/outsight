@@ -64,6 +64,7 @@ export function TemplateEditorForm({
   const [tags, setTags] = useState<string[]>(seedValues.tags);
   const [customTag, setCustomTag] = useState("");
   const [questions, setQuestions] = useState<TemplateQuestion[]>(seedValues.questions);
+  const [scoring] = useState(seedValues.scoring);
 
   const toggleTag = (tag: string) => {
     if (!canEditTags) return;
@@ -145,6 +146,7 @@ export function TemplateEditorForm({
       description: normalizeTemplateDescription(description),
       tags: normalizeTemplateTags(tags),
       questions: normalizeQuestions(questions),
+      scoring,
     });
   };
 

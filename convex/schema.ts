@@ -1,6 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const scoringValidator = v.object({
+  mode: v.literal("standard"),
+  includedQuestionIds: v.array(v.string()),
+  answerScores: v.optional(v.record(v.string(), v.record(v.string(), v.number()))),
+});
+
 export default defineSchema({
   users: defineTable({
     name: v.optional(v.string()),
@@ -25,6 +31,7 @@ export default defineSchema({
     originTemplateId: v.optional(v.id("questionnaireTemplates")),
     tags: v.optional(v.array(v.string())),
     archivedAt: v.optional(v.number()),
+    scoring: v.optional(scoringValidator),
     questions: v.array(
       v.object({
         id: v.string(), // Unique identifier for the question

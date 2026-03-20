@@ -4,6 +4,7 @@ import {
   normalizeTemplateTags,
   normalizeTemplateTitle,
   type QuestionType,
+  type TemplateScoring,
   type TemplateEditorValues,
   type TemplateQuestion,
 } from "@/lib/templateEditor";
@@ -13,6 +14,84 @@ interface RawTemplateUploadInput {
   description?: unknown;
   tags?: unknown;
   questions?: unknown;
+  scoring?: unknown;
+}
+
+function validateScoring(
+  scoring: unknown,
+  questions: TemplateQuestion[],
+  templateIndex: number
+): TemplateScoring {
+  if (!scoring || typeof scoring !== "object") {
+    throw new Error(`Template ${templateIndex + 1}: invalid scoring object`);
+  }
+
+  const candidate = scoring as Record<string, unknown>;
+  if (candidate.mode !== "standard") {
+    throw new Error(`Template ${templateIndex + 1}: only standard scoring is supported`);
+  }
+
+  if (
+    !Array.isArray(candidate.includedQuestionIds) ||
+    candidate.includedQuestionIds.length === 0 ||
+    candidate.includedQuestionIds.some((questionId) => typeof questionId !== "string" || !questionId.trim())
+  ) {
+    throw new Error(
+      `Template ${templateIndex + 1}: scoring must include at least one valid question id`
+    );
+  }
+
+  const validQuestionIds = new Set(questions.map((question) => question.id));
+  for (const questionId of candidate.includedQuestionIds as string[]) {
+    if (!validQuestionIds.has(questionId)) {
+      throw new Error(
+        `Template ${templateIndex + 1}: scoring references unknown question id "${questionId}"`
+      );
+    }
+  }
+
+  let answerScores: Record<string, Record<string, number>> | undefined;
+  if (candidate.answerScores !== undefined) {
+    if (!candidate.answerScores || typeof candidate.answerScores !== "object") {
+      throw new Error(`Template ${templateIndex + 1}: scoring answerScores must be an object`);
+    }
+
+    answerScores = {};
+    for (const [questionId, rawScoreMap] of Object.entries(
+      candidate.answerScores as Record<string, unknown>
+    )) {
+      if (!validQuestionIds.has(questionId)) {
+        throw new Error(
+          `Template ${templateIndex + 1}: scoring answerScores references unknown question id "${questionId}"`
+        );
+      }
+
+      if (!rawScoreMap || typeof rawScoreMap !== "object") {
+        throw new Error(
+          `Template ${templateIndex + 1}: scoring answerScores for "${questionId}" must be an object`
+        );
+      }
+
+      const normalizedScoreMap: Record<string, number> = {};
+      for (const [answerValue, score] of Object.entries(rawScoreMap as Record<string, unknown>)) {
+        if (typeof score !== "number" || Number.isNaN(score)) {
+          throw new Error(
+            `Template ${templateIndex + 1}: scoring answerScores for "${questionId}" must be numeric`
+          );
+        }
+
+        normalizedScoreMap[answerValue] = score;
+      }
+
+      answerScores[questionId] = normalizedScoreMap;
+    }
+  }
+
+  return {
+    mode: "standard",
+    includedQuestionIds: candidate.includedQuestionIds as string[],
+    answerScores,
+  };
 }
 
 function validateQuestion(question: unknown, templateIndex: number, questionIndex: number): TemplateQuestion {
@@ -122,13 +201,16 @@ function validateTemplate(input: RawTemplateUploadInput, index: number, selected
     throw new Error(`Template ${index + 1}: tags must be an array of strings`);
   }
 
+  const questions = normalizeQuestions(
+    input.questions.map((question, questionIndex) => validateQuestion(question, index, questionIndex))
+  );
+
   return {
     title: normalizeTemplateTitle(input.title),
     description: normalizeTemplateDescription(input.description ?? ""),
     tags: normalizeTemplateTags([...(input.tags as string[] | undefined ?? []), ...selectedTags]),
-    questions: normalizeQuestions(
-      input.questions.map((question, questionIndex) => validateQuestion(question, index, questionIndex))
-    ),
+    questions,
+    scoring: input.scoring === undefined ? undefined : validateScoring(input.scoring, questions, index),
   } satisfies TemplateEditorValues;
 }
 

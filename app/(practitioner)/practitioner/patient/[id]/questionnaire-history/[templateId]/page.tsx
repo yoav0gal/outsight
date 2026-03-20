@@ -18,14 +18,36 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { QuestionnaireScoreTrend } from "@/components/practitioner/QuestionnaireScoreTrend";
 import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type HistoryInstance = Doc<"questionnaireInstances">;
+type ScoreSummary = {
+  mode: "standard";
+  value: number;
+  max: number | null;
+  answeredQuestions: number;
+  totalQuestions: number;
+};
+
+type HistoryInstance = Doc<"questionnaireInstances"> & {
+  score?: ScoreSummary | null;
+};
 type AssignmentDoc = Doc<"questionnaireAssignments">;
+
+function formatScoreLabel(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  score: ScoreSummary | null | undefined
+) {
+  if (!score) return null;
+
+  return score.max === null
+    ? t("questionnaires.score", { value: score.value })
+    : t("questionnaires.scoreWithMax", { value: score.value, max: score.max });
+}
 
 export default function PractitionerPatientQuestionnaireHistoryPage() {
   const params = useParams();
@@ -115,6 +137,8 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     }
   };
 
+  const selectedSubmissionScoreLabel = formatScoreLabel(t, selectedSubmission?.score);
+
   if (patient === undefined || templateHistory === undefined) {
     return (
       <main className="flex flex-1 items-center justify-center">
@@ -125,6 +149,21 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
 
   const assignment = (templateHistory as { assignment?: AssignmentDoc | null }).assignment;
   const hasHistory = templateHistory.history.length > 0;
+  const scoreTrendPoints = templateHistory.history
+    .filter((instance) => instance.score)
+    .map((instance, index) => {
+      const timestamp = instance.submittedAt ?? instance.expiresAt ?? instance.createdAt;
+      return {
+        id: instance._id,
+        label: String(index + 1),
+        timestamp,
+        score: {
+          value: instance.score!.value,
+          max: instance.score!.max,
+        },
+      };
+    })
+    .reverse();
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-10">
@@ -205,6 +244,8 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
         </div>
       </header>
 
+      <QuestionnaireScoreTrend points={scoreTrendPoints} />
+
       {!templateHistory.history.length ? (
         <div className="rounded-[2rem] border border-dashed border-zinc-200 bg-white py-20 text-center">
           <FileText className="mx-auto mb-4 h-12 w-12 text-zinc-300" />
@@ -238,6 +279,11 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
                     <CardTitle className="text-lg text-zinc-950">
                       {t("questionnaires.answersCount", { count: instance.answers?.length ?? 0 })}
                     </CardTitle>
+                    {formatScoreLabel(t, instance.score) ? (
+                      <p className="text-sm font-semibold text-indigo-700">
+                        {formatScoreLabel(t, instance.score)}
+                      </p>
+                    ) : null}
                     <div className="flex items-center gap-2 text-sm font-medium text-zinc-500">
                       <Calendar className="h-4 w-4" />
                       <span>{new Date(historyAt).toLocaleString()}</span>
@@ -351,6 +397,11 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
                     ).toLocaleString(),
                   })}
                 </p>
+                {selectedSubmissionScoreLabel ? (
+                  <p className="mt-3 text-sm font-semibold text-indigo-700">
+                    {selectedSubmissionScoreLabel}
+                  </p>
+                ) : null}
               </header>
 
               <QuestionnairePreview

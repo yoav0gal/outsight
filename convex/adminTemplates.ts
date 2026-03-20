@@ -32,6 +32,12 @@ const questionValidator = v.object({
   ),
 });
 
+const scoringValidator = v.object({
+  mode: v.literal("standard"),
+  includedQuestionIds: v.array(v.string()),
+  answerScores: v.optional(v.record(v.string(), v.record(v.string(), v.number()))),
+});
+
 function normalizeTag(tag: string) {
   return tag.trim();
 }
@@ -148,6 +154,7 @@ export const createSystemTemplatesAdmin = mutation({
         title: v.string(),
         description: v.optional(v.string()),
         tags: v.optional(v.array(v.string())),
+        scoring: v.optional(scoringValidator),
         questions: v.array(questionValidator),
       })
     ),
@@ -175,6 +182,7 @@ export const createSystemTemplatesAdmin = mutation({
         source: "system",
         originTemplateId: undefined,
         tags: normalizeTags(template.tags),
+        scoring: template.scoring,
         questions: template.questions,
       });
 
@@ -192,6 +200,7 @@ export const updateSystemTemplateAdmin = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
+    scoring: v.optional(scoringValidator),
     questions: v.array(questionValidator),
   },
   handler: async (ctx, args) => {
@@ -209,6 +218,7 @@ export const updateSystemTemplateAdmin = mutation({
       title: sanitizedTitle,
       description: args.description,
       tags: normalizeTags(args.tags),
+      scoring: args.scoring ?? template.scoring,
       questions: args.questions,
     });
 

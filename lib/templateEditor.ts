@@ -20,11 +20,18 @@ export interface TemplateQuestion {
   };
 }
 
+export interface TemplateScoring {
+  mode: "standard";
+  includedQuestionIds: string[];
+  answerScores?: Record<string, Record<string, number>>;
+}
+
 export interface TemplateEditorValues {
   title: string;
   description: string;
   tags: string[];
   questions: TemplateQuestion[];
+  scoring?: TemplateScoring;
 }
 
 export function createEmptyQuestion(): TemplateQuestion {
@@ -88,5 +95,6 @@ export function createEmptyTemplateValues(): TemplateEditorValues {
     description: "",
     tags: [],
     questions: [],
+    scoring: undefined,
   };
 }

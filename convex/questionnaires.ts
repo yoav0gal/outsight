@@ -25,6 +25,178 @@ const questionValidator = v.object({
   ),
 });
 
+const scoringValidator = v.object({
+  mode: v.literal("standard"),
+  includedQuestionIds: v.array(v.string()),
+  answerScores: v.optional(v.record(v.string(), v.record(v.string(), v.number()))),
+});
+
+type AnswerValue = string | number | boolean | string[];
+
+type TemplateScoring = {
+  mode: "standard";
+  includedQuestionIds: string[];
+  answerScores?: Record<string, Record<string, number>>;
+};
+
+type TemplateQuestion = {
+  id: string;
+  type: "short_text" | "long_text" | "multiple_choice" | "cards" | "boolean" | "numeric_scale";
+  prompt: string;
+  required: boolean;
+  options?: string[];
+  scaleConfig?: {
+    min: number;
+    max: number;
+    minLabel?: string;
+    maxLabel?: string;
+  };
+};
+
+type ScoreSummary = {
+  mode: "standard";
+  value: number;
+  max: number | null;
+  answeredQuestions: number;
+  totalQuestions: number;
+};
+
+function getAnswerScoreKey(value: AnswerValue) {
+  if (Array.isArray(value)) {
+    return value.join("|");
+  }
+
+  return String(value);
+}
+
+function getQuestionMaxScore(
+  question: TemplateQuestion,
+  answerScores?: Record<string, number>
+) {
+  if (answerScores) {
+    const values = Object.values(answerScores);
+    return values.length > 0 ? Math.max(...values) : null;
+  }
+
+  if (question.type === "multiple_choice" || question.type === "cards") {
+    return question.options?.length ? question.options.length - 1 : null;
+  }
+
+  if (question.type === "numeric_scale") {
+    return question.scaleConfig?.max ?? null;
+  }
+
+  if (question.type === "boolean") {
+    return 1;
+  }
+
+  return null;
+}
+
+function getQuestionScore(
+  question: TemplateQuestion,
+  value: AnswerValue,
+  answerScores?: Record<string, number>
+) {
+  if (answerScores) {
+    const score = answerScores[getAnswerScoreKey(value)];
+    return typeof score === "number" ? score : null;
+  }
+
+  if ((question.type === "multiple_choice" || question.type === "cards") && typeof value === "string") {
+    const optionIndex = question.options?.findIndex((option) => option === value) ?? -1;
+    return optionIndex >= 0 ? optionIndex : null;
+  }
+
+  if (question.type === "numeric_scale" && typeof value === "number") {
+    return value;
+  }
+
+  if (question.type === "boolean" && typeof value === "boolean") {
+    return value ? 1 : 0;
+  }
+
+  return null;
+}
+
+function calculateScore(
+  template: {
+    questions: TemplateQuestion[];
+    scoring?: TemplateScoring;
+  },
+  answers?: Array<{ questionId: string; value: AnswerValue }>
+): ScoreSummary | null {
+  if (!template.scoring || template.scoring.mode !== "standard" || !answers?.length) {
+    return null;
+  }
+
+  const answersByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer.value] as const));
+  const questionsById = new Map(template.questions.map((question) => [question.id, question] as const));
+
+  let value = 0;
+  let max = 0;
+  let hasKnownMax = true;
+  let answeredQuestions = 0;
+
+  for (const questionId of template.scoring.includedQuestionIds) {
+    const question = questionsById.get(questionId);
+    const answer = answersByQuestionId.get(questionId);
+
+    if (!question || answer === undefined) {
+      continue;
+    }
+
+    const questionScore = getQuestionScore(
+      question,
+      answer,
+      template.scoring.answerScores?.[questionId]
+    );
+
+    if (questionScore === null) {
+      continue;
+    }
+
+    answeredQuestions += 1;
+    value += questionScore;
+
+    const questionMax = getQuestionMaxScore(question, template.scoring.answerScores?.[questionId]);
+    if (questionMax === null) {
+      hasKnownMax = false;
+    } else {
+      max += questionMax;
+    }
+  }
+
+  if (answeredQuestions === 0) {
+    return null;
+  }
+
+  return {
+    mode: "standard",
+    value,
+    max: hasKnownMax ? max : null,
+    answeredQuestions,
+    totalQuestions: template.scoring.includedQuestionIds.length,
+  };
+}
+
+function attachScoreToInstance<
+  T extends {
+    answers?: Array<{ questionId: string; value: AnswerValue }>;
+  },
+>(
+  instance: T,
+  template: {
+    questions: TemplateQuestion[];
+    scoring?: TemplateScoring;
+  } | null
+) {
+  return {
+    ...instance,
+    score: template ? calculateScore(template, instance.answers) : null,
+  };
+}
+
 async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
@@ -245,6 +417,7 @@ export const createTemplate = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
+    scoring: v.optional(scoringValidator),
     questions: v.array(questionValidator),
   },
   handler: async (ctx, args) => {
@@ -261,6 +434,7 @@ export const createTemplate = mutation({
       source: "practitioner",
       originTemplateId: undefined,
       tags: normalizedTags,
+      scoring: args.scoring,
       questions: args.questions,
     });
 
@@ -529,6 +703,7 @@ export const createEditableTemplateCopy = mutation({
       source: "practitioner",
       originTemplateId: template._id,
       tags: normalizeTags(template.tags),
+      scoring: template.scoring,
       questions: template.questions,
     });
 
@@ -544,6 +719,7 @@ export const updateTemplate = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
+    scoring: v.optional(scoringValidator),
     questions: v.array(questionValidator),
   },
   handler: async (ctx, args) => {
@@ -562,6 +738,7 @@ export const updateTemplate = mutation({
       title: sanitizedTitle,
       description: args.description,
       tags: normalizeTags(args.tags ?? template.tags ?? []),
+      scoring: args.scoring ?? template.scoring,
       questions: args.questions,
     });
   },
@@ -771,7 +948,7 @@ export const listPendingInstances = query({
     const results = await Promise.all(
       instances.map(async (instance) => {
         const template = await ctx.db.get(instance.templateId);
-        return { ...instance, template };
+        return attachScoreToInstance({ ...instance, template }, template);
       })
     );
     
@@ -808,7 +985,7 @@ export const listPatientHistory = query({
     const results = await Promise.all(
       history.map(async (instance) => {
         const template = await ctx.db.get(instance.templateId);
-        return { ...instance, template };
+        return attachScoreToInstance({ ...instance, template }, template);
       })
     );
     
@@ -882,10 +1059,20 @@ export const listPractitionerPatientHistorySummaries = query({
 
     const results = await Promise.all(
       Array.from(summaries.values()).map(async (summary) => {
-        const template = await ctx.db.get(summary.templateId);
+        const [template, latestInstance] = await Promise.all([
+          ctx.db.get(summary.templateId),
+          ctx.db.get(summary.latestInstanceId),
+        ]);
+
+        const latestScore =
+          template && latestInstance
+            ? attachScoreToInstance(latestInstance, template).score
+            : null;
+
         return {
           ...summary,
           lastViewedAt: viewsByTemplateId.get(summary.templateId),
+          latestScore,
           template,
         };
       })
@@ -930,7 +1117,8 @@ export const listPractitionerPatientTemplateHistory = query({
         (instance) =>
           instance.templateId === args.templateId && isHistoryInstance(instance)
       )
-      .sort((a, b) => getInstanceHistoryTimestamp(b) - getInstanceHistoryTimestamp(a));
+      .sort((a, b) => getInstanceHistoryTimestamp(b) - getInstanceHistoryTimestamp(a))
+      .map((instance) => attachScoreToInstance(instance, template));
 
     const lastEntryAt = history[0] ? getInstanceHistoryTimestamp(history[0]) : null;
     const assignment = assignments
@@ -1055,7 +1243,7 @@ export const getInstance = query({
     }
 
     const template = await ctx.db.get(instance.templateId);
-    return { ...instance, template };
+    return attachScoreToInstance({ ...instance, template }, template);
   },
 });
 

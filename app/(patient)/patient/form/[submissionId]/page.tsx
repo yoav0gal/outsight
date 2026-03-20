@@ -20,6 +20,23 @@ import { Badge } from "@/components/ui/badge";
 
 type AnswerValue = string | number | boolean | string[];
 
+function formatScoreLabel(
+  t: (key: string, values?: Record<string, string | number>) => string,
+  score:
+    | {
+        value: number;
+        max: number | null;
+      }
+    | null
+    | undefined
+) {
+  if (!score) return null;
+
+  return score.max === null
+    ? t("score", { value: score.value })
+    : t("scoreWithMax", { value: score.value, max: score.max });
+}
+
 export default function QuestionnaireFormPage() {
   const params = useParams();
   const router = useRouter();
@@ -103,6 +120,8 @@ export default function QuestionnaireFormPage() {
   }
 
   if (instance.status !== "pending") {
+    const scoreLabel = formatScoreLabel(t, instance.score);
+
     return (
       <main className="mx-auto flex-1 w-full max-w-5xl p-6 pt-0 pb-10 sm:px-8 sm:pt-0 sm:pb-16 lg:px-10">
         <div className="mb-2 flex items-center">
@@ -122,6 +141,9 @@ export default function QuestionnaireFormPage() {
           <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-950 mb-4 tracking-tight">
             {instance.template.title}
           </h1>
+          {scoreLabel ? (
+            <p className="text-sm font-semibold text-indigo-700">{scoreLabel}</p>
+          ) : null}
         </div>
 
         <div className="space-y-8">

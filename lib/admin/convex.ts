@@ -69,6 +69,7 @@ export function listSystemTemplatesAdmin() {
       tags: string[];
       source: "system";
       archivedAt?: number;
+      scoring?: TemplateScoring;
       questions: TemplateQuestion[];
     }>
   >("query", "adminTemplates:listSystemTemplatesAdmin", {});
@@ -86,6 +87,7 @@ export function getSystemTemplateAdmin(templateId: string) {
     tags: string[];
     source: "system";
     archivedAt?: number;
+    scoring?: TemplateScoring;
     questions: TemplateQuestion[];
   }>("query", "adminTemplates:getSystemTemplateAdmin", { templateId });
 }
@@ -95,6 +97,7 @@ export function createSystemTemplatesAdmin(
     title: string;
     description?: string;
     tags?: string[];
+    scoring?: TemplateScoring;
     questions: unknown[];
   }>
 ) {
@@ -109,6 +112,7 @@ export function updateSystemTemplateAdmin(
     title: string;
     description?: string;
     tags?: string[];
+    scoring?: TemplateScoring;
     questions: unknown[];
   }
 ) {
@@ -135,4 +139,4 @@ export function deleteSystemTemplateAdmin(templateId: string) {
     templateId,
   });
 }
-import type { TemplateQuestion } from "@/lib/templateEditor";
+import type { TemplateQuestion, TemplateScoring } from "@/lib/templateEditor";

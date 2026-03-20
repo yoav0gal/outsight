@@ -1,0 +1,49 @@
+{
+  "title": "DML2 - יומן מחשבות",
+  "description": "תבנית יומן מחשבות שהותאמה לייבוא למערכת התבניות. שימי לב: המקור כלל בלוק אירועים חוזר ובחירת מספר טעויות חשיבה, ולכן בגרסה זו הבלוק מיוצג כאירוע אחד ושדה טעויות החשיבה הומר לשדה טקסט חופשי.",
+  "tags": ["CBT", "יומן מחשבות", "מחשבות אוטומטיות"],
+  "questions": [
+    {
+      "id": "event",
+      "type": "long_text",
+      "prompt": "אירוע",
+      "required": true
+    },
+    {
+      "id": "thought",
+      "type": "long_text",
+      "prompt": "מחשבה",
+      "required": true
+    },
+    {
+      "id": "emotion",
+      "type": "long_text",
+      "prompt": "רגש",
+      "required": true
+    },
+    {
+      "id": "emotion_intensity",
+      "type": "numeric_scale",
+      "prompt": "עוצמת הרגש באחוזים %",
+      "required": true,
+      "scaleConfig": {
+        "min": 0,
+        "max": 100,
+        "minLabel": "0%",
+        "maxLabel": "100%"
+      }
+    },
+    {
+      "id": "thinking_mistake",
+      "type": "long_text",
+      "prompt": "טעות חשיבה. ניתן לכתוב אחת או יותר מתוך: הכל או כלום, הכללה, מסננת שלילית, הקטנה בערך התכונה החיובית, קפיצה למסקנות, קריאת מחשבות, ראיית עתיד, העצמה או הקטנה, טיעון רגשי, הצהרות חמ\"צ, שימוש בתוויות, האשמה עצמית או האשמת האחר.",
+      "required": false
+    },
+    {
+      "id": "alternative_thought",
+      "type": "long_text",
+      "prompt": "מחשבה חלופית",
+      "required": false
+    }
+  ]
+}

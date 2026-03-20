@@ -1,0 +1,443 @@
+{
+  "title": "שאלון לאבחון חרדה חברתית",
+  "description": "שאלון חרדה חברתית המבוסס על הטופס \"שאלון לאבחון חרדה חברתית\". השאלון כולל שני דירוגים נפרדים לכל סיטואציה: פחד או חרדה, והימנעות.",
+  "tags": ["חרדה חברתית", "אבחון", "סקר"],
+  "scoring": {
+    "mode": "standard",
+    "includedQuestionIds": [
+      "fear_1",
+      "fear_2",
+      "fear_3",
+      "fear_4",
+      "fear_5",
+      "fear_6",
+      "fear_7",
+      "fear_8",
+      "fear_9",
+      "fear_10",
+      "fear_11",
+      "fear_12",
+      "fear_13",
+      "fear_14",
+      "fear_15",
+      "fear_16",
+      "fear_17",
+      "fear_18",
+      "fear_19",
+      "fear_20",
+      "fear_21",
+      "fear_22",
+      "fear_23",
+      "fear_24",
+      "avoidance_1",
+      "avoidance_2",
+      "avoidance_3",
+      "avoidance_4",
+      "avoidance_5",
+      "avoidance_6",
+      "avoidance_7",
+      "avoidance_8",
+      "avoidance_9",
+      "avoidance_10",
+      "avoidance_11",
+      "avoidance_12",
+      "avoidance_13",
+      "avoidance_14",
+      "avoidance_15",
+      "avoidance_16",
+      "avoidance_17",
+      "avoidance_18",
+      "avoidance_19",
+      "avoidance_20",
+      "avoidance_21",
+      "avoidance_22",
+      "avoidance_23",
+      "avoidance_24"
+    ]
+  },
+  "questions": [
+    {
+      "id": "fear_1",
+      "type": "cards",
+      "prompt": "פחד או חרדה: להשתמש בטלפון בנוכחות אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_2",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להשתתף בפעילות בקבוצה קטנה",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_3",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לאכול בנוכחות אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_4",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לשתות בנוכחות אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_5",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לדבר עם בעל סמכות",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_6",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לפעול להופיע או לדבר בפני קהל",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_7",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: ללכת למסיבה",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_8",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לעבוד כשצופים בך",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_9",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לכתוב כשצופים בך",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_10",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לדבר בטלפון עם מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_11",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לדבר פנים מול פנים עם מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_12",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לפגוש אנשים זרים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_13",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לעשות את צרכיך בבית שימוש ציבורי",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_14",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להיכנס לחדר שבו יושבים כבר אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_15",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להיות במרכז תשומת הלב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_16",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לדבר בפגישה ללא הכנה מוקדמת",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_17",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להיבחן במבחן שבוחן את כישוריך,מיומנותך ואו ידיעותיך",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_18",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לבטא אי הסכמה כלפי מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_19",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להסתכל ישר בעיניים של מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_20",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לנאום בפני קהל - נאום שהוכן מראש",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_21",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לנסות ליזום מפגש למטרה רומנטית או מינית",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_22",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להחזיר מוצרים או סחורה לחנות כדי לקבל החזר כספי",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_23",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: לערוך מסיבה",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "fear_24",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "פחד או חרדה: להתנגד לאיש מכירות לחצן",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_1",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להשתמש בטלפון בנוכחות אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_2",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להשתתף בפעילות בקבוצה קטנה",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_3",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לאכול בנוכחות אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_4",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לשתות בנוכחות אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_5",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לדבר עם בעל סמכות",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_6",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לפעול להופיע או לדבר בפני קהל",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_7",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: ללכת למסיבה",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_8",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לעבוד כשצופים בך",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_9",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לכתוב כשצופים בך",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_10",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לדבר בטלפון עם מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_11",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לדבר פנים מול פנים עם מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_12",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לפגוש אנשים זרים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_13",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לעשות את צרכיך בבית שימוש ציבורי",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_14",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להיכנס לחדר שבו יושבים כבר אנשים",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_15",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להיות במרכז תשומת הלב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_16",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לדבר בפגישה ללא הכנה מוקדמת",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_17",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להיבחן במבחן שבוחן את כישוריך,מיומנותך ואו ידיעותיך",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_18",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לבטא אי הסכמה כלפי מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_19",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להסתכל ישר בעיניים של מישהו שאינך מכיר היטב",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_20",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לנאום בפני קהל - נאום שהוכן מראש",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_21",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לנסות ליזום מפגש למטרה רומנטית או מינית",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_22",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להחזיר מוצרים או סחורה לחנות כדי לקבל החזר כספי",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_23",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: לערוך מסיבה",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    },
+    {
+      "id": "avoidance_24",
+      "type": "cards",
+      "displayMode": "dot_scale",
+      "prompt": "הימנעות: להתנגד לאיש מכירות לחצן",
+      "required": true,
+      "options": ["אף פעם לא", "לפעמים", "לעתים קרובות", "בדרך כלל"]
+    }
+  ]
+}

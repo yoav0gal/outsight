@@ -9,6 +9,7 @@ import { useState } from "react";
 import {
   Archive,
   ArchiveRestore,
+  Activity,
   ArrowLeft,
   BellRing,
   CalendarDays,
@@ -572,6 +573,14 @@ export default function PatientDetailsPage() {
                       date: new Date(summary.lastEntryAt).toLocaleString(),
                     })
                   : t("questionnaires.noResponsesYet");
+                const lastScoreLabel = summary?.latestScore
+                  ? summary.latestScore.max === null
+                    ? t("questionnaires.score", { value: summary.latestScore.value })
+                    : t("questionnaires.scoreWithMax", {
+                        value: summary.latestScore.value,
+                        max: summary.latestScore.max,
+                      })
+                  : t("questionnaires.noScoreYet");
                 return (
                   <Card
                     key={assignment._id}
@@ -594,7 +603,32 @@ export default function PatientDetailsPage() {
                           ) : null}
                         </div>
                         <p className="line-clamp-2 text-sm text-zinc-500">{tpl?.description}</p>
-                        <p className="pt-1 text-sm font-medium text-zinc-500">{metaLabel}</p>
+                        <div className="pt-2">
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
+                                <CalendarDays className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">
+                                  {t("questionnaires.lastAddedIndicator")}
+                                </p>
+                                <p className="truncate text-sm font-semibold text-zinc-700">{metaLabel}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                                <Activity className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">
+                                  {t("questionnaires.lastScoreIndicator")}
+                                </p>
+                                <p className="truncate text-sm font-semibold text-zinc-700">{lastScoreLabel}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       <div className="mt-auto flex w-full items-center gap-2">
                         <Badge

@@ -20,6 +20,7 @@ export async function POST(request: Request) {
         title: body.title,
         description: body.description || undefined,
         tags: body.tags,
+        scoring: body.scoring,
         questions: body.questions,
       },
     ]);
