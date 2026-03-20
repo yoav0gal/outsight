@@ -91,6 +91,15 @@ export default defineSchema({
     .index("by_assignment", ["assignmentId"])
     .index("by_status", ["status"]),
 
+  questionnaireHistoryViews: defineTable({
+    practitionerId: v.optional(v.id("users")),
+    patientId: v.id("users"),
+    templateId: v.id("questionnaireTemplates"),
+    lastViewedAt: v.number(),
+  })
+    .index("by_practitioner_patient", ["practitionerId", "patientId"])
+    .index("by_practitioner_patient_template", ["practitionerId", "patientId", "templateId"]),
+
   sessionReviews: defineTable({
     patientId: v.id("users"),
     practitionerId: v.id("users"),

@@ -4,11 +4,10 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, CalendarDays, ClipboardPenLine, FileText, History } from "lucide-react";
+import { ArrowLeft, BellRing, CalendarDays, ClipboardPenLine, FileText, History } from "lucide-react";
 
-import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,13 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-type TemplateDoc = Doc<"questionnaireTemplates">;
-type AnswerDoc = NonNullable<Doc<"questionnaireInstances">["answers"]>[number];
 type SessionReviewDoc = Doc<"sessionReviews">;
-
-interface HistoryInstance extends Doc<"questionnaireInstances"> {
-  template: TemplateDoc | null;
-}
 
 interface SessionReviewFormState {
   sessionDate: string;
@@ -83,6 +76,7 @@ function buildSessionForm(review?: SessionReviewDoc | null): SessionReviewFormSt
 export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("PractitionerPatient");
   const tQ = useTranslations("Questionnaire");
   const patientId = params.id as Id<"users">;
@@ -91,15 +85,13 @@ export default function PatientDetailsPage() {
   const assignments = useQuery(api.questionnaires.listPatientAssignments, { patientId });
   const templates = useQuery(api.questionnaires.listTemplates);
   const clinicTemplates = useQuery(api.questionnaires.listClinicTemplates);
-  const history = useQuery(api.questionnaires.listPatientHistory, { patientId });
+  const history = useQuery(api.questionnaires.listPractitionerPatientHistorySummaries, { patientId });
   const sessionHistory = useQuery(api.sessionReviews.listPatientSessionReviews, { patientId });
   const assignMutation = useMutation(api.questionnaires.assign);
   const createSessionReview = useMutation(api.sessionReviews.createSessionReview);
   const updateSessionReview = useMutation(api.sessionReviews.updateSessionReview);
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<HistoryInstance | null>(null);
-  const [selectedViewTemplate, setSelectedViewTemplate] = useState<TemplateDoc | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<Id<"questionnaireTemplates"> | "">("");
   const [selectedFrequency, setSelectedFrequency] = useState<"once" | "daily" | "weekly">("weekly");
   const [isAssigning, setIsAssigning] = useState(false);
@@ -225,6 +217,10 @@ export default function PatientDetailsPage() {
   const latestSessionLabel = sessionHistory?.latestSessionDate
     ? new Date(sessionHistory.latestSessionDate).toLocaleDateString()
     : t("history.noLastSession");
+  const defaultTab = searchParams.get("tab") === "questionnaires" ? "questionnaires" : "history";
+  const historyByTemplateId = new Map(
+    (history ?? []).map((summary) => [summary.templateId, summary] as const)
+  );
 
   return (
     <main className="flex-1 max-w-5xl mx-auto w-full p-6 sm:p-10">
@@ -251,7 +247,7 @@ export default function PatientDetailsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="history" dir="auto" className="w-full">
+      <Tabs defaultValue={defaultTab} dir="auto" className="w-full">
         <TabsList className="mb-8 inline-flex w-full overflow-x-auto rounded-xl bg-zinc-100 p-1.5 sm:w-auto">
           <TabsTrigger
             value="history"
@@ -479,16 +475,35 @@ export default function PatientDetailsPage() {
             ) : (
               assignments.map((assignment) => {
                 const tpl = templates?.find((template) => template._id === assignment.templateId);
+                const summary = historyByTemplateId.get(assignment.templateId);
+                const metaLabel = summary?.lastEntryAt
+                  ? t("questionnaires.lastAdded", {
+                      date: new Date(summary.lastEntryAt).toLocaleString(),
+                    })
+                  : t("questionnaires.noResponsesYet");
                 return (
                   <Card
                     key={assignment._id}
                     className="cursor-pointer rounded-2xl border-zinc-200/60 shadow-sm transition-shadow hover:shadow-md"
-                    onClick={() => setSelectedViewTemplate(tpl ?? null)}
+                    onClick={() =>
+                      router.push(
+                        `/practitioner/patient/${patientId}/questionnaire-history/${assignment.templateId}`
+                      )
+                    }
                   >
                     <CardContent className="flex flex-col items-start gap-4 p-6">
                       <div className="w-full space-y-1 text-start">
-                        <h4 className="line-clamp-1 font-bold text-zinc-900">{tpl?.title || "Loading..."}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="line-clamp-1 font-bold text-zinc-900">{tpl?.title || "Loading..."}</h4>
+                          {summary?.unreadEntries ? (
+                            <Badge className="rounded-full border-none bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800 hover:bg-amber-100">
+                              <BellRing className="me-1 h-3 w-3" />
+                              {t("questionnaires.newEntries", { count: summary.unreadEntries })}
+                            </Badge>
+                          ) : null}
+                        </div>
                         <p className="line-clamp-2 text-sm text-zinc-500">{tpl?.description}</p>
+                        <p className="pt-1 text-sm font-medium text-zinc-500">{metaLabel}</p>
                       </div>
                       <div className="mt-auto flex w-full items-center gap-2">
                         <Badge
@@ -503,6 +518,11 @@ export default function PatientDetailsPage() {
                         >
                           {t(`questionnaires.status.${assignment.status}`)}
                         </Badge>
+                        {summary ? (
+                          <Badge variant="secondary" className="rounded-lg bg-zinc-100 text-zinc-700">
+                            {t("questionnaires.entriesCount", { count: summary.totalEntries })}
+                          </Badge>
+                        ) : null}
                       </div>
                     </CardContent>
                   </Card>
@@ -510,111 +530,6 @@ export default function PatientDetailsPage() {
               })
             )}
           </div>
-
-          <div className="pt-8">
-            <h3 className="mb-6 text-xl font-bold text-zinc-900">{t("questionnaires.history")}</h3>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {!history ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="rounded-2xl border-zinc-100 shadow-sm">
-                    <CardContent className="space-y-4 p-6">
-                      <div className="h-5 w-2/3 animate-pulse rounded-md bg-zinc-100"></div>
-                      <div className="h-4 w-1/3 animate-pulse rounded-md bg-zinc-100"></div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : history.length === 0 ? (
-                <div className="col-span-full rounded-3xl border border-dashed border-zinc-200 bg-white py-16 text-center">
-                  <History className="mx-auto mb-3 h-10 w-10 text-zinc-300" />
-                  <p className="font-medium text-zinc-500">{t("questionnaires.noHistory")}</p>
-                </div>
-              ) : (
-                history.map((instance) => {
-                  const tpl = instance.template;
-                  const date = new Date(instance.submittedAt || instance.createdAt).toLocaleDateString();
-                  return (
-                    <Card
-                      key={instance._id}
-                      className="cursor-pointer rounded-2xl border-zinc-200/60 shadow-sm transition-shadow hover:shadow-md"
-                      onClick={() => setSelectedSubmission(instance)}
-                    >
-                      <CardContent className="flex flex-col items-start gap-4 p-6">
-                        <div className="w-full space-y-1 text-start">
-                          <h4 className="line-clamp-1 font-bold text-zinc-900">{tpl?.title || "Unknown"}</h4>
-                          <p className="text-sm text-zinc-500">{date}</p>
-                        </div>
-                        <div className="mt-auto flex w-full items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className={`rounded-lg capitalize ${
-                              instance.status === "completed"
-                                ? "border-green-200 text-green-700"
-                                : "border-red-200 text-red-700"
-                            }`}
-                          >
-                            {t(`questionnaires.status.${instance.status}`)}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          <Dialog open={!!selectedViewTemplate} onOpenChange={(open) => !open && setSelectedViewTemplate(null)}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[700px]">
-              {selectedViewTemplate && (
-                <div className="bg-zinc-50/30 p-8 sm:p-12">
-                  <QuestionnairePreview
-                    questions={selectedViewTemplate.questions}
-                    title={selectedViewTemplate.title}
-                    description={selectedViewTemplate.description}
-                  />
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[700px]">
-              {selectedSubmission && (
-                <div className="bg-zinc-50/30 p-8 sm:p-12">
-                  <header className="mb-12 text-center sm:text-start">
-                    <Badge
-                      className={`mb-4 border-none ${
-                        selectedSubmission.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {t(`questionnaires.status.${selectedSubmission.status}`)}
-                    </Badge>
-                    <h2 className="mb-2 text-4xl font-black tracking-tight text-zinc-950">
-                      {selectedSubmission.template?.title}
-                    </h2>
-                    <p className="font-medium text-zinc-500">
-                      {tQ("submittedOn", {
-                        date: new Date(selectedSubmission.submittedAt || selectedSubmission.createdAt).toLocaleString(),
-                      })}
-                    </p>
-                  </header>
-
-                  <QuestionnairePreview
-                    questions={selectedSubmission.template?.questions || []}
-                    answers={Object.fromEntries(
-                      (selectedSubmission.answers ?? []).map((answer: AnswerDoc) => [
-                        answer.questionId,
-                        answer.value,
-                      ])
-                    )}
-                  />
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
         </TabsContent>
       </Tabs>
 

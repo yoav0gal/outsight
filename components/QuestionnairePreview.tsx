@@ -27,7 +27,7 @@ interface QuestionnairePreviewProps {
   questions: Question[];
   title?: string;
   description?: string;
-  answers?: Record<string, any>;
+  answers?: Record<string, string | number | boolean | string[]>;
 }
 
 export function QuestionnairePreview({ questions, title, description, answers }: QuestionnairePreviewProps) {

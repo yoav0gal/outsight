@@ -198,6 +198,11 @@ export function AdminTemplatesDashboard({
               <p className="mt-3 text-base leading-7 text-zinc-600">{t("dashboard.description")}</p>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/admin/questionnaire-visual-lab">
+                <Button variant="outline" className="rounded-xl border-zinc-200 bg-white">
+                  {t("dashboard.playground")}
+                </Button>
+              </Link>
               <Link href="/admin/templates/new">
                 <Button className="rounded-xl bg-indigo-600 text-white hover:bg-indigo-500">
                   <Plus className="size-4" />

@@ -139,6 +139,20 @@ function normalizeTag(tag: string) {
   return tag.trim();
 }
 
+function getInstanceHistoryTimestamp(instance: {
+  submittedAt?: number;
+  expiresAt?: number;
+  createdAt: number;
+}) {
+  return instance.submittedAt ?? instance.expiresAt ?? instance.createdAt;
+}
+
+function isHistoryInstance<T extends { status: "pending" | "completed" | "expired" }>(
+  instance: T
+): instance is T & { status: "completed" | "expired" } {
+  return instance.status !== "pending";
+}
+
 function normalizeTags(tags: string[] | undefined) {
   if (!tags) return [];
 
@@ -778,10 +792,10 @@ export const listPatientHistory = query({
       .collect();
       
     // Only return completed or expired instances
-    const history = instances.filter(i => i.status !== "pending");
+    const history = instances.filter(isHistoryInstance);
     
-    // Sort by createdAt descending
-    history.sort((a, b) => b.createdAt - a.createdAt);
+    // Sort by most recent history event descending
+    history.sort((a, b) => getInstanceHistoryTimestamp(b) - getInstanceHistoryTimestamp(a));
 
     // Fetch template details for each instance to render
     const results = await Promise.all(
@@ -792,6 +806,133 @@ export const listPatientHistory = query({
     );
     
     return results;
+  },
+});
+
+export const listPractitionerPatientHistorySummaries = query({
+  args: { patientId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const [instances, viewRows] = await Promise.all([
+      ctx.db
+        .query("questionnaireInstances")
+        .withIndex("by_patient", (q) => q.eq("patientId", args.patientId))
+        .collect(),
+      ctx.db
+        .query("questionnaireHistoryViews")
+        .withIndex("by_practitioner_patient", (q) =>
+          q.eq("practitionerId", user._id).eq("patientId", args.patientId)
+        )
+        .collect(),
+    ]);
+
+    const groupedHistory = instances.filter(isHistoryInstance);
+    const viewsByTemplateId = new Map(
+      viewRows.map((row) => [row.templateId, row.lastViewedAt] as const)
+    );
+    const summaries = new Map<
+      Id<"questionnaireTemplates">,
+      {
+        templateId: Id<"questionnaireTemplates">;
+        totalEntries: number;
+        unreadEntries: number;
+        lastEntryAt: number;
+        latestInstanceId: Id<"questionnaireInstances">;
+        latestStatus: "completed" | "expired";
+      }
+    >();
+
+    for (const instance of groupedHistory) {
+      const historyTimestamp = getInstanceHistoryTimestamp(instance);
+      const lastViewedAt = viewsByTemplateId.get(instance.templateId) ?? 0;
+      const existing = summaries.get(instance.templateId);
+
+      if (!existing) {
+        summaries.set(instance.templateId, {
+          templateId: instance.templateId,
+          totalEntries: 1,
+          unreadEntries: historyTimestamp > lastViewedAt ? 1 : 0,
+          lastEntryAt: historyTimestamp,
+          latestInstanceId: instance._id,
+          latestStatus: instance.status,
+        });
+        continue;
+      }
+
+      existing.totalEntries += 1;
+      if (historyTimestamp > lastViewedAt) {
+        existing.unreadEntries += 1;
+      }
+
+      if (historyTimestamp > existing.lastEntryAt) {
+        existing.lastEntryAt = historyTimestamp;
+        existing.latestInstanceId = instance._id;
+        existing.latestStatus = instance.status;
+      }
+    }
+
+    const results = await Promise.all(
+      Array.from(summaries.values()).map(async (summary) => {
+        const template = await ctx.db.get(summary.templateId);
+        return {
+          ...summary,
+          lastViewedAt: viewsByTemplateId.get(summary.templateId),
+          template,
+        };
+      })
+    );
+
+    return results.sort((a, b) => b.lastEntryAt - a.lastEntryAt);
+  },
+});
+
+export const listPractitionerPatientTemplateHistory = query({
+  args: {
+    patientId: v.id("users"),
+    templateId: v.id("questionnaireTemplates"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const [template, instances, historyView] = await Promise.all([
+      ctx.db.get(args.templateId),
+      ctx.db
+        .query("questionnaireInstances")
+        .withIndex("by_patient", (q) => q.eq("patientId", args.patientId))
+        .collect(),
+      ctx.db
+        .query("questionnaireHistoryViews")
+        .withIndex("by_practitioner_patient_template", (q) =>
+          q
+            .eq("practitionerId", user._id)
+            .eq("patientId", args.patientId)
+            .eq("templateId", args.templateId)
+        )
+        .unique(),
+    ]);
+
+    const history = instances
+      .filter(
+        (instance) =>
+          instance.templateId === args.templateId && isHistoryInstance(instance)
+      )
+      .sort((a, b) => getInstanceHistoryTimestamp(b) - getInstanceHistoryTimestamp(a));
+
+    const lastEntryAt = history[0] ? getInstanceHistoryTimestamp(history[0]) : null;
+
+    return {
+      template,
+      history,
+      lastEntryAt,
+      lastViewedAt: historyView?.lastViewedAt,
+      unreadEntries: history.filter(
+        (instance) =>
+          getInstanceHistoryTimestamp(instance) > (historyView?.lastViewedAt ?? 0)
+      ).length,
+    };
   },
 });
 
@@ -810,6 +951,45 @@ export const getInstance = query({
 
     const template = await ctx.db.get(instance.templateId);
     return { ...instance, template };
+  },
+});
+
+export const markPractitionerPatientTemplateHistoryViewed = mutation({
+  args: {
+    patientId: v.id("users"),
+    templateId: v.id("questionnaireTemplates"),
+    viewedThroughAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const existing = await ctx.db
+      .query("questionnaireHistoryViews")
+      .withIndex("by_practitioner_patient_template", (q) =>
+        q
+          .eq("practitionerId", user._id)
+          .eq("patientId", args.patientId)
+          .eq("templateId", args.templateId)
+      )
+      .unique();
+
+    if (existing) {
+      if (args.viewedThroughAt > existing.lastViewedAt) {
+        await ctx.db.patch(existing._id, {
+          lastViewedAt: args.viewedThroughAt,
+        });
+      }
+
+      return existing._id;
+    }
+
+    return await ctx.db.insert("questionnaireHistoryViews", {
+      practitionerId: user._id,
+      patientId: args.patientId,
+      templateId: args.templateId,
+      lastViewedAt: args.viewedThroughAt,
+    });
   },
 });
 

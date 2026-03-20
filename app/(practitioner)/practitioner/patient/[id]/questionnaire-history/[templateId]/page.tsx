@@ -1,0 +1,212 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Doc, Id } from "@/convex/_generated/dataModel";
+import { useTranslations } from "next-intl";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, BellRing, Calendar, ChevronRight, FileText, History } from "lucide-react";
+
+import { QuestionnairePreview } from "@/components/QuestionnairePreview";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+
+type HistoryInstance = Doc<"questionnaireInstances">;
+
+export default function PractitionerPatientQuestionnaireHistoryPage() {
+  const params = useParams();
+  const router = useRouter();
+  const t = useTranslations("PractitionerPatient");
+  const tQ = useTranslations("Questionnaire");
+  const patientId = params.id as Id<"users">;
+  const templateId = params.templateId as Id<"questionnaireTemplates">;
+  const [selectedSubmission, setSelectedSubmission] = useState<HistoryInstance | null>(null);
+  const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
+
+  const patient = useQuery(api.users.getPatient, { id: patientId });
+  const templateHistory = useQuery(api.questionnaires.listPractitionerPatientTemplateHistory, {
+    patientId,
+    templateId,
+  });
+  const markViewed = useMutation(api.questionnaires.markPractitionerPatientTemplateHistoryViewed);
+
+  useEffect(() => {
+    if (!templateHistory?.lastEntryAt || !templateHistory.unreadEntries) return;
+
+    void markViewed({
+      patientId,
+      templateId,
+      viewedThroughAt: templateHistory.lastEntryAt,
+    });
+  }, [markViewed, patientId, templateHistory?.lastEntryAt, templateHistory?.unreadEntries, templateId]);
+
+  if (patient === undefined || templateHistory === undefined) {
+    return (
+      <main className="flex flex-1 items-center justify-center">
+        <div className="h-10 w-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-10">
+      <Button
+        variant="ghost"
+        onClick={() => router.push(`/practitioner/patient/${patientId}?tab=questionnaires`)}
+        className="-ms-4 flex w-fit items-center gap-2 text-zinc-500 transition-colors hover:text-indigo-600"
+      >
+        <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+        {t("backToDashboard")}
+      </Button>
+
+      <header className="rounded-[2rem] border border-zinc-200/70 bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+            <History className="h-6 w-6" />
+          </div>
+          {templateHistory.unreadEntries ? (
+            <Badge className="rounded-full border-none bg-amber-100 px-3 py-1 text-[11px] font-black text-amber-800 hover:bg-amber-100">
+              {t("questionnaires.newEntries", { count: templateHistory.unreadEntries })}
+            </Badge>
+          ) : null}
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-950">
+          {templateHistory.template?.title ?? t("questionnaires.history")}
+        </h1>
+        <p className="mt-2 text-sm font-medium text-zinc-500">
+          {patient?.name || t("unnamed")} · {patient?.email}
+        </p>
+        {templateHistory.lastEntryAt ? (
+          <p className="mt-4 text-sm font-semibold text-zinc-600">
+            {t("questionnaires.lastAdded", {
+              date: new Date(templateHistory.lastEntryAt).toLocaleString(),
+            })}
+          </p>
+        ) : null}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button className="rounded-xl font-bold" onClick={() => setIsPrescriptionOpen(true)}>
+            <FileText className="me-2 h-4 w-4" />
+            {t("questionnaires.viewPrescription")}
+          </Button>
+          <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
+            {t("questionnaires.entriesCount", { count: templateHistory.history.length })}
+          </Badge>
+        </div>
+      </header>
+
+      {!templateHistory.history.length ? (
+        <div className="rounded-[2rem] border border-dashed border-zinc-200 bg-white py-20 text-center">
+          <FileText className="mx-auto mb-4 h-12 w-12 text-zinc-300" />
+          <p className="font-medium text-zinc-500">{t("questionnaires.noHistory")}</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {templateHistory.history.map((instance, index) => {
+            const historyAt = instance.submittedAt ?? instance.expiresAt ?? instance.createdAt;
+            return (
+              <Card
+                key={instance._id}
+                className="cursor-pointer overflow-hidden rounded-[2rem] border-zinc-200/70 shadow-sm transition-shadow hover:shadow-md"
+                onClick={() => setSelectedSubmission(instance)}
+              >
+                <CardContent className="flex items-center justify-between gap-4 p-6">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="rounded-full bg-zinc-100 text-zinc-700">
+                        {t("questionnaires.historyEntryTitle", {
+                          number: templateHistory.history.length - index,
+                        })}
+                      </Badge>
+                      {index === 0 && templateHistory.unreadEntries ? (
+                        <Badge className="rounded-full border-none bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800 hover:bg-amber-100">
+                          <BellRing className="me-1 h-3 w-3" />
+                          {t("questionnaires.newEntries", { count: templateHistory.unreadEntries })}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <CardTitle className="text-lg text-zinc-950">
+                      {t("questionnaires.answersCount", { count: instance.answers?.length ?? 0 })}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-500">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(historyAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      className={`w-fit rounded-full border-none px-3 py-1 ${
+                        instance.status === "completed"
+                          ? "bg-green-100 text-green-700 hover:bg-green-100"
+                          : "bg-red-100 text-red-700 hover:bg-red-100"
+                      }`}
+                    >
+                      {t(`questionnaires.status.${instance.status}`)}
+                    </Badge>
+                    <ChevronRight className="h-5 w-5 text-zinc-300 rtl:rotate-180" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={isPrescriptionOpen} onOpenChange={setIsPrescriptionOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[700px]">
+          {templateHistory.template ? (
+            <div className="bg-zinc-50/30 p-8 sm:p-12">
+              <QuestionnairePreview
+                questions={templateHistory.template.questions}
+                title={templateHistory.template.title}
+                description={templateHistory.template.description}
+              />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[700px]">
+          {selectedSubmission ? (
+            <div className="bg-zinc-50/30 p-8 sm:p-12">
+              <header className="mb-12 text-center sm:text-start">
+                <Badge
+                  className={`mb-4 border-none ${
+                    selectedSubmission.status === "completed"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {t(`questionnaires.status.${selectedSubmission.status}`)}
+                </Badge>
+                <h2 className="mb-2 text-4xl font-black tracking-tight text-zinc-950">
+                  {templateHistory.template?.title}
+                </h2>
+                <p className="font-medium text-zinc-500">
+                  {tQ("submittedOn", {
+                    date: new Date(
+                      selectedSubmission.submittedAt ?? selectedSubmission.createdAt
+                    ).toLocaleString(),
+                  })}
+                </p>
+              </header>
+
+              <QuestionnairePreview
+                questions={templateHistory.template?.questions ?? []}
+                answers={Object.fromEntries(
+                  (selectedSubmission.answers ?? []).map((answer) => [
+                    answer.questionId,
+                    answer.value,
+                  ])
+                )}
+              />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </main>
+  );
+}

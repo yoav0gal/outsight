@@ -18,6 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 
+type AnswerValue = string | number | boolean | string[];
+
 export default function QuestionnaireFormPage() {
   const params = useParams();
   const router = useRouter();
@@ -27,14 +29,14 @@ export default function QuestionnaireFormPage() {
   const instance = useQuery(api.questionnaires.getInstance, { instanceId });
   const submitMutation = useMutation(api.questionnaires.submitInstance);
 
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize answers if we have them
   useEffect(() => {
     if (instance?.answers) {
-      const initial: Record<string, any> = {};
+      const initial: Record<string, AnswerValue> = {};
       instance.answers.forEach(a => {
         initial[a.questionId] = a.value;
       });
@@ -42,7 +44,7 @@ export default function QuestionnaireFormPage() {
     }
   }, [instance?.answers]);
 
-  const handleAnswerChange = (questionId: string, value: any) => {
+  const handleAnswerChange = (questionId: string, value: AnswerValue) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
     setError(null);
   };
@@ -71,7 +73,7 @@ export default function QuestionnaireFormPage() {
         answers: formattedAnswers,
       });
 
-      router.push("/patient/history");
+      router.replace("/patient/home");
     } catch (err) {
       console.error(err);
       setError("Failed to submit answers.");
@@ -175,6 +177,14 @@ export default function QuestionnaireFormPage() {
 
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 fill-mode-both">
           {instance.template.questions.map((question, index) => (
+            (() => {
+              const answer = answers[question.id];
+              const textAnswer = typeof answer === "string" ? answer : "";
+              const booleanAnswer = answer === true;
+              const numericAnswer = typeof answer === "number" ? answer : question.scaleConfig?.min ?? 0;
+              const choiceAnswer = typeof answer === "string" ? answer : "";
+
+              return (
             <Card key={question.id} className="border-zinc-200 shadow-sm rounded-3xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 transition-shadow">
               <CardHeader className="bg-white p-6 sm:p-8">
                 <CardTitle className="text-xl leading-relaxed font-bold text-zinc-900 flex items-start gap-3">
@@ -186,10 +196,10 @@ export default function QuestionnaireFormPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-6 pb-8 sm:px-8 bg-zinc-50/50">
-                
+
                 {question.type === "short_text" && (
                   <Input 
-                    value={answers[question.id] || ""}
+                    value={textAnswer}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                     placeholder={t("typeAnswer")}
                     className="h-14 rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm"
@@ -198,7 +208,7 @@ export default function QuestionnaireFormPage() {
 
                 {question.type === "long_text" && (
                   <Textarea 
-                    value={answers[question.id] || ""}
+                    value={textAnswer}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                     placeholder={t("typeAnswer")}
                     className="min-h-[120px] rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm resize-y p-4"
@@ -208,18 +218,18 @@ export default function QuestionnaireFormPage() {
                 {question.type === "boolean" && (
                   <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm w-fit">
                     <Switch 
-                      checked={answers[question.id] === true}
+                      checked={booleanAnswer}
                       onCheckedChange={(checked) => handleAnswerChange(question.id, checked)}
                     />
-                    <Label className="text-base font-medium cursor-pointer" onClick={() => handleAnswerChange(question.id, !answers[question.id])}>
-                      {answers[question.id] ? "Yes" : "No"}
+                    <Label className="text-base font-medium cursor-pointer" onClick={() => handleAnswerChange(question.id, !booleanAnswer)}>
+                      {booleanAnswer ? "Yes" : "No"}
                     </Label>
                   </div>
                 )}
 
                 {question.type === "multiple_choice" && question.options && (
                   <RadioGroup 
-                    value={answers[question.id] || ""}
+                    value={choiceAnswer}
                     onValueChange={(val) => handleAnswerChange(question.id, val)}
                     className="grid gap-3"
                   >
@@ -227,7 +237,7 @@ export default function QuestionnaireFormPage() {
                       <Label 
                         key={i} 
                         className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
-                          answers[question.id] === option 
+                          choiceAnswer === option 
                             ? "border-indigo-600 bg-indigo-50/50 shadow-sm" 
                             : "border-zinc-200 bg-white hover:border-indigo-300"
                         }`}
@@ -242,7 +252,7 @@ export default function QuestionnaireFormPage() {
                 {question.type === "numeric_scale" && question.scaleConfig && (
                   <div className="space-y-8 py-4 px-2">
                     <Slider 
-                      value={[answers[question.id] || question.scaleConfig.min]}
+                      value={[numericAnswer]}
                       min={question.scaleConfig.min}
                       max={question.scaleConfig.max}
                       step={1}
@@ -251,7 +261,7 @@ export default function QuestionnaireFormPage() {
                     />
                     <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
                       <span>{question.scaleConfig.minLabel || question.scaleConfig.min}</span>
-                      <span className="text-indigo-600 font-bold text-lg">{answers[question.id] || question.scaleConfig.min}</span>
+                      <span className="text-indigo-600 font-bold text-lg">{numericAnswer}</span>
                       <span>{question.scaleConfig.maxLabel || question.scaleConfig.max}</span>
                     </div>
                   </div>
@@ -259,6 +269,8 @@ export default function QuestionnaireFormPage() {
 
               </CardContent>
             </Card>
+              );
+            })()
           ))}
         </div>
 

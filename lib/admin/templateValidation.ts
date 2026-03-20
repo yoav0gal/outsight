@@ -46,7 +46,6 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
     throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid required flag`);
   }
   const questionType = type as QuestionType;
-
   if (questionType === "multiple_choice") {
     if (!Array.isArray(candidate.options) || candidate.options.length < 2) {
       throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: multiple choice requires at least two options`);
