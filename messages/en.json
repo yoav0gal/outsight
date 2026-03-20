@@ -262,10 +262,14 @@
     "options": "Options",
     "addOption": "Add Option",
     "removeOption": "Remove Option",
+    "optionPlaceholder": "Option {index}",
     "min": "Minimum Value",
     "max": "Maximum Value",
     "minLabel": "Minimum Label (Optional)",
     "maxLabel": "Maximum Label (Optional)",
+    "minLabelPlaceholder": "e.g. Very Poor",
+    "maxLabelPlaceholder": "e.g. Excellent",
+    "questionsEmpty": "Start with a title, then add the questions your template should include.",
     "backToMyPatients": "Back to My Patients",
     "backToQuestionnaires": "Back to Questionnaires",
     "save": "Save Template",
@@ -275,5 +279,61 @@
     "updatedSuccess": "Template updated successfully!",
     "error": "Failed to create template",
     "updatedError": "Failed to update template"
+  },
+  "Admin": {
+    "shared": {
+      "genericError": "Something went wrong. Please try again."
+    },
+    "login": {
+      "eyebrow": "Shared Admin Access",
+      "title": "System Template Dashboard",
+      "description": "Use the shared password to manage system questionnaire templates and tagging.",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter the shared admin password",
+      "submit": "Enter dashboard",
+      "submitting": "Checking password...",
+      "invalidPassword": "That password was not accepted."
+    },
+    "dashboard": {
+      "eyebrow": "Admin Library",
+      "title": "Manage system templates",
+      "description": "Upload JSON templates, curate tags, and maintain the shared library practitioners can browse.",
+      "createButton": "Create template",
+      "logout": "Log out",
+      "uploadTitle": "Import templates",
+      "uploadDescription": "Upload one JSON template object or an array of templates. Selected tags are merged into every uploaded template.",
+      "fileLabel": "JSON file",
+      "uploadTags": "Tags to merge into this upload",
+      "customTagPlaceholder": "Add a custom tag",
+      "addTag": "Add tag",
+      "uploadButton": "Upload templates",
+      "uploading": "Uploading...",
+      "uploadSuccess": "{count, plural, one {Imported # template.} other {Imported # templates.}}",
+      "libraryTitle": "System template library",
+      "libraryDescription": "Edit, archive, or delete the templates that appear in the practitioner explorer.",
+      "count": "{count, plural, one {# template} other {# templates}}",
+      "searchPlaceholder": "Search by template title",
+      "emptyTitle": "No templates match these filters",
+      "emptyDescription": "Adjust the search or tag filters, or import a new JSON file.",
+      "archived": "Archived",
+      "noDescription": "No description yet.",
+      "questionsCount": "{count, plural, one {# question} other {# questions}}",
+      "deleteConfirm": "Delete this system template? This cannot be undone."
+    },
+    "editor": {
+      "title": "Edit system template",
+      "description": "Update the shared template content, tags, and question structure directly.",
+      "save": "Save changes",
+      "back": "Back to admin dashboard"
+    },
+    "creator": {
+      "title": "Create system template",
+      "description": "Compose a new shared template directly in the admin dashboard without uploading a file.",
+      "save": "Create template",
+      "back": "Back to admin dashboard"
+    },
+    "errors": {
+      "duplicateTitle": "A system template with this name already exists."
+    }
   }
 }

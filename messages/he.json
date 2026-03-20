@@ -262,10 +262,14 @@
     "options": "אפשרויות",
     "addOption": "הוסף אפשרות",
     "removeOption": "הסר אפשרות",
+    "optionPlaceholder": "אפשרות {index}",
     "min": "ערך מינימלי",
     "max": "ערך מקסימלי",
     "minLabel": "תווית למינימום (אופציונלי)",
     "maxLabel": "תווית למקסימום (אופציונלי)",
+    "minLabelPlaceholder": "למשל: גרוע מאוד",
+    "maxLabelPlaceholder": "למשל: מצוין",
+    "questionsEmpty": "התחל בשם לתבנית ואז הוסף את השאלות שהיא צריכה לכלול.",
     "backToMyPatients": "חזרה למטופלים שלי",
     "backToQuestionnaires": "חזרה לשאלונים",
     "save": "שמור תבנית",
@@ -275,5 +279,61 @@
     "updatedSuccess": "התבנית עודכנה בהצלחה!",
     "error": "יצירת התבנית נכשלה",
     "updatedError": "עדכון התבנית נכשל"
+  },
+  "Admin": {
+    "shared": {
+      "genericError": "משהו השתבש. נסה שוב."
+    },
+    "login": {
+      "eyebrow": "גישה משותפת למנהלים",
+      "title": "לוח ניהול תבניות מערכת",
+      "description": "השתמש בסיסמה המשותפת כדי לנהל תבניות שאלון מערכת ותגיות.",
+      "passwordLabel": "סיסמה",
+      "passwordPlaceholder": "הזן את סיסמת הניהול המשותפת",
+      "submit": "כניסה ללוח",
+      "submitting": "בודק סיסמה...",
+      "invalidPassword": "הסיסמה הזו לא התקבלה."
+    },
+    "dashboard": {
+      "eyebrow": "ספריית ניהול",
+      "title": "ניהול תבניות מערכת",
+      "description": "העלה תבניות JSON, סדר תגיות, ותחזק את הספרייה המשותפת שמטפלים יכולים לעיין בה.",
+      "createButton": "יצירת תבנית",
+      "logout": "התנתק",
+      "uploadTitle": "ייבוא תבניות",
+      "uploadDescription": "העלה אובייקט JSON יחיד של תבנית או מערך של תבניות. התגיות שתבחר ימוזגו לכל תבנית שתעלה.",
+      "fileLabel": "קובץ JSON",
+      "uploadTags": "תגיות למיזוג לייבוא הזה",
+      "customTagPlaceholder": "הוסף תגית מותאמת אישית",
+      "addTag": "הוסף תגית",
+      "uploadButton": "העלה תבניות",
+      "uploading": "מעלה...",
+      "uploadSuccess": "{count, plural, one {יובאה תבנית אחת.} other {יובאו # תבניות.}}",
+      "libraryTitle": "ספריית תבניות מערכת",
+      "libraryDescription": "ערוך, העבר לארכיון או מחק את התבניות שמופיעות בסייר התבניות למטפלים.",
+      "count": "{count, plural, one {תבנית אחת} other {# תבניות}}",
+      "searchPlaceholder": "חפש לפי שם התבנית",
+      "emptyTitle": "אין תבניות שתואמות לסינון הזה",
+      "emptyDescription": "שנה את החיפוש או סינון התגיות, או יבא קובץ JSON חדש.",
+      "archived": "בארכיון",
+      "noDescription": "עדיין אין תיאור.",
+      "questionsCount": "{count, plural, one {שאלה אחת} other {# שאלות}}",
+      "deleteConfirm": "למחוק את תבנית המערכת הזו? לא ניתן לשחזר אחר כך."
+    },
+    "editor": {
+      "title": "עריכת תבנית מערכת",
+      "description": "עדכן ישירות את תוכן התבנית המשותפת, התגיות ומבנה השאלות.",
+      "save": "שמור שינויים",
+      "back": "חזרה ללוח הניהול"
+    },
+    "creator": {
+      "title": "יצירת תבנית מערכת",
+      "description": "בנה תבנית משותפת חדשה ישירות מלוח הניהול בלי להעלות קובץ.",
+      "save": "צור תבנית",
+      "back": "חזרה ללוח הניהול"
+    },
+    "errors": {
+      "duplicateTitle": "כבר קיימת תבנית מערכת עם השם הזה."
+    }
   }
 }

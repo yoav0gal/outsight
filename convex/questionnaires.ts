@@ -75,6 +75,26 @@ async function getClinicTemplateIds(
   return new Set(memberships.map((membership) => membership.templateId));
 }
 
+async function getClinicTemplates(
+  ctx: QueryCtx | MutationCtx,
+  practitionerId: Id<"users">
+) {
+  const templates = await getVisibleTemplates(ctx, practitionerId);
+  const clinicTemplateIds = await getClinicTemplateIds(ctx, practitionerId);
+
+  return templates.filter((template) => {
+    if (!clinicTemplateIds.has(template._id)) {
+      return false;
+    }
+
+    if (!isArchivedTemplate(template)) {
+      return true;
+    }
+
+    return template.source === "system";
+  });
+}
+
 async function saveTemplateMembership(
   ctx: MutationCtx,
   practitionerId: Id<"users">,
@@ -247,10 +267,7 @@ export const listClinicTemplates = query({
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
 
-    const templates = await getActiveVisibleTemplates(ctx, user._id);
-    const clinicTemplateIds = await getClinicTemplateIds(ctx, user._id);
-
-    return templates.filter((template) => clinicTemplateIds.has(template._id));
+    return await getClinicTemplates(ctx, user._id);
   },
 });
 
@@ -644,9 +661,6 @@ export const assign = mutation({
     if (!template) {
       throw new Error("Template not found");
     }
-    if (isArchivedTemplate(template)) {
-      throw new Error("Archived templates cannot be assigned");
-    }
 
     const clinicMembership = await ctx.db
       .query("clinicQuestionnaireTemplates")
@@ -657,6 +671,14 @@ export const assign = mutation({
 
     if (!clinicMembership) {
       throw new Error("Template must be saved in clinic before assignment");
+    }
+
+    const normalizedTemplate = normalizeTemplate(template);
+    const canAssignArchivedSystemTemplate =
+      isArchivedTemplate(normalizedTemplate) && normalizedTemplate.source === "system";
+
+    if (isArchivedTemplate(normalizedTemplate) && !canAssignArchivedSystemTemplate) {
+      throw new Error("Archived templates cannot be assigned");
     }
 
     // Assign the questionnaire
