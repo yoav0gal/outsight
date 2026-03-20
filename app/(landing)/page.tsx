@@ -4,21 +4,17 @@ import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import Link from "next/link";
 import { SyncUser } from "@/components/SyncUser";
 import { Suspense } from "react";
-import { ArrowRight, ArrowLeft, ClipboardCheck, Users, ShieldCheck, Signpost } from "lucide-react";
-import { useTranslations, useLocale } from "next-intl";
+import { ArrowRight, ClipboardCheck, Users, ShieldCheck, Signpost } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { UserMenu } from "@/components/UserMenu";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   const { user } = useAuth();
   const t = useTranslations("LandingPage");
-  const locale = useLocale();
-
-  // Determine direction dynamically to support any new RTL languages added in the future
-  const isRtl = (new Intl.Locale(locale) as any).getTextInfo?.().direction === 'rtl';
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 font-sans text-zinc-900">

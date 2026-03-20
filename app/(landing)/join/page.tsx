@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { useQuery } from "convex/react";
@@ -11,9 +11,12 @@ function JoinContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const { user, loading: authLoading } = useAuth();
-  
+
   const isValidToken = useQuery(api.invites.validate, token ? { token } : "skip");
-  const [error, setError] = useState<string | null>(null);
+  const error =
+    !authLoading && isValidToken !== undefined && (!token || isValidToken === false)
+      ? "This invitation link is invalid or has already been used."
+      : null;
 
   useEffect(() => {
     if (authLoading || isValidToken === undefined) {
@@ -21,7 +24,6 @@ function JoinContent() {
     }
 
     if (!token || isValidToken === false) {
-      setError("This invitation link is invalid or has already been used.");
       return;
     }
 

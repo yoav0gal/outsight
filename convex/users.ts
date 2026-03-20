@@ -1,4 +1,5 @@
 import { mutation, query, QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
 export const store = mutation({
@@ -29,7 +30,7 @@ export const store = mutation({
 
     // New user logic
     let role: "practitioner" | "patient" = "practitioner";
-    let practitionerId: any = undefined;
+    let practitionerId: Id<"users"> | undefined;
 
     if (args.invitationToken) {
       const invitation = await ctx.db

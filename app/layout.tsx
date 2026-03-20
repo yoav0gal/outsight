@@ -7,6 +7,12 @@ import { getMessages, getLocale } from "next-intl/server";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { cn } from "@/lib/utils";
 
+interface LocaleWithTextInfo extends Intl.Locale {
+  getTextInfo?: () => {
+    direction?: "ltr" | "rtl";
+  };
+}
+
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
@@ -33,8 +39,8 @@ export default async function RootLayout({
 }>) {
   const messages = await getMessages();
   const locale = await getLocale();
-  // Dynamically determine direction using native JS Intl API (fallback to ltr)
-  const direction = (new Intl.Locale(locale) as any).getTextInfo?.().direction || (locale === 'he' ? 'rtl' : 'ltr');
+  const textInfo = (new Intl.Locale(locale) as LocaleWithTextInfo).getTextInfo?.();
+  const direction = textInfo?.direction === "rtl" ? "rtl" : "ltr";
 
   return (
     <html lang={locale} dir={direction} className={cn( jetbrainsMono.variable, "font-sans", inter.variable)}>
