@@ -4,7 +4,7 @@ import { type ReactNode, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useQuery } from "convex/react";
-import { Archive, ChevronRight, FileText, PencilLine, Sparkles } from "lucide-react";
+import { Archive, ChevronRight, FileText, PencilLine } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -83,9 +83,17 @@ function TemplateCard({
       onClick={onClick}
     >
       <CardContent className="p-4 sm:p-5">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
-            <Archive className="h-5 w-5" />
+          <div className="flex items-start gap-4">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+              template.source === "system" ? "bg-zinc-100 text-zinc-700" : "bg-emerald-50 text-emerald-700"
+            }`}
+          >
+            {template.source === "system" ? (
+              <FileText className="h-5 w-5" />
+            ) : (
+              <PencilLine className="h-5 w-5" />
+            )}
           </div>
 
           <div className="min-w-0 flex-1 space-y-3">
@@ -98,21 +106,6 @@ function TemplateCard({
                 >
                   <Archive className="me-1 size-3" />
                   {t("indicators.archived")}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                    template.source === "system"
-                      ? "border-zinc-200 bg-zinc-50 text-zinc-700"
-                      : "border-sky-200 bg-sky-50 text-sky-700"
-                  }`}
-                >
-                  {template.source === "system" ? (
-                    <Sparkles className="me-1 size-3" />
-                  ) : (
-                    <PencilLine className="me-1 size-3" />
-                  )}
-                  {template.source === "system" ? t("indicators.system") : t("indicators.custom")}
                 </Badge>
               </div>
               <p className="line-clamp-2 text-sm leading-6 text-zinc-500">

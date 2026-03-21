@@ -127,7 +127,7 @@
   "PatientHome": {
     "title": "Outsight",
     "signOut": "התנתק",
-    "hi": "היי {name}! הגעת.",
+    "hi": "היי {name}",
     "defaultName": "שם",
     "welcomeMessage": "ברוכים הבאים ל-Outsight. המטפל שלך הוסיף אותך לקליניקה שלו. כאן תראה את ההתקדמות ואת התרגילים שלך בקרוב.",
     "gettingStarted": "מתחילים",
@@ -137,7 +137,7 @@
     "caughtUp": "הכל מעודכן!",
     "pendingQuestionnaires": "יש לך {count} שאלונים שממתינים למילוי",
     "takeQuestionnaire": "התחל שאלון",
-    "myQuestionnaires": "ממתינים",
+    "availableForYou": "זמין עבורך",
     "history": "היסטוריה",
     "noHistory": "אין תשובות עבר"
   },
@@ -246,7 +246,8 @@
       "frequency": {
         "once": "פעם אחת",
         "daily": "יומי",
-        "weekly": "שבועי"
+        "weekly": "שבועי",
+        "onDemand": "לפי דרישה"
       },
       "status": {
         "active": "פעיל",
@@ -261,17 +262,16 @@
     },
     "assignModal": {
       "title": "הקצאת שאלון",
-      "description": "בחר כל שאלון שאינו בארכיון וקבע באיזו תדירות המטופל ימלא אותו.",
-      "template": "תבנית",
-      "selectTemplate": "בחר תבנית",
+      "questionnaire": "שאלון",
+      "selectQuestionnaire": "בחר שאלון",
       "searchTemplate": "חפש שאלונים",
-      "searchDescription": "גישה מהירה מופיעה ראשונה. אחריה שאלונים מותאמים אישית, ואז שאלוני מערכת.",
       "noTemplates": "לא נמצאו שאלונים",
       "quickAccess": "גישה מהירה",
       "otherQuestionnaires": "כל שאר השאלונים",
       "system": "מערכת",
       "custom": "מותאם אישית",
       "frequency": "תדירות",
+      "alreadyActive": "השאלון הזה כבר פעיל עבור המטופל הזה.",
       "cancel": "ביטול",
       "submit": "הקצה"
     }

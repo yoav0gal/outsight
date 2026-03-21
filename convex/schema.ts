@@ -72,7 +72,7 @@ export default defineSchema({
     patientId: v.id("users"),
     practitionerId: v.id("users"),
     templateId: v.id("questionnaireTemplates"),
-    frequency: v.union(v.literal("once"), v.literal("daily"), v.literal("weekly")),
+    frequency: v.union(v.literal("once"), v.literal("daily"), v.literal("weekly"), v.literal("onDemand")),
     status: v.union(
       v.literal("active"),
       v.literal("archived"),
@@ -101,6 +101,7 @@ export default defineSchema({
       )
     ),
     createdAt: v.number(), // Date.now()
+    availableAt: v.optional(v.number()),
     expiresAt: v.optional(v.number()),
     submittedAt: v.optional(v.number()),
   })

@@ -127,7 +127,7 @@
   "PatientHome": {
     "title": "Outsight",
     "signOut": "Sign Out",
-    "hi": "Hi {name}! You're in.",
+    "hi": "Hi {name}",
     "defaultName": "there",
     "welcomeMessage": "Welcome to Outsight. Your practitioner has added you to their practice. This is where you'll see your progress and exercises soon.",
     "gettingStarted": "Getting Started",
@@ -137,7 +137,7 @@
     "caughtUp": "You're all caught up!",
     "pendingQuestionnaires": "You have {count} pending questionnaires",
     "takeQuestionnaire": "Start Questionnaire",
-    "myQuestionnaires": "Pending",
+    "availableForYou": "Available for you",
     "history": "History",
     "noHistory": "No past responses found."
   },
@@ -246,7 +246,8 @@
       "frequency": {
         "once": "Once",
         "daily": "Daily",
-        "weekly": "Weekly"
+        "weekly": "Weekly",
+        "onDemand": "On demand"
       },
       "status": {
         "active": "Active",
@@ -260,20 +261,19 @@
       "noHistory": "No past responses"
     },
     "assignModal": {
-      "title": "Prescribe Questionnaire",
-      "description": "Select any non-archived questionnaire and choose how often the patient should fill it out.",
-      "template": "Template",
-      "selectTemplate": "Select a template",
+      "title": "Assign Questionnaire",
+      "questionnaire": "Questionnaire",
+      "selectQuestionnaire": "Select a questionnaire",
       "searchTemplate": "Search questionnaires",
-      "searchDescription": "Quick access appears first. After that, custom questionnaires appear before system questionnaires.",
       "noTemplates": "No questionnaires found",
       "quickAccess": "Quick Access",
       "otherQuestionnaires": "All other questionnaires",
       "system": "System",
       "custom": "Custom",
       "frequency": "Frequency",
+      "alreadyActive": "This questionnaire is already active for this patient.",
       "cancel": "Cancel",
-      "submit": "Prescribe"
+      "submit": "Assign"
     }
   },
   "SharedActions": {

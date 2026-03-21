@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ChevronsUpDown, Library, Pin, Search, Sparkles, PencilLine } from "lucide-react";
+import { Check, ChevronsUpDown, Form, Pin, Search, PencilLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -33,9 +32,7 @@ interface TemplateSearchPickerProps {
   searchPlaceholder: string;
   emptyLabel: string;
   title: string;
-  description: string;
   quickAccessLabel: string;
-  otherLabel: string;
   systemLabel: string;
   customLabel: string;
 }
@@ -48,9 +45,7 @@ export function TemplateSearchPicker({
   searchPlaceholder,
   emptyLabel,
   title,
-  description,
   quickAccessLabel,
-  otherLabel,
   systemLabel,
   customLabel,
 }: TemplateSearchPickerProps) {
@@ -67,11 +62,11 @@ export function TemplateSearchPicker({
     );
   }, [options, search]);
 
-  const groupedOptions = useMemo(() => {
-    return {
-      quickAccess: filteredOptions.filter((option) => option.isQuickAccess),
-      standard: filteredOptions.filter((option) => !option.isQuickAccess),
-    };
+  const prioritizedOptions = useMemo(() => {
+    const quickAccess = filteredOptions.filter((option) => option.isQuickAccess);
+    const standard = filteredOptions.filter((option) => !option.isQuickAccess);
+
+    return [...quickAccess, ...standard];
   }, [filteredOptions]);
 
   return (
@@ -87,22 +82,29 @@ export function TemplateSearchPicker({
             {selectedTemplate?.title || placeholder}
           </span>
           {selectedTemplate?.isQuickAccess ? (
-            <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800">
-              <span className="inline-flex items-center gap-1">
-                <Pin className="size-3" />
-                {quickAccessLabel}
-              </span>
+            <span
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700"
+              aria-label={quickAccessLabel}
+              title={quickAccessLabel}
+            >
+              <Pin className="size-3" />
             </span>
           ) : null}
           {selectedTemplate?.statusBadge ? (
             <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
                 selectedTemplate.statusBadge.tone === "active"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-amber-100 text-amber-800"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
               }`}
+              aria-label={selectedTemplate.statusBadge.label}
+              title={selectedTemplate.statusBadge.label}
             >
-              {selectedTemplate.statusBadge.label}
+              {selectedTemplate.source === "practitioner" ? (
+                <PencilLine className="size-3" />
+              ) : (
+                <Form className="size-3" />
+              )}
             </span>
           ) : null}
         </span>
@@ -116,9 +118,6 @@ export function TemplateSearchPicker({
               <DialogTitle className="text-base font-semibold text-zinc-950">
                 {title}
               </DialogTitle>
-              <DialogDescription className="text-sm text-zinc-500">
-                {description}
-              </DialogDescription>
             </DialogHeader>
           </div>
 
@@ -135,73 +134,31 @@ export function TemplateSearchPicker({
           </div>
 
           <div className="max-h-[24rem] overflow-y-auto px-3 pb-3 sm:px-4 sm:pb-4">
-            {filteredOptions.length === 0 ? (
+            {prioritizedOptions.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-200 px-4 py-10 text-center text-sm text-zinc-500">
                 {emptyLabel}
               </div>
             ) : (
-              <div className="space-y-4">
-                {groupedOptions.quickAccess.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
-                      <Pin className="size-3.5" />
-                      {quickAccessLabel}
-                    </div>
-                    <div className="space-y-2">
-                      {groupedOptions.quickAccess.map((option) => {
-                        const isSelected = option._id === value;
+              <div className="space-y-2">
+                {prioritizedOptions.map((option) => {
+                  const isSelected = option._id === value;
 
-                        return (
-                          <PickerOption
-                            key={option._id}
-                            option={option}
-                            quickAccessLabel={quickAccessLabel}
-                            systemLabel={systemLabel}
-                            customLabel={customLabel}
-                            isSelected={isSelected}
-                            onSelect={() => {
-                              onChange(option._id);
-                              setOpen(false);
-                              setSearch("");
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
-
-                {groupedOptions.standard.length > 0 ? (
-                  <div className="space-y-2">
-                    {groupedOptions.quickAccess.length > 0 ? (
-                      <div className="flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                        <Library className="size-3.5" />
-                        {otherLabel}
-                      </div>
-                    ) : null}
-                    <div className="space-y-2">
-                      {groupedOptions.standard.map((option) => {
-                        const isSelected = option._id === value;
-
-                        return (
-                          <PickerOption
-                            key={option._id}
-                            option={option}
-                            quickAccessLabel={quickAccessLabel}
-                            systemLabel={systemLabel}
-                            customLabel={customLabel}
-                            isSelected={isSelected}
-                            onSelect={() => {
-                              onChange(option._id);
-                              setOpen(false);
-                              setSearch("");
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
+                  return (
+                    <PickerOption
+                      key={option._id}
+                      option={option}
+                      quickAccessLabel={quickAccessLabel}
+                      systemLabel={systemLabel}
+                      customLabel={customLabel}
+                      isSelected={isSelected}
+                      onSelect={() => {
+                        onChange(option._id);
+                        setOpen(false);
+                        setSearch("");
+                      }}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
@@ -247,20 +204,29 @@ function PickerOption({
             {option.title}
           </span>
           {option.isQuickAccess ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800">
+            <span
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-700"
+              aria-label={quickAccessLabel}
+              title={quickAccessLabel}
+            >
               <Pin className="size-3" />
-              {quickAccessLabel}
             </span>
           ) : null}
           {option.source === "practitioner" ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+            <span
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+              aria-label={customLabel}
+              title={customLabel}
+            >
               <PencilLine className="size-3" />
-              {customLabel}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-800">
-              <Sparkles className="size-3" />
-              {systemLabel}
+            <span
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-zinc-700"
+              aria-label={systemLabel}
+              title={systemLabel}
+            >
+              <Form className="size-3" />
             </span>
           )}
           {option.statusBadge ? (
@@ -275,11 +241,6 @@ function PickerOption({
             </span>
           ) : null}
         </span>
-        {option.description ? (
-          <span className="mt-1 block text-sm text-zinc-500">
-            {option.description}
-          </span>
-        ) : null}
       </span>
     </button>
   );

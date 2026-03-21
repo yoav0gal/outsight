@@ -3,18 +3,17 @@
 import { type ComponentType, type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   Archive,
-  ChevronRight,
-  FileText,
-  Filter,
+  Form,
   PencilLine,
   Pin,
+  PinOff,
   Plus,
-  Sparkles,
   Layers3,
   Search,
+  Filter,
 } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
@@ -53,9 +52,13 @@ type ExplorerStateFilter = "all" | "normalAccess" | "quickAccess";
 
 function TemplateCard({
   template,
+  onToggleQuickAccess,
+  isTogglingQuickAccess,
   onClick,
 }: {
   template: TemplateItem;
+  onToggleQuickAccess: () => void;
+  isTogglingQuickAccess: boolean;
   onClick: () => void;
 }) {
   const t = useTranslations("PractitionerQuestionnaires");
@@ -68,22 +71,12 @@ function TemplateCard({
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-start gap-4">
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
-              template.archivedAt
-                ? "bg-amber-50 text-amber-700"
-                : template.isQuickAccess
-                  ? "bg-indigo-50 text-indigo-700"
-                  : template.source === "system"
-                    ? "bg-zinc-100 text-zinc-700"
-                    : "bg-emerald-50 text-emerald-700"
-            }`}
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-100 bg-zinc-50/50 -mt-3`}
           >
             {template.archivedAt ? (
               <Archive className="h-5 w-5" />
-            ) : template.isQuickAccess ? (
-              <Pin className="h-5 w-5" />
             ) : template.source === "system" ? (
-              <Sparkles className="h-5 w-5" />
+              <Form className="h-5 w-5" />
             ) : (
               <PencilLine className="h-5 w-5" />
             )}
@@ -94,23 +87,8 @@ function TemplateCard({
               <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{template.title}</h3>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-zinc-500">
                 <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className={`size-1.5 rounded-full ${
-                      template.source === "system" ? "bg-zinc-400" : "bg-emerald-500"
-                    }`}
-                  />
-                  {template.source === "system" ? t("indicators.system") : t("indicators.custom")}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <FileText className="size-3.5" />
                   {t("questionsCount", { count: template.questions.length })}
                 </span>
-                {template.isQuickAccess ? (
-                  <span className="inline-flex items-center gap-1.5 text-indigo-700">
-                    <Pin className="size-3.5" />
-                    {t("indicators.quickAccess")}
-                  </span>
-                ) : null}
                 {template.archivedAt ? (
                   <span className="inline-flex items-center gap-1.5 text-amber-700">
                     <Archive className="size-3.5" />
@@ -125,9 +103,24 @@ function TemplateCard({
             </p>
           </div>
 
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
-            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-          </div>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleQuickAccess();
+            }}
+            disabled={!!template.archivedAt || isTogglingQuickAccess}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors -mt-2 ${
+              template.isQuickAccess
+                ? "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                : "border-zinc-200 bg-white text-zinc-300 hover:border-zinc-300 hover:text-zinc-600"
+            } disabled:cursor-not-allowed disabled:opacity-50`}
+            title={template.isQuickAccess ? t("preview.removeFromQuickAccess") : t("preview.saveToQuickAccess")}
+            aria-label={template.isQuickAccess ? t("preview.removeFromQuickAccess") : t("preview.saveToQuickAccess")}
+          >
+            <Pin className="h-4 w-4" />
+          </button>
         </div>
       </CardContent>
     </Card>
@@ -139,7 +132,7 @@ function EmptyState({
   title,
   description,
 }: {
-  icon: typeof FileText;
+  icon: typeof Form;
   title: string;
   description: string;
 }) {
@@ -193,6 +186,9 @@ export default function PractitionerQuestionnaires() {
   const [stateFilter, setStateFilter] = useState<ExplorerStateFilter>("all");
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem | null>(null);
   const [selectedContext, setSelectedContext] = useState<"explorer" | "archived">("explorer");
+  const [togglingTemplateId, setTogglingTemplateId] = useState<Id<"questionnaireTemplates"> | null>(
+    null
+  );
 
   const explorerTemplates = useQuery(api.questionnaires.listTemplatesExplorer, {
     search,
@@ -200,13 +196,16 @@ export default function PractitionerQuestionnaires() {
     state: stateFilter,
   });
   const managedTemplates = useQuery(api.questionnaires.listClinicTemplates);
+  const archivedTemplates = useQuery(api.questionnaires.listArchivedTemplates);
+  const pinTemplateToQuickAccess = useMutation(api.questionnaires.pinTemplateToQuickAccess);
+  const unpinTemplateFromQuickAccess = useMutation(api.questionnaires.unpinTemplateFromQuickAccess);
 
   const managedTemplateById = useMemo(() => {
     return new Map<Id<"questionnaireTemplates">, TemplateItem>(
       (managedTemplates ?? []).map((template) => [template._id, template])
     );
   }, [managedTemplates]);
-  const archivedTemplateCount = (managedTemplates ?? []).filter((template) => template.archivedAt).length;
+  const archivedTemplateCount = archivedTemplates?.length ?? 0;
 
   const openTemplate = (
     template: TemplateItem,
@@ -225,6 +224,27 @@ export default function PractitionerQuestionnaires() {
     setSearch("");
     setSourceFilter("all");
     setStateFilter("all");
+  };
+
+  const toggleQuickAccess = async (template: TemplateItem) => {
+    if (template.archivedAt || togglingTemplateId) {
+      return;
+    }
+
+    setTogglingTemplateId(template._id);
+    try {
+      if (template.isQuickAccess) {
+        await unpinTemplateFromQuickAccess({
+          templateId: template._id,
+        });
+      } else {
+        await pinTemplateToQuickAccess({
+          templateId: template._id,
+        });
+      }
+    } finally {
+      setTogglingTemplateId(null);
+    }
   };
 
   return (
@@ -272,7 +292,7 @@ export default function PractitionerQuestionnaires() {
             <FilterChip active={sourceFilter === "all"} onClick={() => setSourceFilter("all")} icon={Layers3}>
               {t("filters.allSources")}
             </FilterChip>
-            <FilterChip active={sourceFilter === "system"} onClick={() => setSourceFilter("system")} icon={Sparkles}>
+            <FilterChip active={sourceFilter === "system"} onClick={() => setSourceFilter("system")} icon={Form}>
               {t("filters.sourceSystem")}
             </FilterChip>
             <FilterChip active={sourceFilter === "practitioner"} onClick={() => setSourceFilter("practitioner")} icon={PencilLine}>
@@ -287,7 +307,7 @@ export default function PractitionerQuestionnaires() {
             <FilterChip active={stateFilter === "all"} onClick={() => setStateFilter("all")} icon={Filter}>
               {t("filters.allAccess")}
             </FilterChip>
-            <FilterChip active={stateFilter === "normalAccess"} onClick={() => setStateFilter("normalAccess")} icon={Layers3}>
+            <FilterChip active={stateFilter === "normalAccess"} onClick={() => setStateFilter("normalAccess")} icon={PinOff}>
               {t("filters.normalAccess")}
             </FilterChip>
             <FilterChip active={stateFilter === "quickAccess"} onClick={() => setStateFilter("quickAccess")} icon={Pin}>
@@ -312,6 +332,8 @@ export default function PractitionerQuestionnaires() {
               <TemplateCard
                 key={template._id}
                 template={template}
+                onToggleQuickAccess={() => toggleQuickAccess(template)}
+                isTogglingQuickAccess={togglingTemplateId === template._id}
                 onClick={() => openTemplate(template, "explorer")}
               />
             ))}

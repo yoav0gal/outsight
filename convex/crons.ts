@@ -34,6 +34,11 @@ export const generateQuestionnaires = internalMutation({
         continue;
       }
 
+      if (assignment.frequency === "onDemand") {
+        // On-demand assignments generate the next instance after a submission
+        continue;
+      }
+
       if (assignment.frequency === "weekly" && !isSunday) {
         // Weekly assignments only generate on Sundays
         continue;

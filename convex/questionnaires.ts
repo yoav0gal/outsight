@@ -39,6 +39,8 @@ type TemplateScoring = {
   answerScores?: Record<string, Record<string, number>>;
 };
 
+type QuestionnaireFrequency = "once" | "daily" | "weekly" | "onDemand";
+
 type TemplateQuestion = {
   id: string;
   type: "short_text" | "long_text" | "multiple_choice" | "cards" | "boolean" | "numeric_scale";
@@ -381,16 +383,21 @@ async function createPendingInstanceForAssignment(
     _id: Id<"questionnaireAssignments">;
     patientId: Id<"users">;
     templateId: Id<"questionnaireTemplates">;
-    frequency: "once" | "daily" | "weekly";
+    frequency: QuestionnaireFrequency;
   },
-  now = Date.now()
+  options?: {
+    createdAt?: number;
+    availableAt?: number;
+  }
 ) {
+  const createdAt = options?.createdAt ?? Date.now();
+  const availableAt = options?.availableAt ?? createdAt;
   let expiresAt: number | undefined;
 
   if (assignment.frequency === "daily") {
-    expiresAt = now + 24 * 60 * 60 * 1000;
+    expiresAt = createdAt + 24 * 60 * 60 * 1000;
   } else if (assignment.frequency === "weekly") {
-    expiresAt = now + 7 * 24 * 60 * 60 * 1000;
+    expiresAt = createdAt + 7 * 24 * 60 * 60 * 1000;
   }
 
   return await ctx.db.insert("questionnaireInstances", {
@@ -398,7 +405,8 @@ async function createPendingInstanceForAssignment(
     patientId: assignment.patientId,
     templateId: assignment.templateId,
     status: "pending",
-    createdAt: now,
+    createdAt,
+    availableAt,
     expiresAt,
   });
 }
@@ -1061,7 +1069,7 @@ export const assign = mutation({
   args: {
     patientId: v.id("users"),
     templateId: v.id("questionnaireTemplates"),
-    frequency: v.union(v.literal("once"), v.literal("daily"), v.literal("weekly")),
+    frequency: v.union(v.literal("once"), v.literal("daily"), v.literal("weekly"), v.literal("onDemand")),
   },
   handler: async (ctx, args) => {
     const practitioner = await getCurrentUser(ctx);
@@ -1170,21 +1178,24 @@ export const listPendingInstances = query({
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "patient") throw new Error("Unauthorized");
+    const now = Date.now();
 
     const instances = await ctx.db
       .query("questionnaireInstances")
       .withIndex("by_patient", (q) => q.eq("patientId", user._id))
       .filter((q) => q.eq(q.field("status"), "pending"))
       .collect();
-      
+
     // Fetch template details for each instance to render
     const results = await Promise.all(
-      instances.map(async (instance) => {
-        const template = await ctx.db.get(instance.templateId);
-        return attachScoreToInstance({ ...instance, template }, template);
-      })
+      instances
+        .filter((instance) => (instance.availableAt ?? 0) <= now)
+        .map(async (instance) => {
+          const template = await ctx.db.get(instance.templateId);
+          return attachScoreToInstance({ ...instance, template }, template);
+        })
     );
-    
+
     return results;
   },
 });
@@ -1554,12 +1565,31 @@ export const submitInstance = mutation({
     if (!instance) throw new Error("Instance not found");
     if (instance.patientId !== user._id) throw new Error("Unauthorized");
     if (instance.status !== "pending") throw new Error("Instance is not pending");
+    const assignment = await ctx.db.get(instance.assignmentId);
+    if (!assignment) throw new Error("Assignment not found");
+    const now = Date.now();
 
     await ctx.db.patch(args.instanceId, {
       status: "completed",
       answers: args.answers,
-      submittedAt: Date.now(),
+      submittedAt: now,
     });
+
+    if (assignment.frequency === "onDemand") {
+      await createPendingInstanceForAssignment(
+        ctx,
+        {
+          _id: assignment._id,
+          patientId: assignment.patientId,
+          templateId: assignment.templateId,
+          frequency: assignment.frequency,
+        },
+        {
+          createdAt: now,
+          availableAt: now + 10 * 60 * 1000,
+        }
+      );
+    }
   },
 });
 
@@ -1587,6 +1617,10 @@ export const createTestInstance = mutation({
 
     const status = args.status ?? "completed";
     const createdAt = args.createdAt ?? Date.now();
+    const availableAt =
+      status === "pending" && assignment.frequency === "onDemand"
+        ? createdAt + 10 * 60 * 1000
+        : createdAt;
 
     let expiresAt: number | undefined;
     if (assignment.frequency === "daily") {
@@ -1601,6 +1635,7 @@ export const createTestInstance = mutation({
       templateId: assignment.templateId,
       status,
       createdAt,
+      availableAt,
       expiresAt,
       submittedAt: status === "completed" ? args.submittedAt ?? createdAt : undefined,
     });

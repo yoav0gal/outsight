@@ -194,7 +194,7 @@ export default function PatientDetailsPage() {
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Id<"questionnaireTemplates"> | "">("");
-  const [selectedFrequency, setSelectedFrequency] = useState<"once" | "daily" | "weekly">("weekly");
+  const [selectedFrequency, setSelectedFrequency] = useState<"once" | "daily" | "weekly" | "onDemand">("weekly");
   const [isAssigning, setIsAssigning] = useState(false);
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
   const [selectedSessionReview, setSelectedSessionReview] = useState<SessionReviewDoc | null>(null);
@@ -234,6 +234,7 @@ export default function PatientDetailsPage() {
         : undefined,
     };
   });
+  const selectedTemplateStatus = selectedTemplate ? assignmentStatusByTemplateId.get(selectedTemplate) : undefined;
   const visibleAssignments = questionnairesView === "archived" ? archivedAssignments : activeAssignments;
   const questionnaireViewLabel =
     questionnairesView === "archived" ? t("questionnaires.archivedTitle") : t("questionnaires.active");
@@ -431,30 +432,30 @@ export default function PatientDetailsPage() {
             </Button>
           }
         />
-        <DialogContent className="rounded-2xl sm:max-w-[425px]">
+        <DialogContent className="w-[min(42rem,calc(100vw-1rem))] max-w-[min(42rem,calc(100vw-1rem))] rounded-2xl sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))]">
           <DialogHeader>
             <DialogTitle className="text-xl">{t("assignModal.title")}</DialogTitle>
-            <DialogDescription>{t("assignModal.description")}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
+          <div className="grid gap-5 py-4">
             <div className="grid gap-2">
               <Label htmlFor="template" className="text-sm font-semibold">
-                {t("assignModal.template")}
+                {t("assignModal.questionnaire")}
               </Label>
               <TemplateSearchPicker
                 options={clinicTemplateOptions}
                 value={selectedTemplate}
                 onChange={(value) => setSelectedTemplate(value as Id<"questionnaireTemplates">)}
-                placeholder={t("assignModal.selectTemplate")}
+                placeholder={t("assignModal.selectQuestionnaire")}
                 searchPlaceholder={t("assignModal.searchTemplate")}
                 emptyLabel={t("assignModal.noTemplates")}
                 title={t("assignModal.title")}
-                description={t("assignModal.searchDescription")}
                 quickAccessLabel={t("assignModal.quickAccess")}
-                otherLabel={t("assignModal.otherQuestionnaires")}
                 systemLabel={t("assignModal.system")}
                 customLabel={t("assignModal.custom")}
               />
+              {selectedTemplateStatus === "active" ? (
+                <p className="text-sm text-red-600">{t("assignModal.alreadyActive")}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="frequency" className="text-sm font-semibold">
@@ -462,13 +463,13 @@ export default function PatientDetailsPage() {
               </Label>
               <Select
                 value={selectedFrequency}
-                onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly")}
+                onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly" | "onDemand")}
               >
                 <SelectTrigger id="frequency" className="h-12 rounded-lg border-zinc-200">
                   <SelectValue>{(value: string) => (value ? t(`questionnaires.frequency.${value}`) : "")}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  {(["once", "daily", "weekly"] as const).map((freq) => (
+                  {(["once", "daily", "weekly", "onDemand"] as const).map((freq) => (
                     <SelectItem key={freq} value={freq} className="rounded-lg">
                       {t(`questionnaires.frequency.${freq}`)}
                     </SelectItem>
@@ -481,7 +482,11 @@ export default function PatientDetailsPage() {
             <Button variant="ghost" onClick={() => setIsAssignOpen(false)} className="rounded-xl">
               {t("assignModal.cancel")}
             </Button>
-            <Button onClick={handleAssign} disabled={!selectedTemplate || isAssigning} className="rounded-xl">
+            <Button
+              onClick={handleAssign}
+              disabled={!selectedTemplate || selectedTemplateStatus === "active" || isAssigning}
+              className="rounded-xl"
+            >
               {isAssigning ? "..." : t("assignModal.submit")}
             </Button>
           </DialogFooter>

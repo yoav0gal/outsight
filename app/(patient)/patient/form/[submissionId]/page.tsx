@@ -190,11 +190,6 @@ export default function QuestionnaireFormPage() {
           <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-950 mb-4 tracking-tight">
             {instance.template.title}
           </h1>
-          {instance.template.description && (
-            <p className="text-xl text-zinc-600 max-w-2xl">
-              {instance.template.description}
-            </p>
-          )}
         </div>
 
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 fill-mode-both">

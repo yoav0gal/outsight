@@ -2,10 +2,10 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Smile, FileText, ArrowRight, CheckCircle2 } from "lucide-react";
+import { FileText, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 export default function PatientHome() {
@@ -15,19 +15,10 @@ export default function PatientHome() {
 
   return (
     <main className="flex-1 w-full max-w-2xl mx-auto p-4 sm:p-6 pb-12 flex flex-col gap-8">
-      {/* Welcome Section - Warm & Friendly */}
-      <div className="flex flex-col items-center text-center gap-4 py-6">
-        <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-indigo-50 text-indigo-600 rounded-[2rem] flex items-center justify-center shadow-sm">
-          <Smile className="w-12 h-12" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-black text-zinc-950 mb-1 tracking-tight">
-            {t("hi", { name: user?.name || t("defaultName") })}
-          </h1>
-          <p className="text-zinc-500 font-medium">
-            {t("welcomeMessage")}
-          </p>
-        </div>
+      <div className="pt-3">
+        <h1 className="text-4xl font-black text-zinc-950 tracking-tight">
+          {t("hi", { name: user?.name || t("defaultName") })}
+        </h1>
       </div>
 
       {/* Questionnaires Section */}
@@ -35,7 +26,7 @@ export default function PatientHome() {
         <div className="flex items-center justify-between px-2">
           <h2 className="text-xl font-black text-zinc-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-500" />
-            {t("myQuestionnaires")}
+            {t("availableForYou")}
           </h2>
           {pendingInstances && pendingInstances.length > 0 && (
             <span className="bg-indigo-600 text-white text-xs py-1 px-3 rounded-full font-black shadow-md shadow-indigo-100">
@@ -69,9 +60,6 @@ export default function PatientHome() {
                     <CardTitle className="text-xl font-black text-zinc-900 line-clamp-1">
                       {tpl?.title}
                     </CardTitle>
-                    <CardDescription className="line-clamp-2 text-zinc-500 font-medium leading-relaxed">
-                      {tpl?.description}
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6 pt-0 mt-auto">
                     <Link href={`/patient/form/${instance._id}`} className="block w-full">
