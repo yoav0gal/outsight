@@ -35,6 +35,11 @@
     "myPatients": "המטופלים שלי",
     "myPatientsDesc": "נהל ועקוב אחר ההתקדמות של המטופלים שלך.",
     "addPatient": "הוסף מטופל",
+    "searchPlaceholder": "חיפוש לפי שם המטופל או האימייל",
+    "searchEmpty": "לא נמצאו מטופלים עבור החיפוש הזה.",
+    "newEntries": "{count, plural, one {# רשומה חדשה} two {# רשומות חדשות} other {# רשומות חדשות}}",
+    "inviteCodeTitle": "קוד הזמנה חד-פעמי",
+    "inviteCodeDesc": "אפשר לשתף את הקוד הזה פעם אחת עם המטופל. אחרי שימוש אחד הוא יפסיק לעבוד.",
     "inviteLinkGenerated": "נוצר קישור הזמנה למטופל",
     "inviteLinkDesc": "שלח קישור זה למטופל שלך. הם יכולים להשתמש בו כדי ליצור חשבון המקושר לקליניקה שלך.",
     "copy": "העתק",
@@ -48,53 +53,62 @@
   },
   "PractitionerQuestionnaires": {
     "title": "שאלונים",
-    "eyebrow": "מרכז השאלונים",
-    "description": "שמור את השאלונים שמוכנים לשימוש בקליניקה, עיין בכל מאגר התבניות, ובחר אילו תבניות יהיו זמינות להקצאה.",
-    "createTemplate": "יצירת תבנית שאלון",
-    "noTemplates": "עדיין אין תבניות",
-    "noTemplatesDesc": "צור את התבנית הראשונה שלך כדי להקצות אותה למטופלים.",
+    "description": "חפש בכל מאגר השאלונים, נהל את סט העבודה הפעיל שלך, וסמן בגישה מהירה את הטפסים שבהם אתה משתמש הכי הרבה.",
+    "actions": {
+      "createOwnQuestionnaire": "יצירת שאלון משלך",
+      "archivedQuestionnaires": "שאלונים בארכיון",
+      "archivedQuestionnairesWithCount": "השאלונים שלך בארכיון ({count})"
+    },
+    "searchPlaceholder": "חיפוש שאלונים",
     "questionsCount": "{count} שאלות",
-    "clinic": {
-      "title": "בקליניקה שלך",
-      "badge": "ספריית הקליניקה",
-      "description": "אלה השאלונים שהקליניקה שלך יכולה להקצות כרגע.",
-      "count": "{count} שמורים",
-      "emptyTitle": "עדיין לא נשמרו תבניות לקליניקה",
-      "emptyDescription": "עיין במאגר התבניות למטה ושמור את מה שתרצה שיהיה זמין להקצאה."
+    "filters": {
+      "sourceLabel": "מקור",
+      "accessLabel": "גישה",
+      "allSources": "כל המקורות",
+      "allAccess": "כל הגישות",
+      "normalAccess": "גישה רגילה",
+      "sourceSystem": "מערכת",
+      "sourceCustom": "מותאם אישית",
+      "stateQuickAccess": "גישה מהירה",
+      "clear": "נקה סינון"
     },
     "explorer": {
-      "title": "מאגר התבניות",
-      "badge": "מאגר תבניות",
-      "description": "עבור על כל התבניות הזמינות, סנן לפי תגיות, ושמור את המתאימות לקליניקה שלך.",
+      "title": "מאגר השאלונים",
+      "description": "עבור על כל השאלונים הפעילים במערכת, ואז הוסף או הצמד את מה ששייך לזרימת העבודה היומיומית שלך.",
       "count": "{count} תוצאות",
-      "searchPlaceholder": "חיפוש לפי שם תבנית",
-      "allTags": "כל התגיות",
-      "emptyTitle": "לא נמצאו תבניות עבור הסינון הזה",
-      "emptyDescription": "נסה שם אחר או נקה את סינון התגיות הפעיל."
+      "emptyTitle": "לא נמצאו שאלונים עבור הסינון הזה",
+      "emptyDescription": "נסה חיפוש אחר או נקה אחד מהמסננים הפעילים."
+    },
+    "quickAccess": {
+      "title": "גישה מהירה",
+      "description": "השאלונים האלו יופיעו ראשונים בזמן הקצאה למטופל.",
+      "count": "{count} מוצמדים",
+      "emptyTitle": "עדיין אין שאלונים בגישה מהירה",
+      "emptyDescription": "הצמד את השאלונים שאתה מקצה לעיתים קרובות כדי שיופיעו ראשונים בזמן הקצאה."
     },
     "archived": {
-      "title": "בארכיון",
-      "badge": "תבניות בארכיון",
-      "description": "עיין בתבניות שהוצאו משימוש פעיל בקליניקה. הן נשארות זמינות לצפייה אך לא ניתנות להקצאה חדשה.",
+      "title": "ארכיון",
+      "description": "שאלונים מותאמים שהועברו לארכיון נשארים זמינים לצפייה ולשחזור, אבל לא מופיעים בהקצאה למטופל.",
       "count": "{count} בארכיון",
-      "emptyTitle": "עדיין אין תבניות בארכיון",
-      "emptyDescription": "העבר תבנית מותאמת לארכיון כדי להסיר אותה מהקליניקה ומהמאגר הפעיל בלי לאבד היסטוריה."
+      "emptyTitle": "עדיין אין שאלונים בארכיון",
+      "emptyDescription": "העבר שאלון מותאם לארכיון כשאתה רוצה להפסיק להקצות אותו בלי למחוק את ההיסטוריה."
     },
     "preview": {
-      "saved": "בקליניקה שלך",
-      "inClinic": "בקליניקה שלך",
-      "saveToClinic": "שמור לקליניקה",
-      "removeFromClinic": "הסר מהקליניקה",
+      "quickAccess": "גישה מהירה",
+      "saveToQuickAccess": "הצמד לגישה מהירה",
+      "removeFromQuickAccess": "הסר מגישה מהירה",
+      "quickAccessSuccess": "השאלון הוצמד לגישה מהירה.",
+      "removeQuickAccessSuccess": "השאלון הוסר מגישה מהירה.",
       "deleteTemplate": "מחק תבנית",
-      "deleteConfirmTitle": "למחוק את התבנית?",
-      "deleteConfirmDescription": "הפעולה תמחק את התבנית לצמיתות ולא ניתן יהיה לשחזר אותה.",
-      "deleteConfirmWithClinic": "התבנית תימחק לצמיתות, ואם היא שמורה בקליניקה שלך היא תוסר גם משם.",
-      "cancelDelete": "ביטול",
+      "deleteConfirmTitle": "למחוק את התבנית לצמיתות?",
+      "deleteConfirmDescription": "הפעולה תמחק לצמיתות את התבנית ואת כל המרשמים, התשובות וההיסטוריה שקשורים אליה. לא ניתן לשחזר אחר כך.",
       "confirmDelete": "מחק תבנית",
+      "deleteSuccess": "התבנית וכל המידע הקשור אליה נמחקו לצמיתות.",
       "deleteError": "מחיקת התבנית נכשלה",
-      "archive": "העבר לארכיון",
+      "archiveInstead": "עדיף להעביר לארכיון",
+      "archiveSuccess": "התבנית נשמרה והוסרה משימוש פעיל.",
       "archiveError": "העברה לארכיון נכשלה",
-      "restore": "שחזר",
+      "restoreSuccess": "התבנית שוב פעילה.",
       "restoreError": "שחזור התבנית נכשל",
       "edit": "עריכת תבנית",
       "makeEditable": "צור עותק לעריכה",
@@ -102,6 +116,12 @@
       "custom": "מותאם אישית",
       "archived": "בארכיון",
       "noDescription": "עדיין אין תיאור."
+    },
+    "indicators": {
+      "system": "מערכת",
+      "custom": "מותאם אישית",
+      "quickAccess": "גישה מהירה",
+      "archived": "בארכיון"
     }
   },
   "PatientHome": {
@@ -123,6 +143,7 @@
   },
   "PractitionerPatient": {
     "backToDashboard": "חזרה למטופלים שלי",
+    "backToPatient": "חזרה למטופל",
     "unnamed": "מטופל ללא שם",
     "tabs": {
       "overview": "סקירה",
@@ -170,8 +191,12 @@
       }
     },
     "questionnaires": {
-      "assign": "הקצה שאלון",
-      "active": "הקצאות פעילות",
+      "assign": "הוסף שאלון",
+      "assignSuccess": "השאלון פעיל עכשיו עבור המטופל.",
+      "assignRestoredSuccess": "נמצא מרשם בארכיון עבור התבנית הזו והוא שוחזר והופעל מחדש.",
+      "assignError": "הקצאת השאלון נכשלה.",
+      "assignAlreadyActiveError": "למטופל הזה כבר יש שאלון פעיל עבור התבנית הזו.",
+      "active": "שאלונים פעילים",
       "activeDescription": "הקצאות אלה פעילות כרגע ועשויות לייצר משימות חדשות למטופל.",
       "archivedTitle": "הקצאות בארכיון",
       "archivedDescription": "הקצאות אלה הוצאו משימוש פעיל, אך נשארות זמינות לעיון.",
@@ -180,6 +205,7 @@
       "openArchived": "צפייה בהקצאות בארכיון",
       "returnToActive": "חזרה להקצאות פעילות",
       "history": "תשובות עבר",
+      "newEntriesLabel": "רשומות חדשות",
       "newEntries": "{count} חדשים",
       "lastAdded": "תוספת אחרונה {date}",
       "lastAddedIndicator": "תוספת אחרונה",
@@ -207,11 +233,15 @@
       "deleting": "מוחק...",
       "cancelDelete": "ביטול",
       "confirmDelete": "מחק מרשם",
-      "deleteConfirmTitle": "למחוק את המרשם הזה?",
-      "deleteConfirmDescription": "הפעולה תסיר את המרשם מרשומת המטופל ותעצור משימות ממתינות שעדיין לא הושלמו. תשובות עבר יישארו בהיסטוריה.",
+      "deleteConfirmTitle": "למחוק את המרשם הזה לצמיתות?",
+      "deleteConfirmDescription": "הפעולה תמחק לצמיתות את המרשם ואת כל נתוני המטופל שקשורים אליו, כולל משימות ממתינות ותשובות שמורות. לא ניתן לשחזר אחר כך.",
       "deleteConfirmTitleWithHistory": "למחוק את המרשם ואת כל ההיסטוריה שלו?",
       "deleteConfirmDescriptionWithHistory": "למרשם הזה יש {count} תשובות עבר. מחיקה תסיר לצמיתות את המרשם ואת כל התשובות האלה מרשומת המטופל. מומלץ להעביר לארכיון אם תרצה לשמור את ההיסטוריה.",
+      "archiveSuccess": "המרשם נשמר והוסר משימוש פעיל.",
       "archiveError": "העברת המרשם לארכיון נכשלה",
+      "restoreSuccess": "המרשם שוב פעיל.",
+      "restoreError": "שחזור המרשם נכשל",
+      "deleteSuccess": "המרשם וכל המידע הקשור אליו נמחקו לצמיתות.",
       "deleteError": "מחיקת המרשם נכשלה",
       "frequency": {
         "once": "פעם אחת",
@@ -231,15 +261,39 @@
     },
     "assignModal": {
       "title": "הקצאת שאלון",
-      "description": "בחר תבנית מהקליניקה ובאיזו תדירות על המטופל למלא אותה.",
+      "description": "בחר כל שאלון שאינו בארכיון וקבע באיזו תדירות המטופל ימלא אותו.",
       "template": "תבנית",
       "selectTemplate": "בחר תבנית",
-      "searchTemplate": "חפש בתבניות הקליניקה",
-      "searchDescription": "אפשר להקצות רק תבניות שנשמרו תחת \"בקליניקה שלך\".",
-      "noTemplates": "לא נמצאו תבניות בקליניקה",
+      "searchTemplate": "חפש שאלונים",
+      "searchDescription": "גישה מהירה מופיעה ראשונה. אחריה שאלונים מותאמים אישית, ואז שאלוני מערכת.",
+      "noTemplates": "לא נמצאו שאלונים",
+      "quickAccess": "גישה מהירה",
+      "otherQuestionnaires": "כל שאר השאלונים",
+      "system": "מערכת",
+      "custom": "מותאם אישית",
       "frequency": "תדירות",
       "cancel": "ביטול",
       "submit": "הקצה"
+    }
+  },
+  "SharedActions": {
+    "add": "הוסף",
+    "archive": "העבר לארכיון",
+    "restore": "שחזר",
+    "delete": "מחק",
+    "cancel": "ביטול",
+    "goToArchive": "מעבר לארכיון",
+    "archived": "בארכיון",
+    "backToActive": "חזרה לפעיל",
+    "success": {
+      "archived": "הועבר לארכיון",
+      "restored": "שוחזר",
+      "deleted": "נמחק לצמיתות",
+      "savedToClinic": "נשמר בקליניקה",
+      "removedFromUse": "הוסר משימוש פעיל"
+    },
+    "errors": {
+      "generic": "משהו השתבש. נסה שוב."
     }
   },
   "Questionnaire": {

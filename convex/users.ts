@@ -2,6 +2,20 @@ import { mutation, query, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
+function getInstanceHistoryTimestamp(instance: {
+  submittedAt?: number;
+  expiresAt?: number;
+  createdAt: number;
+}) {
+  return instance.submittedAt ?? instance.expiresAt ?? instance.createdAt;
+}
+
+function isHistoryInstance<T extends { status: "pending" | "completed" | "expired" }>(
+  instance: T
+): instance is T & { status: "completed" | "expired" } {
+  return instance.status !== "pending";
+}
+
 export const store = mutation({
   args: { 
     name: v.optional(v.string()), 
@@ -82,10 +96,43 @@ export const listPatients = query({
       throw new Error("Unauthorized");
     }
 
-    return await ctx.db
+    const patients = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("practitionerId"), user._id))
       .collect();
+
+    return await Promise.all(
+      patients.map(async (patient) => {
+        const [instances, viewRows] = await Promise.all([
+          ctx.db
+            .query("questionnaireInstances")
+            .withIndex("by_patient", (q) => q.eq("patientId", patient._id))
+            .collect(),
+          ctx.db
+            .query("questionnaireHistoryViews")
+            .withIndex("by_practitioner_patient", (q) =>
+              q.eq("practitionerId", user._id).eq("patientId", patient._id)
+            )
+            .collect(),
+        ]);
+
+        const lastViewedAtByTemplateId = new Map(
+          viewRows.map((row) => [row.templateId, row.lastViewedAt] as const)
+        );
+
+        const unreadEntries = instances
+          .filter(isHistoryInstance)
+          .reduce((count, instance) => {
+            const lastViewedAt = lastViewedAtByTemplateId.get(instance.templateId) ?? 0;
+            return getInstanceHistoryTimestamp(instance) > lastViewedAt ? count + 1 : count;
+          }, 0);
+
+        return {
+          ...patient,
+          unreadEntries,
+        };
+      })
+    );
   },
 });
 

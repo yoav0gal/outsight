@@ -206,6 +206,35 @@ async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
     .unique();
 }
 
+async function deleteHistoryViewsForTemplate(
+  ctx: MutationCtx,
+  templateId: Id<"questionnaireTemplates">
+) {
+  const historyViews = await ctx.db.query("questionnaireHistoryViews").collect();
+
+  for (const historyView of historyViews) {
+    if (historyView.templateId === templateId) {
+      await ctx.db.delete(historyView._id);
+    }
+  }
+}
+
+async function deleteAssignmentCascade(
+  ctx: MutationCtx,
+  assignmentId: Id<"questionnaireAssignments">
+) {
+  const instances = await ctx.db
+    .query("questionnaireInstances")
+    .withIndex("by_assignment", (q) => q.eq("assignmentId", assignmentId))
+    .collect();
+
+  for (const instance of instances) {
+    await ctx.db.delete(instance._id);
+  }
+
+  await ctx.db.delete(assignmentId);
+}
+
 async function getVisibleTemplates(
   ctx: QueryCtx | MutationCtx,
   userId: Id<"users">
@@ -236,7 +265,7 @@ async function getArchivedPractitionerTemplates(
   );
 }
 
-async function getClinicTemplateIds(
+async function getTemplateMemberships(
   ctx: QueryCtx | MutationCtx,
   practitionerId: Id<"users">
 ) {
@@ -245,7 +274,7 @@ async function getClinicTemplateIds(
     .withIndex("by_practitioner", (q) => q.eq("practitionerId", practitionerId))
     .collect();
 
-  return new Set(memberships.map((membership) => membership.templateId));
+  return new Map(memberships.map((membership) => [membership.templateId, membership] as const));
 }
 
 async function getClinicTemplates(
@@ -253,19 +282,31 @@ async function getClinicTemplates(
   practitionerId: Id<"users">
 ) {
   const templates = await getVisibleTemplates(ctx, practitionerId);
-  const clinicTemplateIds = await getClinicTemplateIds(ctx, practitionerId);
+  const memberships = await getTemplateMemberships(ctx, practitionerId);
 
-  return templates.filter((template) => {
-    if (!clinicTemplateIds.has(template._id)) {
-      return false;
-    }
+  return templates
+    .filter((template) => memberships.has(template._id) && !isArchivedTemplate(template))
+    .map((template) => {
+      const membership = memberships.get(template._id)!;
+      return {
+        ...template,
+        isInClinic: true,
+        isQuickAccess: typeof membership.quickAccessAt === "number",
+        managedAt: membership.addedAt,
+        quickAccessAt: membership.quickAccessAt,
+      };
+    })
+    .sort((a, b) => {
+      if (a.isQuickAccess !== b.isQuickAccess) {
+        return a.isQuickAccess ? -1 : 1;
+      }
 
-    if (!isArchivedTemplate(template)) {
-      return true;
-    }
+      if (a.isQuickAccess && b.isQuickAccess) {
+        return (b.quickAccessAt ?? 0) - (a.quickAccessAt ?? 0);
+      }
 
-    return template.source === "system";
-  });
+      return a.title.localeCompare(b.title);
+    });
 }
 
 async function saveTemplateMembership(
@@ -286,6 +327,79 @@ async function saveTemplateMembership(
     practitionerId,
     templateId,
     addedAt: Date.now(),
+  });
+}
+
+async function saveQuickAccessMembership(
+  ctx: MutationCtx,
+  practitionerId: Id<"users">,
+  templateId: Id<"questionnaireTemplates">
+) {
+  const membershipId = await saveTemplateMembership(ctx, practitionerId, templateId);
+  await ctx.db.patch(membershipId, {
+    quickAccessAt: Date.now(),
+  });
+}
+
+async function listAssignmentsForTemplate(
+  ctx: MutationCtx,
+  practitionerId: Id<"users">,
+  patientId: Id<"users">,
+  templateId: Id<"questionnaireTemplates">
+) {
+  const assignments = await ctx.db
+    .query("questionnaireAssignments")
+    .withIndex("by_practitioner_patient_template", (q) =>
+      q.eq("practitionerId", practitionerId).eq("patientId", patientId).eq("templateId", templateId)
+    )
+    .collect();
+
+  return assignments.sort((a, b) => {
+    const aTimestamp = a.archivedAt ?? a.createdAt;
+    const bTimestamp = b.archivedAt ?? b.createdAt;
+    return bTimestamp - aTimestamp;
+  });
+}
+
+async function getLatestPendingInstance(
+  ctx: MutationCtx,
+  assignmentId: Id<"questionnaireAssignments">
+) {
+  const instances = await ctx.db
+    .query("questionnaireInstances")
+    .withIndex("by_assignment", (q) => q.eq("assignmentId", assignmentId))
+    .collect();
+
+  return instances
+    .filter((instance) => instance.status === "pending")
+    .sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
+}
+
+async function createPendingInstanceForAssignment(
+  ctx: MutationCtx,
+  assignment: {
+    _id: Id<"questionnaireAssignments">;
+    patientId: Id<"users">;
+    templateId: Id<"questionnaireTemplates">;
+    frequency: "once" | "daily" | "weekly";
+  },
+  now = Date.now()
+) {
+  let expiresAt: number | undefined;
+
+  if (assignment.frequency === "daily") {
+    expiresAt = now + 24 * 60 * 60 * 1000;
+  } else if (assignment.frequency === "weekly") {
+    expiresAt = now + 7 * 24 * 60 * 60 * 1000;
+  }
+
+  return await ctx.db.insert("questionnaireInstances", {
+    assignmentId: assignment._id,
+    patientId: assignment.patientId,
+    templateId: assignment.templateId,
+    status: "pending",
+    createdAt: now,
+    expiresAt,
   });
 }
 
@@ -464,31 +578,78 @@ export const listClinicTemplates = query({
   },
 });
 
+export const listAssignableTemplates = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const templates = await getActiveVisibleTemplates(ctx, user._id);
+    const memberships = await getTemplateMemberships(ctx, user._id);
+
+    return templates
+      .map((template) => {
+        const membership = memberships.get(template._id);
+        return {
+          ...template,
+          isInClinic: !!membership,
+          isQuickAccess: typeof membership?.quickAccessAt === "number",
+        };
+      })
+      .sort((a, b) => {
+        if (a.isQuickAccess !== b.isQuickAccess) {
+          return a.isQuickAccess ? -1 : 1;
+        }
+
+        if (a.source !== b.source) {
+          return a.source === "practitioner" ? -1 : 1;
+        }
+
+        return a.title.localeCompare(b.title);
+      });
+  },
+});
+
 export const listTemplatesExplorer = query({
   args: {
     search: v.optional(v.string()),
-    tags: v.optional(v.array(v.string())),
+    source: v.optional(v.union(v.literal("all"), v.literal("system"), v.literal("practitioner"))),
+    state: v.optional(v.union(v.literal("all"), v.literal("normalAccess"), v.literal("quickAccess"))),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
 
     const templates = await getActiveVisibleTemplates(ctx, user._id);
-    const clinicTemplateIds = await getClinicTemplateIds(ctx, user._id);
+    const memberships = await getTemplateMemberships(ctx, user._id);
     const search = args.search?.trim().toLocaleLowerCase();
-    const selectedTags = normalizeTags(args.tags);
-    const selectedTagKeys = new Set(selectedTags.map((tag) => tag.toLocaleLowerCase()));
+    const sourceFilter = args.source ?? "all";
+    const stateFilter = args.state ?? "all";
 
     return templates
       .filter((template) => {
-        if (search && !template.title.toLocaleLowerCase().includes(search)) {
+        if (
+          search &&
+          ![template.title, template.description ?? "", template.tags.join(" ")]
+            .join(" ")
+            .toLocaleLowerCase()
+            .includes(search)
+        ) {
           return false;
         }
 
-        if (
-          selectedTagKeys.size > 0 &&
-          !template.tags.some((tag) => selectedTagKeys.has(tag.toLocaleLowerCase()))
-        ) {
+        if (sourceFilter !== "all" && template.source !== sourceFilter) {
+          return false;
+        }
+
+        const membership = memberships.get(template._id);
+        const isQuickAccess = typeof membership?.quickAccessAt === "number";
+
+        if (stateFilter === "quickAccess" && !isQuickAccess) {
+          return false;
+        }
+
+        if (stateFilter === "normalAccess" && isQuickAccess) {
           return false;
         }
 
@@ -496,8 +657,20 @@ export const listTemplatesExplorer = query({
       })
       .map((template) => ({
         ...template,
-        isInClinic: clinicTemplateIds.has(template._id),
-      }));
+        isInClinic: memberships.has(template._id),
+        isQuickAccess: typeof memberships.get(template._id)?.quickAccessAt === "number",
+      }))
+      .sort((a, b) => {
+        if (a.isQuickAccess !== b.isQuickAccess) {
+          return a.isQuickAccess ? -1 : 1;
+        }
+
+        if (a.isInClinic !== b.isInClinic) {
+          return a.isInClinic ? -1 : 1;
+        }
+
+        return a.title.localeCompare(b.title);
+      });
   },
 });
 
@@ -520,7 +693,11 @@ export const listArchivedTemplates = query({
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
 
-    return await getArchivedPractitionerTemplates(ctx, user._id);
+    return (await getArchivedPractitionerTemplates(ctx, user._id)).map((template) => ({
+      ...template,
+      isInClinic: false,
+      isQuickAccess: false,
+    }));
   },
 });
 
@@ -536,11 +713,17 @@ export const getTemplate = query({
       throw new Error("Unauthorized");
     }
 
-    const clinicTemplateIds = await getClinicTemplateIds(ctx, user._id);
+    const membership = await ctx.db
+      .query("clinicQuestionnaireTemplates")
+      .withIndex("by_practitioner_template", (q) =>
+        q.eq("practitionerId", user._id).eq("templateId", args.templateId)
+      )
+      .unique();
 
     return {
       ...normalizeTemplate(template),
-      isInClinic: clinicTemplateIds.has(template._id),
+      isInClinic: !!membership,
+      isQuickAccess: typeof membership?.quickAccessAt === "number",
     };
   },
 });
@@ -583,6 +766,46 @@ export const removeTemplateFromClinic = mutation({
   },
 });
 
+export const pinTemplateToQuickAccess = mutation({
+  args: { templateId: v.id("questionnaireTemplates") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const template = await ctx.db.get(args.templateId);
+    if (!template) throw new Error("Template not found");
+    if (template.practitionerId && template.practitionerId !== user._id) {
+      throw new Error("Unauthorized");
+    }
+    if (isArchivedTemplate(template)) {
+      throw new Error("Archived templates cannot be added to quick access");
+    }
+
+    await saveQuickAccessMembership(ctx, user._id, args.templateId);
+  },
+});
+
+export const unpinTemplateFromQuickAccess = mutation({
+  args: { templateId: v.id("questionnaireTemplates") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const membership = await ctx.db
+      .query("clinicQuestionnaireTemplates")
+      .withIndex("by_practitioner_template", (q) =>
+        q.eq("practitionerId", user._id).eq("templateId", args.templateId)
+      )
+      .unique();
+
+    if (membership) {
+      await ctx.db.patch(membership._id, {
+        quickAccessAt: undefined,
+      });
+    }
+  },
+});
+
 export const deleteTemplate = mutation({
   args: { templateId: v.id("questionnaireTemplates") },
   handler: async (ctx, args) => {
@@ -599,22 +822,7 @@ export const deleteTemplate = mutation({
       .query("questionnaireAssignments")
       .withIndex("by_practitioner", (q) => q.eq("practitionerId", user._id))
       .collect();
-    const relatedAssignments = assignments.filter(
-      (assignment) => assignment.templateId === args.templateId
-    );
-
-    if (relatedAssignments.length > 0) {
-      throw new Error("This template cannot be deleted because it has assignments");
-    }
-
-    const instances = await ctx.db.query("questionnaireInstances").collect();
-    const hasRelatedInstance = instances.some(
-      (instance) => instance.templateId === args.templateId
-    );
-
-    if (hasRelatedInstance) {
-      throw new Error("This template cannot be deleted because it has submissions");
-    }
+    const relatedAssignments = assignments.filter((assignment) => assignment.templateId === args.templateId);
 
     const clinicMemberships = await ctx.db
       .query("clinicQuestionnaireTemplates")
@@ -626,6 +834,12 @@ export const deleteTemplate = mutation({
         await ctx.db.delete(membership._id);
       }
     }
+
+    for (const assignment of relatedAssignments) {
+      await deleteAssignmentCascade(ctx, assignment._id);
+    }
+
+    await deleteHistoryViewsForTemplate(ctx, args.templateId);
 
     await ctx.db.delete(args.templateId);
   },
@@ -677,6 +891,8 @@ export const unarchiveTemplate = mutation({
     await ctx.db.patch(args.templateId, {
       archivedAt: undefined,
     });
+
+    await saveTemplateMembership(ctx, user._id, args.templateId);
   },
 });
 
@@ -858,26 +1074,53 @@ export const assign = mutation({
       throw new Error("Template not found");
     }
 
-    const clinicMembership = await ctx.db
-      .query("clinicQuestionnaireTemplates")
-      .withIndex("by_practitioner_template", (q) =>
-        q.eq("practitionerId", practitioner._id).eq("templateId", args.templateId)
-      )
-      .unique();
-
-    if (!clinicMembership) {
-      throw new Error("Template must be saved in clinic before assignment");
-    }
-
     const normalizedTemplate = normalizeTemplate(template);
-    const canAssignArchivedSystemTemplate =
-      isArchivedTemplate(normalizedTemplate) && normalizedTemplate.source === "system";
 
-    if (isArchivedTemplate(normalizedTemplate) && !canAssignArchivedSystemTemplate) {
+    if (isArchivedTemplate(normalizedTemplate)) {
       throw new Error("Archived templates cannot be assigned");
     }
 
-    // Assign the questionnaire
+    const relatedAssignments = await listAssignmentsForTemplate(
+      ctx,
+      practitioner._id,
+      args.patientId,
+      args.templateId
+    );
+    const activeAssignment =
+      relatedAssignments.find((assignment) => assignment.status === "active") ??
+      relatedAssignments.find((assignment) => assignment.status === "completed");
+    const archivedAssignment = relatedAssignments.find((assignment) => assignment.status === "archived");
+
+    if (activeAssignment) {
+      throw new Error("A questionnaire for this template is already active for this patient");
+    }
+
+    if (archivedAssignment) {
+      await ctx.db.patch(archivedAssignment._id, {
+        status: "active",
+        archivedAt: undefined,
+        frequency: args.frequency,
+      });
+
+      const pendingInstance = await getLatestPendingInstance(ctx, archivedAssignment._id);
+      if (!pendingInstance) {
+        await createPendingInstanceForAssignment(
+          ctx,
+          {
+            _id: archivedAssignment._id,
+            patientId: archivedAssignment.patientId,
+            templateId: archivedAssignment.templateId,
+            frequency: args.frequency,
+          }
+        );
+      }
+
+      return {
+        assignmentId: archivedAssignment._id,
+        action: "restored" as const,
+      };
+    }
+
     const assignmentId = await ctx.db.insert("questionnaireAssignments", {
       practitionerId: practitioner._id,
       patientId: args.patientId,
@@ -887,27 +1130,17 @@ export const assign = mutation({
       createdAt: Date.now(),
     });
 
-    // Create the first instance right now to get them started
-    let expiresAt: number | undefined;
-    const now = Date.now();
-    if (args.frequency === "daily") {
-      // Expires in 24 hours
-      expiresAt = now + 24 * 60 * 60 * 1000;
-    } else if (args.frequency === "weekly") {
-      // Expires in 7 days
-      expiresAt = now + 7 * 24 * 60 * 60 * 1000;
-    }
-
-    await ctx.db.insert("questionnaireInstances", {
-      assignmentId,
+    await createPendingInstanceForAssignment(ctx, {
+      _id: assignmentId,
       patientId: args.patientId,
       templateId: args.templateId,
-      status: "pending",
-      createdAt: now,
-      expiresAt,
+      frequency: args.frequency,
     });
 
-    return assignmentId;
+    return {
+      assignmentId,
+      action: "created" as const,
+    };
   },
 });
 
@@ -1185,10 +1418,36 @@ export const unarchiveQuestionnaireAssignment = mutation({
       throw new Error("Assignment not found or unauthorized");
     }
 
+    const relatedAssignments = await listAssignmentsForTemplate(
+      ctx,
+      practitioner._id,
+      assignment.patientId,
+      assignment.templateId
+    );
+    const blockingAssignment = relatedAssignments.find(
+      (candidate) =>
+        candidate._id !== assignment._id &&
+        (candidate.status === "active" || candidate.status === "completed")
+    );
+
+    if (blockingAssignment) {
+      throw new Error("A questionnaire for this template is already active for this patient");
+    }
+
     await ctx.db.patch(args.assignmentId, {
       status: "active",
       archivedAt: undefined,
     });
+
+    const pendingInstance = await getLatestPendingInstance(ctx, assignment._id);
+    if (!pendingInstance) {
+      await createPendingInstanceForAssignment(ctx, {
+        _id: assignment._id,
+        patientId: assignment.patientId,
+        templateId: assignment.templateId,
+        frequency: assignment.frequency,
+      });
+    }
   },
 });
 
@@ -1205,14 +1464,7 @@ export const deleteQuestionnaireAssignment = mutation({
       throw new Error("Assignment not found or unauthorized");
     }
 
-    const instances = await ctx.db
-      .query("questionnaireInstances")
-      .withIndex("by_assignment", (q) => q.eq("assignmentId", args.assignmentId))
-      .collect();
-
-    for (const instance of instances) {
-      await ctx.db.delete(instance._id);
-    }
+    await deleteAssignmentCascade(ctx, args.assignmentId);
 
     const historyViews = await ctx.db
       .query("questionnaireHistoryViews")
@@ -1224,8 +1476,6 @@ export const deleteQuestionnaireAssignment = mutation({
     for (const historyView of historyViews) {
       await ctx.db.delete(historyView._id);
     }
-
-    await ctx.db.delete(args.assignmentId);
   },
 });
 
@@ -1310,5 +1560,51 @@ export const submitInstance = mutation({
       answers: args.answers,
       submittedAt: Date.now(),
     });
+  },
+});
+
+export const createTestInstance = mutation({
+  args: {
+    assignmentId: v.id("questionnaireAssignments"),
+    status: v.optional(v.union(v.literal("pending"), v.literal("completed"), v.literal("expired"))),
+    createdAt: v.optional(v.number()),
+    submittedAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const practitioner = await getCurrentUser(ctx);
+    if (!practitioner || practitioner.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const assignment = await ctx.db.get(args.assignmentId);
+    if (!assignment || assignment.practitionerId !== practitioner._id) {
+      throw new Error("Assignment not found or unauthorized");
+    }
+
+    if (assignment.status !== "active") {
+      throw new Error("Only active assignments can receive test instances");
+    }
+
+    const status = args.status ?? "completed";
+    const createdAt = args.createdAt ?? Date.now();
+
+    let expiresAt: number | undefined;
+    if (assignment.frequency === "daily") {
+      expiresAt = createdAt + 24 * 60 * 60 * 1000;
+    } else if (assignment.frequency === "weekly") {
+      expiresAt = createdAt + 7 * 24 * 60 * 60 * 1000;
+    }
+
+    const instanceId = await ctx.db.insert("questionnaireInstances", {
+      assignmentId: assignment._id,
+      patientId: assignment.patientId,
+      templateId: assignment.templateId,
+      status,
+      createdAt,
+      expiresAt,
+      submittedAt: status === "completed" ? args.submittedAt ?? createdAt : undefined,
+    });
+
+    return instanceId;
   },
 });

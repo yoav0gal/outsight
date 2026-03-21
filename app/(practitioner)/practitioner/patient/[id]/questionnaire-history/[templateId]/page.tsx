@@ -23,7 +23,9 @@ import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DestructiveActionDialog } from "@/components/ui/destructiveActionDialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useFeedback } from "@/components/ui/feedback";
 
 type ScoreSummary = {
   mode: "standard";
@@ -54,6 +56,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
   const router = useRouter();
   const t = useTranslations("PractitionerPatient");
   const tQ = useTranslations("Questionnaire");
+  const tActions = useTranslations("SharedActions");
   const patientId = params.id as Id<"users">;
   const templateId = params.templateId as Id<"questionnaireTemplates">;
   const [selectedSubmission, setSelectedSubmission] = useState<HistoryInstance | null>(null);
@@ -62,6 +65,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
   const [isArchiving, setIsArchiving] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { showFeedback } = useFeedback();
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
   const templateHistory = useQuery(api.questionnaires.listPractitionerPatientTemplateHistory, {
@@ -97,10 +101,20 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     setIsArchiving(true);
     try {
       await archiveQuestionnaireAssignment({ assignmentId: assignment._id });
+      setIsDeleteDialogOpen(false);
+      showFeedback({
+        variant: "success",
+        title: tActions("success.archived"),
+        description: t("questionnaires.archiveSuccess"),
+      });
       goToQuestionnairesView("archived");
     } catch (error) {
       console.error(error);
-      alert(t("questionnaires.archiveError"));
+      showFeedback({
+        variant: "error",
+        title: tActions("archive"),
+        description: t("questionnaires.archiveError"),
+      });
     } finally {
       setIsArchiving(false);
     }
@@ -112,10 +126,19 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     setIsRestoring(true);
     try {
       await unarchiveQuestionnaireAssignment({ assignmentId: assignment._id });
+      showFeedback({
+        variant: "success",
+        title: tActions("success.restored"),
+        description: t("questionnaires.restoreSuccess"),
+      });
       goToQuestionnairesView("active");
     } catch (error) {
       console.error(error);
-      alert(t("questionnaires.restoreError"));
+      showFeedback({
+        variant: "error",
+        title: tActions("restore"),
+        description: t("questionnaires.restoreError"),
+      });
     } finally {
       setIsRestoring(false);
     }
@@ -128,10 +151,19 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     try {
       await deleteQuestionnaireAssignment({ assignmentId: assignment._id });
       setIsDeleteDialogOpen(false);
+      showFeedback({
+        variant: "success",
+        title: tActions("success.deleted"),
+        description: t("questionnaires.deleteSuccess"),
+      });
       goToQuestionnairesView(assignment.status === "archived" ? "archived" : "active");
     } catch (error) {
       console.error(error);
-      alert(t("questionnaires.deleteError"));
+      showFeedback({
+        variant: "error",
+        title: tActions("delete"),
+        description: t("questionnaires.deleteError"),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -173,7 +205,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
         className="-ms-4 flex w-fit items-center gap-2 text-zinc-500 transition-colors hover:text-indigo-600"
       >
         <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-        {t("backToDashboard")}
+        {t("backToPatient")}
       </Button>
 
       <header className="rounded-[2rem] border border-zinc-200/70 bg-white p-6 shadow-sm sm:p-8">
@@ -322,56 +354,29 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[520px]">
-          <div className="rounded-[2rem] border border-zinc-100 bg-white p-8 sm:p-10">
-            <DialogHeader className="space-y-3 text-start">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <DialogTitle className="text-2xl font-bold tracking-tight text-zinc-950">
-                {hasHistory
-                  ? t("questionnaires.deleteConfirmTitleWithHistory")
-                  : t("questionnaires.deleteConfirmTitle")}
-              </DialogTitle>
-              <DialogDescription className="max-w-xl text-sm leading-6 text-zinc-600">
-                {hasHistory
-                  ? t("questionnaires.deleteConfirmDescriptionWithHistory", {
-                      count: templateHistory.history.length,
-                    })
-                  : t("questionnaires.deleteConfirmDescription")}
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter className="mt-8 gap-3 sm:justify-between">
-              <Button variant="ghost" className="rounded-xl text-zinc-600" onClick={() => setIsDeleteDialogOpen(false)}>
-                {t("questionnaires.cancelDelete")}
-              </Button>
-              <div className="flex flex-wrap items-center gap-3">
-                {hasHistory ? (
-                  <Button
-                    variant="outline"
-                    className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-                    onClick={handleArchivePrescription}
-                    disabled={isArchiving}
-                  >
-                    <Archive className="me-2 h-4 w-4" />
-                    {isArchiving ? t("questionnaires.archiving") : t("questionnaires.archiveInstead")}
-                  </Button>
-                ) : null}
-                <Button
-                  variant="destructive"
-                  className="rounded-xl px-6 font-bold"
-                  onClick={handleDeletePrescription}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? t("questionnaires.deleting") : t("questionnaires.confirmDelete")}
-                </Button>
-              </div>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DestructiveActionDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title={
+          hasHistory
+            ? t("questionnaires.deleteConfirmTitleWithHistory")
+            : t("questionnaires.deleteConfirmTitle")
+        }
+        description={
+          hasHistory
+            ? t("questionnaires.deleteConfirmDescriptionWithHistory", {
+                count: templateHistory.history.length,
+              })
+            : t("questionnaires.deleteConfirmDescription")
+        }
+        cancelLabel={tActions("cancel")}
+        confirmLabel={t("questionnaires.confirmDelete")}
+        onConfirm={handleDeletePrescription}
+        isPending={isDeleting}
+        alternativeLabel={hasHistory ? t("questionnaires.archiveInstead") : undefined}
+        onAlternative={hasHistory ? handleArchivePrescription : undefined}
+        alternativePending={isArchiving}
+      />
 
       <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[700px]">

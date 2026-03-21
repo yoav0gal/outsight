@@ -1,20 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { type ComponentType, type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useQuery } from "convex/react";
-import { Archive, Compass, FileText, Library, Plus, Search } from "lucide-react";
+import {
+  Archive,
+  ChevronRight,
+  FileText,
+  Filter,
+  PencilLine,
+  Pin,
+  Plus,
+  Sparkles,
+  Layers3,
+  Search,
+} from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { QuestionnaireTemplateDialog } from "@/components/practitioner/QuestionnaireTemplateDialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type TemplateItem = {
   _id: Id<"questionnaireTemplates">;
@@ -33,72 +42,92 @@ type TemplateItem = {
       maxLabel?: string;
     };
   }>;
-  tags: string[];
   source: "system" | "practitioner";
   isInClinic?: boolean;
+  isQuickAccess?: boolean;
   archivedAt?: number;
 };
 
+type ExplorerSourceFilter = "all" | "system" | "practitioner";
+type ExplorerStateFilter = "all" | "normalAccess" | "quickAccess";
+
 function TemplateCard({
   template,
-  showClinicMarker = false,
   onClick,
 }: {
   template: TemplateItem;
-  showClinicMarker?: boolean;
   onClick: () => void;
 }) {
   const t = useTranslations("PractitionerQuestionnaires");
 
   return (
     <Card
-      className="group cursor-pointer rounded-[1.75rem] border-zinc-200/70 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg"
+      className="group cursor-pointer rounded-[1.5rem] border-zinc-200/70 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
       onClick={onClick}
     >
-      <CardContent className="flex h-full flex-col gap-4 p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 text-start">
-            <h3 className="truncate text-lg font-semibold text-zinc-950">{template.title}</h3>
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-zinc-500">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start gap-4">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+              template.archivedAt
+                ? "bg-amber-50 text-amber-700"
+                : template.isQuickAccess
+                  ? "bg-indigo-50 text-indigo-700"
+                  : template.source === "system"
+                    ? "bg-zinc-100 text-zinc-700"
+                    : "bg-emerald-50 text-emerald-700"
+            }`}
+          >
+            {template.archivedAt ? (
+              <Archive className="h-5 w-5" />
+            ) : template.isQuickAccess ? (
+              <Pin className="h-5 w-5" />
+            ) : template.source === "system" ? (
+              <Sparkles className="h-5 w-5" />
+            ) : (
+              <PencilLine className="h-5 w-5" />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="space-y-1">
+              <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{template.title}</h3>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-zinc-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className={`size-1.5 rounded-full ${
+                      template.source === "system" ? "bg-zinc-400" : "bg-emerald-500"
+                    }`}
+                  />
+                  {template.source === "system" ? t("indicators.system") : t("indicators.custom")}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <FileText className="size-3.5" />
+                  {t("questionsCount", { count: template.questions.length })}
+                </span>
+                {template.isQuickAccess ? (
+                  <span className="inline-flex items-center gap-1.5 text-indigo-700">
+                    <Pin className="size-3.5" />
+                    {t("indicators.quickAccess")}
+                  </span>
+                ) : null}
+                {template.archivedAt ? (
+                  <span className="inline-flex items-center gap-1.5 text-amber-700">
+                    <Archive className="size-3.5" />
+                    {t("indicators.archived")}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <p className="line-clamp-2 text-sm leading-6 text-zinc-500">
               {template.description || t("preview.noDescription")}
             </p>
           </div>
-          {showClinicMarker && template.isInClinic ? (
-            <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
-              aria-label={t("preview.inClinic")}
-              title={t("preview.inClinic")}
-            >
-              <Library className="size-4" />
-            </span>
-          ) : null}
-        </div>
 
-        {template.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {template.tags.slice(0, 3).map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700"
-              >
-                {tag}
-              </Badge>
-            ))}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </div>
-        ) : null}
-
-        <div className="mt-auto flex items-center justify-between gap-3 border-t border-zinc-100 pt-4">
-          <span className="text-sm font-medium text-zinc-600">
-            {t("questionsCount", { count: template.questions.length })}
-          </span>
-          <span className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-            {template.archivedAt
-              ? t("preview.archived")
-              : template.source === "system"
-                ? t("preview.system")
-                : t("preview.custom")}
-          </span>
         </div>
       </CardContent>
     </Card>
@@ -115,7 +144,7 @@ function EmptyState({
   description: string;
 }) {
   return (
-    <div className="rounded-[2rem] border border-dashed border-zinc-200 bg-white px-6 py-14 text-center">
+    <div className="rounded-[1.5rem] border border-dashed border-zinc-200 bg-zinc-50/80 px-6 py-14 text-center">
       <Icon className="mx-auto mb-4 size-10 text-zinc-300" />
       <h3 className="text-lg font-semibold text-zinc-900">{title}</h3>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-500">{description}</p>
@@ -123,403 +152,171 @@ function EmptyState({
   );
 }
 
+function TemplateListSkeleton({ count, columns = false }: { count: number; columns?: boolean }) {
+  return (
+    <div className={columns ? "grid gap-3 lg:grid-cols-2" : "space-y-3"}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Skeleton key={index} className="h-40 rounded-[1.5rem]" />
+      ))}
+    </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  icon: Icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon?: ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={active ? "default" : "outline"}
+      onClick={onClick}
+      className={`rounded-full px-4 ${active ? "bg-zinc-900 text-white hover:bg-zinc-800" : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"}`}
+    >
+      {Icon ? <Icon className="me-2 size-3.5" /> : null}
+      {children}
+    </Button>
+  );
+}
+
 export default function PractitionerQuestionnaires() {
   const t = useTranslations("PractitionerQuestionnaires");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<ExplorerSourceFilter>("all");
+  const [stateFilter, setStateFilter] = useState<ExplorerStateFilter>("all");
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem | null>(null);
-  const [selectedContext, setSelectedContext] = useState<"clinic" | "explorer" | "archived">("clinic");
+  const [selectedContext, setSelectedContext] = useState<"explorer" | "archived">("explorer");
 
   const explorerTemplates = useQuery(api.questionnaires.listTemplatesExplorer, {
     search,
-    tags: selectedTags.length > 0 ? selectedTags : undefined,
+    source: sourceFilter,
+    state: stateFilter,
   });
-  const clinicTemplates = useQuery(api.questionnaires.listClinicTemplates);
-  const archivedTemplates = useQuery(api.questionnaires.listArchivedTemplates);
-  const tags = useQuery(api.questionnaires.listTemplateTags);
+  const managedTemplates = useQuery(api.questionnaires.listClinicTemplates);
 
-  const clinicTemplateById = useMemo(() => {
+  const managedTemplateById = useMemo(() => {
     return new Map<Id<"questionnaireTemplates">, TemplateItem>(
-      (clinicTemplates ?? []).map((template) => [template._id, template])
+      (managedTemplates ?? []).map((template) => [template._id, template])
     );
-  }, [clinicTemplates]);
-
-  const explorerCount = explorerTemplates?.length ?? 0;
-  const clinicCount = clinicTemplates?.length ?? 0;
-  const archivedCount = archivedTemplates?.length ?? 0;
+  }, [managedTemplates]);
+  const archivedTemplateCount = (managedTemplates ?? []).filter((template) => template.archivedAt).length;
 
   const openTemplate = (
     template: TemplateItem,
-    context: "clinic" | "explorer" | "archived"
+    context: "explorer" | "archived"
   ) => {
+    const managedVersion = managedTemplateById.get(template._id);
     setSelectedTemplate({
       ...template,
-      isInClinic: clinicTemplateById.has(template._id) || template.isInClinic,
+      isInClinic: managedVersion?.isInClinic ?? template.isInClinic,
+      isQuickAccess: managedVersion?.isQuickAccess ?? template.isQuickAccess,
     });
     setSelectedContext(context);
   };
 
-  const toggleTag = (tag: string) => {
-    setSelectedTags((currentTags) =>
-      currentTags.includes(tag)
-        ? currentTags.filter((currentTag) => currentTag !== tag)
-        : [...currentTags, tag]
-    );
+  const clearFilters = () => {
+    setSearch("");
+    setSourceFilter("all");
+    setStateFilter("all");
   };
 
   return (
-    <main className="flex-1">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 sm:px-8 lg:px-10">
-        <section className="overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-sm">
-          <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <Badge className="rounded-full border-none bg-indigo-100 px-3 py-1 text-indigo-700">
-                {t("eyebrow")}
-              </Badge>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-                {t("title")}
-              </h1>
-              <p className="mt-3 text-base leading-7 text-zinc-600">{t("description")}</p>
-            </div>
-            <Link href="/practitioner/questionnaires/new">
-              <Button size="lg" className="rounded-xl bg-indigo-600 px-4 text-white hover:bg-indigo-500">
-                <Plus className="size-4" />
-                {t("createTemplate")}
-              </Button>
-            </Link>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 sm:gap-8 sm:px-8 sm:py-8 lg:px-10">
+      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-4">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">{t("title")}</h1>
+          <p className="max-w-3xl text-sm leading-6 text-zinc-600 sm:text-base">{t("description")}</p>
+          <Link
+            href="/practitioner/questionnaires/archived"
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+          >
+            <Archive className="size-4" />
+            {archivedTemplateCount > 0
+              ? t("actions.archivedQuestionnairesWithCount", { count: archivedTemplateCount })
+              : t("actions.archivedQuestionnaires")}
+          </Link>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/practitioner/questionnaires/new">
+            <Button className="rounded-full bg-indigo-600 px-4 text-white hover:bg-indigo-500">
+              <Plus className="me-2 size-4" />
+              {t("actions.createOwnQuestionnaire")}
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-[1.75rem] border border-zinc-200/70 bg-white p-5 shadow-sm sm:p-6">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+          <div className="relative">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("searchPlaceholder")}
+              className="h-12 rounded-xl border-zinc-200 bg-white ps-9"
+            />
           </div>
-        </section>
-
-        <div className="hidden md:flex md:flex-col md:gap-8">
-          <section className="rounded-[2rem] border border-zinc-200/70 bg-white p-6 shadow-sm sm:p-8">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex size-11 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
-                    <Library className="size-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-semibold text-zinc-950">{t("clinic.title")}</h2>
-                    <p className="mt-1 text-sm text-zinc-500">{t("clinic.description")}</p>
-                  </div>
-                </div>
-              </div>
-              <Badge variant="secondary" className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                {t("clinic.count", { count: clinicCount })}
-              </Badge>
-            </div>
-
-            {!clinicTemplates ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {Array.from({ length: 2 }).map((_, index) => (
-                  <Skeleton key={index} className="h-40 rounded-[1.75rem]" />
-                ))}
-              </div>
-            ) : clinicTemplates.length === 0 ? (
-              <EmptyState
-                icon={FileText}
-                title={t("clinic.emptyTitle")}
-                description={t("clinic.emptyDescription")}
-              />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {clinicTemplates.map((template) => (
-                  <TemplateCard
-                    key={template._id}
-                    template={{ ...template, isInClinic: true }}
-                    onClick={() => openTemplate({ ...template, isInClinic: true }, "clinic")}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[2rem] border border-zinc-200/70 bg-white p-6 shadow-sm sm:p-8">
-            <div className="mb-6 flex flex-col gap-4">
-              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700">
-                      <Compass className="size-5" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-semibold text-zinc-950">{t("explorer.title")}</h2>
-                      <p className="mt-1 text-sm text-zinc-500">{t("explorer.description")}</p>
-                    </div>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                  {t("explorer.count", { count: explorerCount })}
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder={t("explorer.searchPlaceholder")}
-                    className="h-11 rounded-xl border-zinc-200 bg-white ps-9"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant={selectedTags.length > 0 ? "outline" : "secondary"}
-                    onClick={() => setSelectedTags([])}
-                    className="rounded-full px-4"
-                  >
-                    {t("explorer.allTags")}
-                  </Button>
-                  {(tags ?? []).map((tag) => (
-                    <Button
-                      key={tag}
-                      type="button"
-                      variant={selectedTags.includes(tag) ? "secondary" : "outline"}
-                      onClick={() => toggleTag(tag)}
-                      className="rounded-full px-4"
-                    >
-                      {tag}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {!explorerTemplates ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <Skeleton key={index} className="h-40 rounded-[1.75rem]" />
-                ))}
-              </div>
-            ) : explorerTemplates.length === 0 ? (
-              <EmptyState
-                icon={Compass}
-                title={t("explorer.emptyTitle")}
-                description={t("explorer.emptyDescription")}
-              />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {explorerTemplates.map((template) => (
-                  <TemplateCard
-                    key={template._id}
-                    template={template}
-                    showClinicMarker
-                    onClick={() => openTemplate(template, "explorer")}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[2rem] border border-zinc-200/70 bg-white p-6 shadow-sm sm:p-8">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                  <Archive className="size-5" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-semibold text-zinc-950">{t("archived.title")}</h2>
-                  <p className="mt-1 text-sm text-zinc-500">{t("archived.description")}</p>
-                </div>
-              </div>
-              <Badge variant="secondary" className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                {t("archived.count", { count: archivedCount })}
-              </Badge>
-            </div>
-
-            {!archivedTemplates ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {Array.from({ length: 2 }).map((_, index) => (
-                  <Skeleton key={index} className="h-40 rounded-[1.75rem]" />
-                ))}
-              </div>
-            ) : archivedTemplates.length === 0 ? (
-              <EmptyState
-                icon={Archive}
-                title={t("archived.emptyTitle")}
-                description={t("archived.emptyDescription")}
-              />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {archivedTemplates.map((template) => (
-                  <TemplateCard
-                    key={template._id}
-                    template={template}
-                    onClick={() => openTemplate(template, "archived")}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
         </div>
 
-        <div className="md:hidden">
-          <Tabs defaultValue="clinic" className="w-full">
-            <TabsList className="mb-5 inline-flex w-full rounded-xl bg-zinc-100 p-1">
-              <TabsTrigger value="clinic" className="rounded-lg">
-                {t("clinic.title")}
-              </TabsTrigger>
-              <TabsTrigger value="explorer" className="rounded-lg">
-                {t("explorer.title")}
-              </TabsTrigger>
-              <TabsTrigger value="archived" className="rounded-lg">
-                {t("archived.title")}
-              </TabsTrigger>
-            </TabsList>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChip active={sourceFilter === "all"} onClick={() => setSourceFilter("all")} icon={Layers3}>
+              {t("filters.allSources")}
+            </FilterChip>
+            <FilterChip active={sourceFilter === "system"} onClick={() => setSourceFilter("system")} icon={Sparkles}>
+              {t("filters.sourceSystem")}
+            </FilterChip>
+            <FilterChip active={sourceFilter === "practitioner"} onClick={() => setSourceFilter("practitioner")} icon={PencilLine}>
+              {t("filters.sourceCustom")}
+            </FilterChip>
+            <Button type="button" variant="ghost" onClick={clearFilters} className="ms-auto rounded-full px-3 text-zinc-500">
+              {t("filters.clear")}
+            </Button>
+          </div>
 
-            <TabsContent value="clinic">
-              <section className="rounded-[2rem] border border-zinc-200/70 bg-white p-5 shadow-sm">
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-semibold text-zinc-950">{t("clinic.title")}</h2>
-                    <p className="mt-1 text-sm text-zinc-500">{t("clinic.description")}</p>
-                  </div>
-                  <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                    {t("clinic.count", { count: clinicCount })}
-                  </Badge>
-                </div>
-
-                {!clinicTemplates ? (
-                  <div className="space-y-4">
-                    {Array.from({ length: 2 }).map((_, index) => (
-                      <Skeleton key={index} className="h-40 rounded-[1.75rem]" />
-                    ))}
-                  </div>
-                ) : clinicTemplates.length === 0 ? (
-                  <EmptyState
-                    icon={FileText}
-                    title={t("clinic.emptyTitle")}
-                    description={t("clinic.emptyDescription")}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {clinicTemplates.map((template) => (
-                      <TemplateCard
-                        key={template._id}
-                        template={{ ...template, isInClinic: true }}
-                        onClick={() => openTemplate({ ...template, isInClinic: true }, "clinic")}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            </TabsContent>
-
-            <TabsContent value="explorer">
-              <section className="rounded-[2rem] border border-zinc-200/70 bg-white p-5 shadow-sm">
-                <div className="mb-5 space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-xl font-semibold text-zinc-950">{t("explorer.title")}</h2>
-                      <p className="mt-1 text-sm text-zinc-500">{t("explorer.description")}</p>
-                    </div>
-                    <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                      {t("explorer.count", { count: explorerCount })}
-                    </Badge>
-                  </div>
-
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
-                    <Input
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder={t("explorer.searchPlaceholder")}
-                      className="h-11 rounded-xl border-zinc-200 bg-white ps-9"
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant={selectedTags.length > 0 ? "outline" : "secondary"}
-                      onClick={() => setSelectedTags([])}
-                      className="rounded-full px-4"
-                    >
-                      {t("explorer.allTags")}
-                    </Button>
-                    {(tags ?? []).map((tag) => (
-                      <Button
-                        key={tag}
-                        type="button"
-                        variant={selectedTags.includes(tag) ? "secondary" : "outline"}
-                        onClick={() => toggleTag(tag)}
-                        className="rounded-full px-4"
-                      >
-                        {tag}
-                      </Button>
-                    ))}
-                  </div>
-
-                </div>
-
-                {!explorerTemplates ? (
-                  <div className="space-y-4">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                      <Skeleton key={index} className="h-40 rounded-[1.75rem]" />
-                    ))}
-                  </div>
-                ) : explorerTemplates.length === 0 ? (
-                  <EmptyState
-                    icon={Compass}
-                    title={t("explorer.emptyTitle")}
-                    description={t("explorer.emptyDescription")}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {explorerTemplates.map((template) => (
-                      <TemplateCard
-                        key={template._id}
-                        template={template}
-                        showClinicMarker
-                        onClick={() => openTemplate(template, "explorer")}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            </TabsContent>
-
-            <TabsContent value="archived">
-              <section className="rounded-[2rem] border border-zinc-200/70 bg-white p-5 shadow-sm">
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-semibold text-zinc-950">{t("archived.title")}</h2>
-                    <p className="mt-1 text-sm text-zinc-500">{t("archived.description")}</p>
-                  </div>
-                  <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                    {t("archived.count", { count: archivedCount })}
-                  </Badge>
-                </div>
-
-                {!archivedTemplates ? (
-                  <div className="space-y-4">
-                    {Array.from({ length: 2 }).map((_, index) => (
-                      <Skeleton key={index} className="h-40 rounded-[1.75rem]" />
-                    ))}
-                  </div>
-                ) : archivedTemplates.length === 0 ? (
-                  <EmptyState
-                    icon={Archive}
-                    title={t("archived.emptyTitle")}
-                    description={t("archived.emptyDescription")}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {archivedTemplates.map((template) => (
-                      <TemplateCard
-                        key={template._id}
-                        template={template}
-                        onClick={() => openTemplate(template, "archived")}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            </TabsContent>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <FilterChip active={stateFilter === "all"} onClick={() => setStateFilter("all")} icon={Filter}>
+              {t("filters.allAccess")}
+            </FilterChip>
+            <FilterChip active={stateFilter === "normalAccess"} onClick={() => setStateFilter("normalAccess")} icon={Layers3}>
+              {t("filters.normalAccess")}
+            </FilterChip>
+            <FilterChip active={stateFilter === "quickAccess"} onClick={() => setStateFilter("quickAccess")} icon={Pin}>
+              {t("filters.stateQuickAccess")}
+            </FilterChip>
+          </div>
         </div>
+      </section>
+
+      <div className="space-y-3">
+        {!explorerTemplates ? (
+          <TemplateListSkeleton count={4} columns />
+        ) : explorerTemplates.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title={t("explorer.emptyTitle")}
+            description={t("explorer.emptyDescription")}
+          />
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {explorerTemplates.map((template) => (
+              <TemplateCard
+                key={template._id}
+                template={template}
+                onClick={() => openTemplate(template, "explorer")}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <QuestionnaireTemplateDialog

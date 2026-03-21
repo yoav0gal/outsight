@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, Library, Loader2, PencilLine, Trash2 } from "lucide-react";
+import {
+  Archive,
+  Loader2,
+  PencilLine,
+  Pin,
+  PinOff,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation } from "convex/react";
@@ -11,23 +18,24 @@ import { Id } from "@/convex/_generated/dataModel";
 import { QuestionnairePreview } from "@/components/QuestionnairePreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DestructiveActionDialog } from "@/components/ui/destructiveActionDialog";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useFeedback } from "@/components/ui/feedback";
 
 interface TemplateDialogTemplate {
   _id: Id<"questionnaireTemplates">;
   title: string;
   description?: string;
-  tags: string[];
   source: "system" | "practitioner";
   isInClinic?: boolean;
+  isQuickAccess?: boolean;
   archivedAt?: number;
   questions: Array<{
     id: string;
@@ -48,7 +56,7 @@ interface QuestionnaireTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template: TemplateDialogTemplate | null;
-  context: "clinic" | "explorer" | "archived";
+  context: "explorer" | "archived";
 }
 
 export function QuestionnaireTemplateDialog({
@@ -59,52 +67,79 @@ export function QuestionnaireTemplateDialog({
 }: QuestionnaireTemplateDialogProps) {
   const router = useRouter();
   const t = useTranslations("PractitionerQuestionnaires");
-  const saveToClinic = useMutation(api.questionnaires.saveTemplateToClinic);
-  const removeFromClinic = useMutation(api.questionnaires.removeTemplateFromClinic);
+  const tActions = useTranslations("SharedActions");
+  const pinTemplateToQuickAccess = useMutation(api.questionnaires.pinTemplateToQuickAccess);
+  const unpinTemplateFromQuickAccess = useMutation(api.questionnaires.unpinTemplateFromQuickAccess);
   const deleteTemplate = useMutation(api.questionnaires.deleteTemplate);
-  const createEditableTemplateCopy = useMutation(
-    api.questionnaires.createEditableTemplateCopy
-  );
+  const createEditableTemplateCopy = useMutation(api.questionnaires.createEditableTemplateCopy);
   const archiveTemplate = useMutation(api.questionnaires.archiveTemplate);
   const unarchiveTemplate = useMutation(api.questionnaires.unarchiveTemplate);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isPinning, setIsPinning] = useState(false);
+  const [isUnpinning, setIsUnpinning] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const { showFeedback } = useFeedback();
 
-  const canDeleteTemplate = context !== "clinic" && template?.source === "practitioner";
-  const canRemoveFromClinic = context === "clinic" && !!template?.isInClinic;
+  const canDeleteTemplate = template?.source === "practitioner";
   const canArchiveTemplate = template?.source === "practitioner" && !template?.archivedAt;
   const canRestoreTemplate = template?.source === "practitioner" && !!template?.archivedAt;
+  const canPinQuickAccess = !!template && !template.archivedAt && !template.isQuickAccess;
+  const canUnpinQuickAccess = !!template?.isQuickAccess && !template.archivedAt;
 
-  async function handleSave() {
+  async function handlePinQuickAccess() {
     if (!template) return;
-    setIsSaving(true);
+    setIsPinning(true);
     try {
-      await saveToClinic({
+      await pinTemplateToQuickAccess({
         templateId: template._id as Id<"questionnaireTemplates">,
       });
       onOpenChange(false);
+      showFeedback({
+        variant: "success",
+        title: t("preview.quickAccess"),
+        description: t("preview.quickAccessSuccess"),
+      });
       router.refresh();
+    } catch (error) {
+      console.error(error);
+      showFeedback({
+        variant: "error",
+        title: t("preview.saveToQuickAccess"),
+        description:
+          error instanceof Error && error.message ? error.message : tActions("errors.generic"),
+      });
     } finally {
-      setIsSaving(false);
+      setIsPinning(false);
     }
   }
 
-  async function handleRemove() {
+  async function handleUnpinQuickAccess() {
     if (!template) return;
-    setIsRemoving(true);
+    setIsUnpinning(true);
     try {
-      await removeFromClinic({
+      await unpinTemplateFromQuickAccess({
         templateId: template._id as Id<"questionnaireTemplates">,
       });
       onOpenChange(false);
+      showFeedback({
+        variant: "success",
+        title: t("preview.removeFromQuickAccess"),
+        description: t("preview.removeQuickAccessSuccess"),
+      });
       router.refresh();
+    } catch (error) {
+      console.error(error);
+      showFeedback({
+        variant: "error",
+        title: t("preview.removeFromQuickAccess"),
+        description:
+          error instanceof Error && error.message ? error.message : tActions("errors.generic"),
+      });
     } finally {
-      setIsRemoving(false);
+      setIsUnpinning(false);
     }
   }
 
@@ -123,9 +158,12 @@ export function QuestionnaireTemplateDialog({
       router.push(`/practitioner/questionnaires/new?templateId=${editableTemplateId}`);
     } catch (error) {
       console.error(error);
-      alert(
-        error instanceof Error && error.message ? error.message : t("preview.deleteError")
-      );
+      showFeedback({
+        variant: "error",
+        title: t("preview.edit"),
+        description:
+          error instanceof Error && error.message ? error.message : tActions("errors.generic"),
+      });
     } finally {
       setIsEditing(false);
     }
@@ -140,14 +178,20 @@ export function QuestionnaireTemplateDialog({
       });
       setIsDeleteConfirmOpen(false);
       onOpenChange(false);
+      showFeedback({
+        variant: "success",
+        title: tActions("success.deleted"),
+        description: t("preview.deleteSuccess"),
+      });
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert(
-        error instanceof Error && error.message
-          ? error.message
-          : t("preview.deleteError")
-      );
+      showFeedback({
+        variant: "error",
+        title: t("preview.deleteTemplate"),
+        description:
+          error instanceof Error && error.message ? error.message : t("preview.deleteError"),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -160,13 +204,22 @@ export function QuestionnaireTemplateDialog({
       await archiveTemplate({
         templateId: template._id as Id<"questionnaireTemplates">,
       });
+      setIsDeleteConfirmOpen(false);
       onOpenChange(false);
+      showFeedback({
+        variant: "success",
+        title: tActions("success.archived"),
+        description: t("preview.archiveSuccess"),
+      });
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert(
-        error instanceof Error && error.message ? error.message : t("preview.archiveError")
-      );
+      showFeedback({
+        variant: "error",
+        title: tActions("archive"),
+        description:
+          error instanceof Error && error.message ? error.message : t("preview.archiveError"),
+      });
     } finally {
       setIsArchiving(false);
     }
@@ -180,12 +233,20 @@ export function QuestionnaireTemplateDialog({
         templateId: template._id as Id<"questionnaireTemplates">,
       });
       onOpenChange(false);
+      showFeedback({
+        variant: "success",
+        title: tActions("success.restored"),
+        description: t("preview.restoreSuccess"),
+      });
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert(
-        error instanceof Error && error.message ? error.message : t("preview.restoreError")
-      );
+      showFeedback({
+        variant: "error",
+        title: tActions("restore"),
+        description:
+          error instanceof Error && error.message ? error.message : t("preview.restoreError"),
+      });
     } finally {
       setIsRestoring(false);
     }
@@ -201,11 +262,7 @@ export function QuestionnaireTemplateDialog({
                 <DialogHeader className="gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className="rounded-full border-none bg-indigo-100 px-3 py-1 text-indigo-700">
-                      {context === "clinic"
-                        ? t("clinic.badge")
-                        : context === "archived"
-                          ? t("archived.badge")
-                          : t("explorer.badge")}
+                      {context === "archived" ? t("archived.title") : t("explorer.title")}
                     </Badge>
                     <Badge
                       variant="outline"
@@ -213,6 +270,15 @@ export function QuestionnaireTemplateDialog({
                     >
                       {template.source === "system" ? t("preview.system") : t("preview.custom")}
                     </Badge>
+                    {template.isQuickAccess ? (
+                      <Badge
+                        variant="outline"
+                        className="rounded-full border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700"
+                      >
+                        <Pin className="me-1 size-3.5" />
+                        {t("preview.quickAccess")}
+                      </Badge>
+                    ) : null}
                     {template.archivedAt ? (
                       <Badge
                         variant="outline"
@@ -228,19 +294,6 @@ export function QuestionnaireTemplateDialog({
                   <DialogDescription className="text-sm text-zinc-500 sm:text-base">
                     {template.description || t("preview.noDescription")}
                   </DialogDescription>
-                  {template.tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {template.tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : null}
                 </DialogHeader>
               </div>
 
@@ -249,22 +302,30 @@ export function QuestionnaireTemplateDialog({
               </div>
 
               <DialogFooter className="shrink-0 flex-col gap-3 border-t border-zinc-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-                <div className="flex items-center gap-2">
-                  {template.archivedAt ? null : template.isInClinic ? (
-                    <Badge className="rounded-full border-none bg-emerald-100 px-3 py-1 text-emerald-700">
-                      <Library className="size-4" />
-                      {t("preview.inClinic")}
-                    </Badge>
-                  ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  {canPinQuickAccess ? (
                     <Button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="rounded-xl bg-indigo-600 text-white hover:bg-indigo-500"
+                      variant="outline"
+                      onClick={handlePinQuickAccess}
+                      disabled={isPinning}
+                      className="rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                     >
-                      {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Library className="size-4" />}
-                      {t("preview.saveToClinic")}
+                      {isPinning ? <Loader2 className="size-4 animate-spin" /> : <Pin className="size-4" />}
+                      {t("preview.saveToQuickAccess")}
                     </Button>
-                  )}
+                  ) : null}
+
+                  {canUnpinQuickAccess ? (
+                    <Button
+                      variant="outline"
+                      onClick={handleUnpinQuickAccess}
+                      disabled={isUnpinning}
+                      className="rounded-xl border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                    >
+                      {isUnpinning ? <Loader2 className="size-4 animate-spin" /> : <PinOff className="size-4" />}
+                      {t("preview.removeFromQuickAccess")}
+                    </Button>
+                  ) : null}
 
                   <Button
                     variant="outline"
@@ -277,10 +338,9 @@ export function QuestionnaireTemplateDialog({
                   >
                     {isEditing ? <Loader2 className="size-4 animate-spin" /> : <PencilLine className="size-4" />}
                   </Button>
-
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {canArchiveTemplate ? (
                     <Button
                       variant="outline"
@@ -289,7 +349,7 @@ export function QuestionnaireTemplateDialog({
                       className="rounded-xl border-amber-200/80 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
                     >
                       {isArchiving ? <Loader2 className="size-4 animate-spin" /> : <Archive className="size-4" />}
-                      {t("preview.archive")}
+                      {tActions("archive")}
                     </Button>
                   ) : null}
 
@@ -301,7 +361,7 @@ export function QuestionnaireTemplateDialog({
                       className="rounded-xl border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                     >
                       {isRestoring ? <Loader2 className="size-4 animate-spin" /> : <Archive className="size-4" />}
-                      {t("preview.restore")}
+                      {tActions("restore")}
                     </Button>
                   ) : null}
 
@@ -310,24 +370,12 @@ export function QuestionnaireTemplateDialog({
                       variant="outline"
                       onClick={() => setIsDeleteConfirmOpen(true)}
                       disabled={isDeleting}
-                      size="icon-lg"
-                      aria-label={t("preview.deleteTemplate")}
-                      title={t("preview.deleteTemplate")}
-                      className="rounded-full border-red-200/80 text-red-600 hover:bg-red-50 hover:text-red-700"
+                      aria-label={tActions("delete")}
+                      title={tActions("delete")}
+                      className="rounded-xl border-red-200/80 text-red-600 hover:bg-red-50 hover:text-red-700"
                     >
                       {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-                    </Button>
-                  ) : canRemoveFromClinic ? (
-                    <Button
-                      variant="outline"
-                      onClick={handleRemove}
-                      disabled={isRemoving}
-                      size="icon-lg"
-                      aria-label={t("preview.removeFromClinic")}
-                      title={t("preview.removeFromClinic")}
-                      className="rounded-full border-red-200/80 text-red-600 hover:bg-red-50 hover:text-red-700"
-                    >
-                      {isRemoving ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                      {tActions("delete")}
                     </Button>
                   ) : null}
                 </div>
@@ -337,48 +385,19 @@ export function QuestionnaireTemplateDialog({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <DialogContent
-          showCloseButton={false}
-          className="w-[min(28rem,calc(100vw-2rem))] max-w-[min(28rem,calc(100vw-2rem))] rounded-[1.5rem] border-none p-0 shadow-2xl"
-        >
-          <div className="p-6 sm:p-7">
-            <DialogHeader className="gap-3">
-              <DialogTitle className="text-xl font-bold text-zinc-950">
-                {t("preview.deleteConfirmTitle")}
-              </DialogTitle>
-              <DialogDescription className="text-sm leading-6 text-zinc-600">
-                {template?.isInClinic
-                  ? t("preview.deleteConfirmWithClinic")
-                  : t("preview.deleteConfirmDescription")}
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-
-          <DialogFooter className="border-t border-zinc-100 px-6 py-4 sm:flex-row sm:justify-between sm:px-7">
-            <DialogClose
-              render={
-                <Button
-                  variant="outline"
-                  className="rounded-xl border-zinc-200 text-zinc-700 hover:bg-zinc-50"
-                />
-              }
-            >
-              {t("preview.cancelDelete")}
-            </DialogClose>
-
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="rounded-xl"
-            >
-              {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-              {t("preview.confirmDelete")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DestructiveActionDialog
+        open={isDeleteConfirmOpen}
+        onOpenChange={setIsDeleteConfirmOpen}
+        title={t("preview.deleteConfirmTitle")}
+        description={t("preview.deleteConfirmDescription")}
+        cancelLabel={tActions("cancel")}
+        confirmLabel={t("preview.confirmDelete")}
+        onConfirm={handleDelete}
+        isPending={isDeleting}
+        alternativeLabel={canArchiveTemplate ? t("preview.archiveInstead") : undefined}
+        onAlternative={canArchiveTemplate ? handleArchive : undefined}
+        alternativePending={isArchiving}
+      />
     </>
   );
 }

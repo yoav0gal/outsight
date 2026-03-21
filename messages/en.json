@@ -35,6 +35,11 @@
     "myPatients": "My Patients",
     "myPatientsDesc": "Manage and track your patients' progress.",
     "addPatient": "Add Patient",
+    "searchPlaceholder": "Search by patient name or email",
+    "searchEmpty": "No patients match this search.",
+    "newEntries": "{count, plural, one {# new entry} other {# new entries}}",
+    "inviteCodeTitle": "One-time invite code",
+    "inviteCodeDesc": "Share this code once with your patient. After it is used, it will stop working.",
     "inviteLinkGenerated": "Patient Invitation Link Generated",
     "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice.",
     "copy": "Copy",
@@ -48,53 +53,62 @@
   },
   "PractitionerQuestionnaires": {
     "title": "Questionnaires",
-    "eyebrow": "Questions Hub",
-    "description": "Keep your clinic-ready questionnaires in one place, browse the full template library, and save only what you want available for assignment.",
-    "createTemplate": "Create Template",
-    "noTemplates": "No templates yet",
-    "noTemplatesDesc": "Create your first template to assign to patients.",
+    "description": "Search the full questionnaire catalog, keep your active set organized, and pin the forms you use most.",
+    "actions": {
+      "createOwnQuestionnaire": "Create your own questionnaire",
+      "archivedQuestionnaires": "Archived questionnaires",
+      "archivedQuestionnairesWithCount": "Your archived questionnaires ({count})"
+    },
+    "searchPlaceholder": "Search questionnaires",
     "questionsCount": "{count} Questions",
-    "clinic": {
-      "title": "In Your Clinic",
-      "badge": "Clinic library",
-      "description": "These are the questionnaires your clinic can assign right now.",
-      "count": "{count} saved",
-      "emptyTitle": "Nothing saved to your clinic yet",
-      "emptyDescription": "Browse the explorer below and save templates you want available for assignment."
+    "filters": {
+      "sourceLabel": "Source",
+      "accessLabel": "Access",
+      "allSources": "All sources",
+      "allAccess": "All access",
+      "normalAccess": "Normal access",
+      "sourceSystem": "System",
+      "sourceCustom": "Custom",
+      "stateQuickAccess": "Quick access",
+      "clear": "Clear filters"
     },
     "explorer": {
-      "title": "Template Explorer",
-      "badge": "Template explorer",
-      "description": "Browse every available template, filter by tags, and save the right ones into your clinic.",
+      "title": "Explorer",
+      "description": "Browse every active questionnaire available in the system, then add or pin what belongs in your day-to-day workflow.",
       "count": "{count} results",
-      "searchPlaceholder": "Search by template name",
-      "allTags": "All tags",
-      "emptyTitle": "No templates match these filters",
-      "emptyDescription": "Try another name or clear the active tag filter."
+      "emptyTitle": "No questionnaires match these filters",
+      "emptyDescription": "Try another search or clear one of the active filters."
+    },
+    "quickAccess": {
+      "title": "Quick Access",
+      "description": "These questionnaires appear first when assigning to a patient.",
+      "count": "{count} pinned",
+      "emptyTitle": "No quick access questionnaires yet",
+      "emptyDescription": "Pin the questionnaires you prescribe often so they show first during assignment."
     },
     "archived": {
       "title": "Archived",
-      "badge": "Archived templates",
-      "description": "Review templates you retired from active clinic use. They stay readable but cannot be newly assigned.",
+      "description": "Archived custom questionnaires stay readable and restorable, but no longer appear during patient assignment.",
       "count": "{count} archived",
-      "emptyTitle": "No archived templates yet",
-      "emptyDescription": "Archive a custom template to remove it from active clinic and explorer flows without losing history."
+      "emptyTitle": "No archived questionnaires yet",
+      "emptyDescription": "Archive a custom questionnaire when you want to stop assigning it without deleting its history."
     },
     "preview": {
-      "saved": "At Your Clinic",
-      "inClinic": "At Your Clinic",
-      "saveToClinic": "Save to clinic",
-      "removeFromClinic": "Remove from clinic",
+      "quickAccess": "Quick Access",
+      "saveToQuickAccess": "Pin to quick access",
+      "removeFromQuickAccess": "Remove from quick access",
+      "quickAccessSuccess": "This questionnaire is now pinned to quick access.",
+      "removeQuickAccessSuccess": "This questionnaire was removed from quick access.",
       "deleteTemplate": "Delete template",
-      "deleteConfirmTitle": "Delete this template?",
-      "deleteConfirmDescription": "This will permanently delete the template and it cannot be restored.",
-      "deleteConfirmWithClinic": "This will permanently delete the template, and if it is saved in your clinic it will be removed from there too.",
-      "cancelDelete": "Cancel",
+      "deleteConfirmTitle": "Delete this template permanently?",
+      "deleteConfirmDescription": "This permanently deletes the template and all related prescriptions, responses, and history. This cannot be undone.",
       "confirmDelete": "Delete template",
+      "deleteSuccess": "The template and its related data were permanently deleted.",
       "deleteError": "Failed to delete template",
-      "archive": "Archive",
+      "archiveInstead": "Archive instead",
+      "archiveSuccess": "The template was kept and removed from active use.",
       "archiveError": "Failed to archive template",
-      "restore": "Restore",
+      "restoreSuccess": "The template is active again.",
       "restoreError": "Failed to restore template",
       "edit": "Edit template",
       "makeEditable": "Make editable copy",
@@ -102,6 +116,12 @@
       "custom": "Custom",
       "archived": "Archived",
       "noDescription": "No description yet."
+    },
+    "indicators": {
+      "system": "System",
+      "custom": "Custom",
+      "quickAccess": "Quick Access",
+      "archived": "Archived"
     }
   },
   "PatientHome": {
@@ -123,6 +143,7 @@
   },
   "PractitionerPatient": {
     "backToDashboard": "Back to My Patients",
+    "backToPatient": "Back to Patient",
     "unnamed": "Unnamed Patient",
     "tabs": {
       "overview": "Overview",
@@ -170,8 +191,12 @@
       }
     },
     "questionnaires": {
-      "assign": "Prescribe Questionnaire",
-      "active": "Active Prescriptions",
+      "assign": "Add Questionnaire",
+      "assignSuccess": "The questionnaire is now active for this patient.",
+      "assignRestoredSuccess": "An archived prescription for this template was restored and reactivated.",
+      "assignError": "Failed to prescribe questionnaire.",
+      "assignAlreadyActiveError": "This patient already has an active questionnaire for that template.",
+      "active": "Active Questionnaires",
       "activeDescription": "These prescriptions are currently active and may generate new tasks for the patient.",
       "archivedTitle": "Archived Prescriptions",
       "archivedDescription": "These prescriptions are retired from active use but remain available for review.",
@@ -180,6 +205,7 @@
       "openArchived": "View archived prescriptions",
       "returnToActive": "Return to active prescriptions",
       "history": "Past Responses",
+      "newEntriesLabel": "New entries",
       "newEntries": "{count} new",
       "lastAdded": "Last addition {date}",
       "lastAddedIndicator": "Last added",
@@ -207,11 +233,15 @@
       "deleting": "Deleting...",
       "cancelDelete": "Cancel",
       "confirmDelete": "Delete prescription",
-      "deleteConfirmTitle": "Delete this prescription?",
-      "deleteConfirmDescription": "This removes the prescription from the patient record and stops any remaining pending tasks. Past responses stay in history.",
+      "deleteConfirmTitle": "Delete this prescription permanently?",
+      "deleteConfirmDescription": "This permanently deletes the prescription and all related patient data for it, including pending tasks and saved responses. This cannot be undone.",
       "deleteConfirmTitleWithHistory": "Delete this prescription and all of its history?",
       "deleteConfirmDescriptionWithHistory": "This prescription has {count} past responses. Deleting it will permanently remove the prescription and all of those answers from this patient record. We recommend archiving instead if you want to keep the history.",
+      "archiveSuccess": "The prescription was kept and removed from active use.",
       "archiveError": "Failed to archive prescription",
+      "restoreSuccess": "The prescription is active again.",
+      "restoreError": "Failed to restore prescription",
+      "deleteSuccess": "The prescription and its related data were permanently deleted.",
       "deleteError": "Failed to delete prescription",
       "frequency": {
         "once": "Once",
@@ -231,15 +261,39 @@
     },
     "assignModal": {
       "title": "Prescribe Questionnaire",
-      "description": "Select a clinic template and how often the patient should fill it out.",
+      "description": "Select any non-archived questionnaire and choose how often the patient should fill it out.",
       "template": "Template",
       "selectTemplate": "Select a template",
-      "searchTemplate": "Search clinic templates",
-      "searchDescription": "Only templates saved under In Your Clinic can be assigned.",
-      "noTemplates": "No clinic templates found",
+      "searchTemplate": "Search questionnaires",
+      "searchDescription": "Quick access appears first. After that, custom questionnaires appear before system questionnaires.",
+      "noTemplates": "No questionnaires found",
+      "quickAccess": "Quick Access",
+      "otherQuestionnaires": "All other questionnaires",
+      "system": "System",
+      "custom": "Custom",
       "frequency": "Frequency",
       "cancel": "Cancel",
       "submit": "Prescribe"
+    }
+  },
+  "SharedActions": {
+    "add": "Add",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "goToArchive": "Go to archive",
+    "archived": "Archived",
+    "backToActive": "Back to active",
+    "success": {
+      "archived": "Archived",
+      "restored": "Restored",
+      "deleted": "Deleted permanently",
+      "savedToClinic": "Saved to clinic",
+      "removedFromUse": "Removed from active use"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
     }
   },
   "Questionnaire": {

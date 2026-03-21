@@ -13,7 +13,6 @@ import {
   createEmptyTemplateValues,
   normalizeQuestions,
   normalizeTemplateDescription,
-  normalizeTemplateTags,
   normalizeTemplateTitle,
   type TemplateEditorValues,
 } from "@/lib/templateEditor";
@@ -24,7 +23,6 @@ export default function CreateTemplatePage() {
   const t = useTranslations("CreateTemplate");
   const createTemplate = useMutation(api.questionnaires.createTemplate);
   const updateTemplate = useMutation(api.questionnaires.updateTemplate);
-  const availableTags = useQuery(api.questionnaires.listTemplateTags);
   const visibleTemplates = useQuery(api.questionnaires.listTemplates);
   const rawTemplateId = searchParams.get("templateId");
   const templateId =
@@ -69,7 +67,7 @@ export default function CreateTemplatePage() {
     const normalizedValues = {
       title: normalizeTemplateTitle(values.title),
       description: normalizeTemplateDescription(values.description),
-      tags: normalizeTemplateTags(values.tags),
+      tags: [],
       questions: normalizeQuestions(values.questions),
     };
 
@@ -80,7 +78,7 @@ export default function CreateTemplatePage() {
         JSON.stringify({
           title: normalizeTemplateTitle(existingTemplate.title),
           description: normalizeTemplateDescription(existingTemplate.description || ""),
-          tags: normalizeTemplateTags(existingTemplate.tags || []),
+          tags: [],
           questions: normalizeQuestions(existingTemplate.questions),
         })
     ) {
@@ -158,7 +156,7 @@ export default function CreateTemplatePage() {
       key={templateId ?? "new-template"}
       mode={isEditing ? "edit" : "create"}
       initialValues={initialValues}
-      availableTags={availableTags ?? []}
+      availableTags={[]}
       isSubmitting={isSubmitting}
       onSubmit={handleSubmit}
       onCancel={() => router.push("/practitioner/questionnaires")}
@@ -167,6 +165,7 @@ export default function CreateTemplatePage() {
       titleError={titleError}
       clearTitleError={() => setTitleError("")}
       canEditTags={!isSystemTemplate}
+      showTags={false}
     />
   );
 }

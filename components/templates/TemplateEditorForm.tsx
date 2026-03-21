@@ -36,6 +36,7 @@ interface TemplateEditorFormProps {
   titleError?: string;
   clearTitleError?: () => void;
   canEditTags?: boolean;
+  showTags?: boolean;
   pageTitle?: string;
   pageDescription?: string;
   submitLabel?: string;
@@ -53,6 +54,7 @@ export function TemplateEditorForm({
   titleError,
   clearTitleError,
   canEditTags = true,
+  showTags = true,
   pageTitle,
   pageDescription,
   submitLabel,
@@ -217,83 +219,85 @@ export function TemplateEditorForm({
                 />
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Label>{t("tags")}</Label>
-                  {!canEditTags ? (
-                    <span className="text-xs font-medium text-zinc-500">
-                      {t("systemTagsReadonly")}
-                    </span>
-                  ) : null}
-                </div>
+              {showTags ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label>{t("tags")}</Label>
+                    {!canEditTags ? (
+                      <span className="text-xs font-medium text-zinc-500">
+                        {t("systemTagsReadonly")}
+                      </span>
+                    ) : null}
+                  </div>
 
-                {tags.length > 0 ? (
+                  {tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700"
+                        >
+                          <span>{tag}</span>
+                          {canEditTags ? (
+                            <button
+                              type="button"
+                              onClick={() => removeTag(tag)}
+                              className="ms-2 rounded-full text-zinc-500 transition-colors hover:text-zinc-900"
+                              aria-label={t("removeTag", { tag })}
+                            >
+                              <X className="size-3" />
+                            </button>
+                          ) : null}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-500">{t("noTagsSelected")}</p>
+                  )}
+
                   <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <Badge
+                    {availableTags.map((tag) => (
+                      <Button
                         key={tag}
-                        variant="secondary"
-                        className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700"
+                        type="button"
+                        variant={tags.includes(tag) ? "secondary" : "outline"}
+                        onClick={() => toggleTag(tag)}
+                        className="rounded-full px-4"
+                        disabled={!canEditTags}
                       >
-                        <span>{tag}</span>
-                        {canEditTags ? (
-                          <button
-                            type="button"
-                            onClick={() => removeTag(tag)}
-                            className="ms-2 rounded-full text-zinc-500 transition-colors hover:text-zinc-900"
-                            aria-label={t("removeTag", { tag })}
-                          >
-                            <X className="size-3" />
-                          </button>
-                        ) : null}
-                      </Badge>
+                        {tag}
+                      </Button>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-zinc-500">{t("noTagsSelected")}</p>
-                )}
 
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map((tag) => (
-                    <Button
-                      key={tag}
-                      type="button"
-                      variant={tags.includes(tag) ? "secondary" : "outline"}
-                      onClick={() => toggleTag(tag)}
-                      className="rounded-full px-4"
-                      disabled={!canEditTags}
-                    >
-                      {tag}
-                    </Button>
-                  ))}
+                  {canEditTags ? (
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Input
+                        value={customTag}
+                        onChange={(event) => setCustomTag(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addCustomTag();
+                          }
+                        }}
+                        placeholder={t("customTagPlaceholder")}
+                        className="h-11 rounded-xl border-zinc-200 bg-white"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addCustomTag}
+                        className="h-11 rounded-xl"
+                      >
+                        <Plus className="size-4" />
+                        {t("addCustomTag")}
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-
-                {canEditTags ? (
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <Input
-                      value={customTag}
-                      onChange={(event) => setCustomTag(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addCustomTag();
-                        }
-                      }}
-                      placeholder={t("customTagPlaceholder")}
-                      className="h-11 rounded-xl border-zinc-200 bg-white"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addCustomTag}
-                      className="h-11 rounded-xl"
-                    >
-                      <Plus className="size-4" />
-                      {t("addCustomTag")}
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
+              ) : null}
             </CardContent>
           </Card>
 

@@ -62,9 +62,11 @@ export default defineSchema({
     practitionerId: v.id("users"),
     templateId: v.id("questionnaireTemplates"),
     addedAt: v.number(),
+    quickAccessAt: v.optional(v.number()),
   })
     .index("by_practitioner", ["practitionerId"])
-    .index("by_practitioner_template", ["practitionerId", "templateId"]),
+    .index("by_practitioner_template", ["practitionerId", "templateId"])
+    .index("by_practitioner_quick_access", ["practitionerId", "quickAccessAt"]),
 
   questionnaireAssignments: defineTable({
     patientId: v.id("users"),
@@ -82,6 +84,7 @@ export default defineSchema({
   })
     .index("by_patient", ["patientId"])
     .index("by_practitioner", ["practitionerId"])
+    .index("by_practitioner_patient_template", ["practitionerId", "patientId", "templateId"])
     .index("by_status", ["status"]),
 
   questionnaireInstances: defineTable({

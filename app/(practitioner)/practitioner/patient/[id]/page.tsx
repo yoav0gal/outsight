@@ -5,12 +5,12 @@ import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { type ComponentType, type ReactNode, useEffect, useState } from "react";
 import {
-  Archive,
   ArchiveRestore,
   Activity,
   ArrowLeft,
+  ChevronRight,
   BellRing,
   CalendarDays,
   ClipboardPenLine,
@@ -19,9 +19,10 @@ import {
 } from "lucide-react";
 
 import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
+import { ArchiveNavigationButton } from "@/components/ui/archiveNavigationButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useFeedback } from "@/components/ui/feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -101,17 +103,88 @@ function buildPatientQuestionnaireUrl(
   return query ? `/practitioner/patient/${patientId}?${query}` : `/practitioner/patient/${patientId}`;
 }
 
+function formatCompactDateTime(timestamp: number) {
+  return new Intl.DateTimeFormat(undefined, {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(timestamp));
+}
+
+function formatCompactDate(timestamp: number) {
+  return new Intl.DateTimeFormat(undefined, {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(timestamp));
+}
+
+interface SummaryMetricProps {
+  icon: ComponentType<{ className?: string }>;
+  iconClassName: string;
+  label: string;
+  value: string | number;
+}
+
+function SummaryMetric({ icon: Icon, iconClassName, label, value }: SummaryMetricProps) {
+  return (
+    <div className="rounded-[1.5rem] border border-zinc-200/70 bg-white px-4 py-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${iconClassName}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">{label}</p>
+          <p className="truncate text-sm font-semibold text-zinc-900">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface SectionShellProps {
+  title: string;
+  description?: ReactNode;
+  badge?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+}
+
+function SectionShell({ title, description, badge, actions, children }: SectionShellProps) {
+  return (
+    <section className="rounded-[1.75rem] border border-zinc-200/70 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-zinc-100 px-5 py-4 sm:px-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-bold text-zinc-950">{title}</h2>
+              {badge}
+            </div>
+            {description ? <div className="max-w-2xl text-sm leading-6 text-zinc-500">{description}</div> : null}
+          </div>
+          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        </div>
+      </div>
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
+  );
+}
+
 export default function PatientDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("PractitionerPatient");
+  const tActions = useTranslations("SharedActions");
   const patientId = params.id as Id<"users">;
 
   const patient = useQuery(api.users.getPatient, { id: patientId });
   const assignments = useQuery(api.questionnaires.listPatientAssignments, { patientId });
   const templates = useQuery(api.questionnaires.listTemplates);
-  const clinicTemplates = useQuery(api.questionnaires.listClinicTemplates);
+  const assignableTemplates = useQuery(api.questionnaires.listAssignableTemplates);
   const history = useQuery(api.questionnaires.listPractitionerPatientHistorySummaries, { patientId });
   const sessionHistory = useQuery(api.sessionReviews.listPatientSessionReviews, { patientId });
   const assignMutation = useMutation(api.questionnaires.assign);
@@ -129,17 +202,41 @@ export default function PatientDetailsPage() {
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isSavingSession, setIsSavingSession] = useState(false);
   const [isRestoringAssignmentId, setIsRestoringAssignmentId] = useState<Id<"questionnaireAssignments"> | null>(null);
+  const { showFeedback } = useFeedback();
 
   const questionnairesView = searchParams.get("questionnairesView") === "archived" ? "archived" : "active";
   const activeAssignments = (assignments ?? []).filter((assignment) => assignment.status === "active");
   const archivedAssignments = (assignments ?? []).filter((assignment) => assignment.status === "archived");
+  const assignmentStatusByTemplateId = new Map<
+    Id<"questionnaireTemplates">,
+    "active" | "archived"
+  >();
+  for (const assignment of activeAssignments) {
+    assignmentStatusByTemplateId.set(assignment.templateId, "active");
+  }
+  for (const assignment of archivedAssignments) {
+    if (!assignmentStatusByTemplateId.has(assignment.templateId)) {
+      assignmentStatusByTemplateId.set(assignment.templateId, "archived");
+    }
+  }
+  const clinicTemplateOptions = (assignableTemplates ?? []).map((template) => {
+    const assignmentStatus = assignmentStatusByTemplateId.get(template._id);
+
+    return {
+      ...template,
+      isQuickAccess: template.isQuickAccess,
+      source: template.source,
+      statusBadge: assignmentStatus
+        ? {
+            label: t(`questionnaires.status.${assignmentStatus}`),
+            tone: assignmentStatus,
+          }
+        : undefined,
+    };
+  });
   const visibleAssignments = questionnairesView === "archived" ? archivedAssignments : activeAssignments;
   const questionnaireViewLabel =
     questionnairesView === "archived" ? t("questionnaires.archivedTitle") : t("questionnaires.active");
-  const questionnaireViewDescription =
-    questionnairesView === "archived"
-      ? t("questionnaires.archivedDescription")
-      : t("questionnaires.activeDescription");
 
   const openCreateSessionDialog = () => {
     setSelectedSessionReview(null);
@@ -159,16 +256,32 @@ export default function PatientDetailsPage() {
     if (!selectedTemplate) return;
     setIsAssigning(true);
     try {
-      await assignMutation({
+      const result = await assignMutation({
         patientId,
         templateId: selectedTemplate as Id<"questionnaireTemplates">,
         frequency: selectedFrequency,
       });
       setIsAssignOpen(false);
       setSelectedTemplate("");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to assign questionnaire.");
+      showFeedback({
+        variant: "success",
+        title: t("questionnaires.assign"),
+        description:
+          result.action === "restored"
+            ? t("questionnaires.assignRestoredSuccess")
+            : t("questionnaires.assignSuccess"),
+      });
+    } catch (error) {
+      console.error(error);
+      showFeedback({
+        variant: "error",
+        title: t("questionnaires.assign"),
+        description:
+          error instanceof Error &&
+          error.message === "A questionnaire for this template is already active for this patient"
+            ? t("questionnaires.assignAlreadyActiveError")
+            : t("questionnaires.assignError"),
+      });
     } finally {
       setIsAssigning(false);
     }
@@ -202,13 +315,19 @@ export default function PatientDetailsPage() {
           reviewId: selectedSessionReview._id,
           ...payload,
         });
-        alert(t("history.success.updated"));
+        showFeedback({
+          variant: "success",
+          title: t("history.success.updated"),
+        });
       } else {
         await createSessionReview({
           patientId,
           ...payload,
         });
-        alert(t("history.success.created"));
+        showFeedback({
+          variant: "success",
+          title: t("history.success.created"),
+        });
       }
 
       setIsSessionDialogOpen(false);
@@ -229,7 +348,10 @@ export default function PatientDetailsPage() {
         }
       }
 
-      alert(selectedSessionReview ? t("history.errors.update") : t("history.errors.create"));
+      showFeedback({
+        variant: "error",
+        title: selectedSessionReview ? t("history.errors.update") : t("history.errors.create"),
+      });
     } finally {
       setIsSavingSession(false);
     }
@@ -243,14 +365,41 @@ export default function PatientDetailsPage() {
     setIsRestoringAssignmentId(assignmentId);
     try {
       await unarchiveQuestionnaireAssignment({ assignmentId });
+      showFeedback({
+        variant: "success",
+        title: tActions("success.restored"),
+        description: t("questionnaires.restoreSuccess"),
+      });
       goToQuestionnaireView("active");
     } catch (error) {
       console.error(error);
-      alert(t("questionnaires.restoreError"));
+      showFeedback({
+        variant: "error",
+        title: tActions("restore"),
+        description:
+          error instanceof Error &&
+          error.message === "A questionnaire for this template is already active for this patient"
+            ? t("questionnaires.assignAlreadyActiveError")
+            : t("questionnaires.restoreError"),
+      });
     } finally {
       setIsRestoringAssignmentId(null);
     }
   };
+
+  const latestSessionLabel = sessionHistory?.latestSessionDate
+    ? new Date(sessionHistory.latestSessionDate).toLocaleDateString()
+    : t("history.noLastSession");
+  const defaultTab = searchParams.get("tab") === "questionnaires" ? "questionnaires" : "history";
+  const [mobileTab, setMobileTab] = useState<"history" | "questionnaires">(defaultTab);
+  const historyByTemplateId = new Map(
+    (history ?? []).map((summary) => [summary.templateId, summary] as const)
+  );
+  const totalUnreadEntries = (history ?? []).reduce((sum, summary) => sum + (summary.unreadEntries ?? 0), 0);
+
+  useEffect(() => {
+    setMobileTab(defaultTab);
+  }, [defaultTab]);
 
   if (patient === undefined) {
     return (
@@ -264,48 +413,337 @@ export default function PatientDetailsPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <h2 className="text-2xl font-bold text-zinc-900 mb-2">Patient Not Found</h2>
-        <Button onClick={() => router.back()} variant="outline">
+        <Button onClick={() => router.push("/practitioner/my-patients")} variant="outline">
           {t("backToDashboard")}
         </Button>
       </div>
     );
   }
 
-  const latestSessionLabel = sessionHistory?.latestSessionDate
-    ? new Date(sessionHistory.latestSessionDate).toLocaleDateString()
-    : t("history.noLastSession");
-  const defaultTab = searchParams.get("tab") === "questionnaires" ? "questionnaires" : "history";
-  const historyByTemplateId = new Map(
-    (history ?? []).map((summary) => [summary.templateId, summary] as const)
+  const questionnaireActions = (
+    <>
+      <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+        <DialogTrigger
+          render={
+            <Button size="sm" className="rounded-xl px-4 font-semibold shadow-sm shadow-indigo-100">
+              <FileText className="me-2 h-4 w-4" />
+              {tActions("add")}
+            </Button>
+          }
+        />
+        <DialogContent className="rounded-2xl sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{t("assignModal.title")}</DialogTitle>
+            <DialogDescription>{t("assignModal.description")}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="template" className="text-sm font-semibold">
+                {t("assignModal.template")}
+              </Label>
+              <TemplateSearchPicker
+                options={clinicTemplateOptions}
+                value={selectedTemplate}
+                onChange={(value) => setSelectedTemplate(value as Id<"questionnaireTemplates">)}
+                placeholder={t("assignModal.selectTemplate")}
+                searchPlaceholder={t("assignModal.searchTemplate")}
+                emptyLabel={t("assignModal.noTemplates")}
+                title={t("assignModal.title")}
+                description={t("assignModal.searchDescription")}
+                quickAccessLabel={t("assignModal.quickAccess")}
+                otherLabel={t("assignModal.otherQuestionnaires")}
+                systemLabel={t("assignModal.system")}
+                customLabel={t("assignModal.custom")}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="frequency" className="text-sm font-semibold">
+                {t("assignModal.frequency")}
+              </Label>
+              <Select
+                value={selectedFrequency}
+                onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly")}
+              >
+                <SelectTrigger id="frequency" className="h-12 rounded-lg border-zinc-200">
+                  <SelectValue>{(value: string) => (value ? t(`questionnaires.frequency.${value}`) : "")}</SelectValue>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {(["once", "daily", "weekly"] as const).map((freq) => (
+                    <SelectItem key={freq} value={freq} className="rounded-lg">
+                      {t(`questionnaires.frequency.${freq}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsAssignOpen(false)} className="rounded-xl">
+              {t("assignModal.cancel")}
+            </Button>
+            <Button onClick={handleAssign} disabled={!selectedTemplate || isAssigning} className="rounded-xl">
+              {isAssigning ? "..." : t("assignModal.submit")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+
+  const historySection = (
+    <SectionShell
+      title={t("history.sessionsLabel")}
+      badge={
+        sessionHistory && sessionHistory.totalSessions > 0 ? (
+          <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
+            {sessionHistory.totalSessions}
+          </Badge>
+        ) : undefined
+      }
+      actions={
+        <Button size="sm" className="rounded-xl px-4 font-semibold shadow-sm shadow-indigo-100" onClick={openCreateSessionDialog}>
+          <ClipboardPenLine className="me-2 h-4 w-4" />
+          {tActions("add")}
+        </Button>
+      }
+    >
+      {!sessionHistory ? (
+        <div className="grid gap-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} className="rounded-[1.5rem] border-zinc-100 shadow-sm">
+              <CardContent className="space-y-3 p-4">
+                <div className="h-3 w-24 animate-pulse rounded-md bg-zinc-100"></div>
+                <div className="h-4 w-40 animate-pulse rounded-md bg-zinc-100"></div>
+                <div className="h-14 w-full animate-pulse rounded-2xl bg-zinc-100"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : sessionHistory.reviews.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-zinc-200 bg-zinc-50/80 px-5 py-12 text-center">
+          <History className="mx-auto mb-4 h-9 w-9 text-zinc-300" />
+          <h3 className="mb-2 text-lg font-bold text-zinc-900">{t("history.emptyTitle")}</h3>
+          <p className="mx-auto mb-5 max-w-xl text-sm leading-6 text-zinc-500">{t("history.emptyDescription")}</p>
+          <Button className="rounded-xl font-semibold" onClick={openCreateSessionDialog}>
+            {t("history.addFirst")}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sessionHistory.reviews.map((review) => (
+            <article
+              key={review._id}
+              className="group cursor-pointer rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/40 p-4 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+              onClick={() => openEditSessionDialog(review)}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 space-y-1">
+                  <h3 className="line-clamp-1 text-base font-bold text-zinc-950">
+                    {review.title?.trim() || t("history.untitled")}
+                  </h3>
+                  <p className="text-sm font-medium text-zinc-500">
+                    {formatCompactDate(review.sessionDate)}
+                  </p>
+                </div>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
+                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </SectionShell>
+  );
+
+  const questionnairesSection = (
+    <SectionShell
+      title={questionnairesView === "archived" ? questionnaireViewLabel : t("questionnaires.active")}
+      badge={<Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">{visibleAssignments.length}</Badge>}
+      description={
+        <ArchiveNavigationButton
+          archived={questionnairesView === "archived"}
+          archivedLabel={
+            archivedAssignments.length > 0
+              ? `${tActions("archived")} (${archivedAssignments.length})`
+              : tActions("archived")
+          }
+          activeLabel={tActions("backToActive")}
+          onClick={() => goToQuestionnaireView(questionnairesView === "archived" ? "active" : "archived")}
+        />
+      }
+      actions={questionnaireActions}
+    >
+      {!assignments ? (
+        <div className="grid gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="rounded-[1.5rem] border-zinc-100 shadow-sm">
+              <CardContent className="space-y-3 p-4">
+                <div className="h-4 w-1/3 animate-pulse rounded-md bg-zinc-100"></div>
+                <div className="h-3 w-2/3 animate-pulse rounded-md bg-zinc-100"></div>
+                <div className="h-12 w-full animate-pulse rounded-2xl bg-zinc-100"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : visibleAssignments.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-zinc-200 bg-zinc-50/80 px-5 py-12 text-center">
+          <FileText className="mx-auto mb-3 h-9 w-9 text-zinc-300" />
+          <p className="font-medium text-zinc-500">
+            {questionnairesView === "archived" ? t("questionnaires.noArchived") : t("questionnaires.noActive")}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {visibleAssignments.map((assignment) => {
+            const tpl = templates?.find((template) => template._id === assignment.templateId);
+            const summary = historyByTemplateId.get(assignment.templateId);
+            const metaLabel = summary?.lastEntryAt
+              ? t("questionnaires.lastAdded", {
+                  date: new Date(summary.lastEntryAt).toLocaleString(),
+                })
+              : t("questionnaires.noResponsesYet");
+            const lastScoreLabel = summary?.latestScore
+              ? summary.latestScore.max === null
+                ? t("questionnaires.score", { value: summary.latestScore.value })
+                : t("questionnaires.scoreWithMax", {
+                    value: summary.latestScore.value,
+                    max: summary.latestScore.max,
+                  })
+              : t("questionnaires.noScoreYet");
+
+            return (
+              <Card
+                key={assignment._id}
+                className={`group cursor-pointer rounded-[1.5rem] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                  assignment.status === "archived"
+                    ? "border-amber-200/70 bg-amber-50/50"
+                    : "border-zinc-200/80 bg-white"
+                }`}
+                onClick={() =>
+                  router.push(`/practitioner/patient/${patientId}/questionnaire-history/${assignment.templateId}`)
+                }
+              >
+                <CardContent className="flex items-center gap-4 p-4 sm:p-5">
+                  <div className="min-w-0 flex-1 space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-start gap-2">
+                        <h3 className="line-clamp-1 text-base font-bold text-zinc-900">{tpl?.title || "Loading..."}</h3>
+                        {summary ? (
+                          <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
+                            {t("questionnaires.entriesCount", { count: summary.totalEntries })}
+                          </Badge>
+                        ) : null}
+                        {summary?.unreadEntries ? (
+                          <Badge className="rounded-full border-none bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800 hover:bg-amber-100">
+                            <BellRing className="me-1 h-3 w-3" />
+                            {t("questionnaires.newEntries", { count: summary.unreadEntries })}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-zinc-500">
+                        <span title={t("questionnaires.lastAddedIndicator")}>
+                          <CalendarDays className="h-4 w-4 text-zinc-400" />
+                        </span>
+                        <span>{summary?.lastEntryAt ? formatCompactDateTime(summary.lastEntryAt) : metaLabel}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex">
+                      <div className="inline-flex max-w-full items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                          <Activity className="h-4 w-4" />
+                        </div>
+                        <p className="truncate text-sm font-semibold text-zinc-700">{lastScoreLabel}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-center justify-center gap-2 self-stretch">
+                    {assignment.status === "archived" ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg border-zinc-200"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleRestoreQuestionnaire(assignment._id);
+                        }}
+                        disabled={isRestoringAssignmentId === assignment._id}
+                      >
+                        <ArchiveRestore className="me-2 h-4 w-4" />
+                        {isRestoringAssignmentId === assignment._id
+                          ? t("questionnaires.restoring")
+                          : t("questionnaires.restorePrescription")}
+                      </Button>
+                    ) : null}
+                    <div className="flex flex-1 items-center">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
+                        <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </SectionShell>
   );
 
   return (
-    <main className="flex-1 max-w-5xl mx-auto w-full p-6 sm:p-10">
-      <div className="mb-8 flex flex-col gap-6">
+    <main className="mx-auto flex-1 w-full max-w-6xl p-4 sm:p-8 lg:p-10">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8">
         <Button
           variant="ghost"
-          onClick={() => router.back()}
+          onClick={() => router.push("/practitioner/my-patients")}
           className="-ms-4 flex w-fit items-center gap-2 text-zinc-500 transition-colors hover:text-indigo-600"
         >
           <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
           {t("backToDashboard")}
         </Button>
 
-        <div className="flex items-center gap-5">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-50 text-3xl font-black text-indigo-600 shadow-inner sm:h-24 sm:w-24">
-            {patient.name?.charAt(0) || "P"}
-          </div>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-              {patient.name || t("unnamed")}
-            </h1>
-            <p className="text-lg font-medium text-zinc-500">{patient.email}</p>
+        <div className="rounded-[2rem] border border-zinc-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(244,244,245,0.65))] p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.5rem] bg-indigo-50 text-2xl font-black text-indigo-600 shadow-inner sm:h-18 sm:w-18">
+                {patient.name?.charAt(0) || "P"}
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
+                  {patient.name || t("unnamed")}
+                </h1>
+                <p className="truncate text-sm font-medium text-zinc-500 sm:text-base">{patient.email}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+              <SummaryMetric
+                icon={CalendarDays}
+                iconClassName="bg-emerald-50 text-emerald-600"
+                label={t("history.lastSession")}
+                value={latestSessionLabel}
+              />
+              <SummaryMetric
+                icon={BellRing}
+                iconClassName="bg-amber-50 text-amber-700"
+                label={t("questionnaires.newEntriesLabel")}
+                value={totalUnreadEntries}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue={defaultTab} dir="auto" className="w-full">
-        <TabsList className="mb-8 inline-flex w-full overflow-x-auto rounded-xl bg-zinc-100 p-1.5 sm:w-auto">
+      <div className="hidden gap-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)] lg:items-start">
+        <div>{questionnairesSection}</div>
+        <div>{historySection}</div>
+      </div>
+
+      <Tabs value={mobileTab} onValueChange={(value) => setMobileTab(value as "history" | "questionnaires")} dir="auto" className="w-full lg:hidden">
+        <TabsList className="mb-5 inline-flex w-full overflow-x-auto rounded-xl bg-zinc-100 p-1.5">
           <TabsTrigger
             value="history"
             className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm"
@@ -321,361 +759,11 @@ export default function PatientDetailsPage() {
         </TabsList>
 
         <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
-              <Card className="overflow-hidden rounded-2xl border-zinc-200/60 shadow-sm">
-                <CardContent className="flex items-center gap-4 p-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                    <ClipboardPenLine className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-500">{t("history.totalSessions")}</p>
-                    <p className="text-2xl font-bold tracking-tight text-zinc-950">
-                      {sessionHistory ? sessionHistory.totalSessions : "..."}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden rounded-2xl border-zinc-200/60 shadow-sm">
-                <CardContent className="flex items-center gap-4 p-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-500">{t("history.lastSession")}</p>
-                    <p className="text-lg font-bold tracking-tight text-zinc-950">{latestSessionLabel}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button
-                size="lg"
-                className="h-auto rounded-2xl px-6 py-4 font-bold shadow-md shadow-indigo-100"
-                onClick={openCreateSessionDialog}
-              >
-                <ClipboardPenLine className="me-2 h-5 w-5" />
-                {t("history.add")}
-              </Button>
-            </div>
-
-            <Card className="overflow-hidden rounded-[2rem] border-zinc-200/60 shadow-sm">
-              <CardHeader className="border-b border-zinc-100 bg-[linear-gradient(135deg,rgba(238,242,255,0.9),rgba(255,255,255,1))]">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl text-zinc-950">{t("history.title")}</CardTitle>
-                    <p className="max-w-2xl text-sm text-zinc-600">{t("history.description")}</p>
-                  </div>
-                  {sessionHistory && sessionHistory.totalSessions > 0 ? (
-                    <Badge variant="secondary" className="w-fit rounded-full bg-white/90 px-3 py-1 text-zinc-700 shadow-sm">
-                      {sessionHistory.totalSessions} {t("history.sessionsLabel")}
-                    </Badge>
-                  ) : null}
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 sm:p-8">
-                {!sessionHistory ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {Array.from({ length: 2 }).map((_, index) => (
-                      <Card key={index} className="rounded-2xl border-zinc-100 shadow-sm">
-                        <CardContent className="space-y-4 p-6">
-                          <div className="h-4 w-1/3 animate-pulse rounded-md bg-zinc-100"></div>
-                          <div className="h-5 w-2/3 animate-pulse rounded-md bg-zinc-100"></div>
-                          <div className="h-16 w-full animate-pulse rounded-2xl bg-zinc-100"></div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : sessionHistory.reviews.length === 0 ? (
-                  <div className="rounded-[2rem] border border-dashed border-zinc-200 bg-zinc-50/80 px-6 py-16 text-center">
-                    <History className="mx-auto mb-4 h-10 w-10 text-zinc-300" />
-                    <h3 className="mb-2 text-xl font-bold text-zinc-900">{t("history.emptyTitle")}</h3>
-                    <p className="mx-auto mb-6 max-w-xl text-sm leading-6 text-zinc-500">
-                      {t("history.emptyDescription")}
-                    </p>
-                    <Button className="rounded-xl font-bold" onClick={openCreateSessionDialog}>
-                      {t("history.addFirst")}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {sessionHistory.reviews.map((review) => (
-                      <article
-                        key={review._id}
-                        className="rounded-[1.75rem] border border-zinc-200/80 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-                      >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge className="rounded-full border-none bg-indigo-100 px-3 py-1 text-indigo-700">
-                                {t("history.sessionNumber", { number: review.sessionNumber })}
-                              </Badge>
-                              <span className="text-sm font-medium text-zinc-500">
-                                {new Date(review.sessionDate).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              <h3 className="text-lg font-bold text-zinc-950">
-                                {review.title?.trim() || t("history.untitled")}
-                              </h3>
-                              <p className="line-clamp-4 max-w-3xl text-sm leading-6 text-zinc-600">
-                                {review.review}
-                              </p>
-                            </div>
-                            {review.updatedAt !== review.createdAt ? (
-                              <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                                {t("history.updatedAt", {
-                                  date: new Date(review.updatedAt).toLocaleDateString(),
-                                })}
-                              </p>
-                            ) : null}
-                          </div>
-                          <Button
-                            variant="outline"
-                            className="shrink-0 rounded-xl border-zinc-200"
-                            onClick={() => openEditSessionDialog(review)}
-                          >
-                            {t("history.edit")}
-                          </Button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          {historySection}
         </TabsContent>
 
-        <TabsContent value="questionnaires" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex flex-col gap-4 rounded-[2rem] border border-zinc-200/60 bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl font-bold text-zinc-900">{questionnaireViewLabel}</h2>
-                  <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
-                    {visibleAssignments.length} {questionnairesView === "archived" ? t("questionnaires.archivedBadge") : t("questionnaires.activeBadge")}
-                  </Badge>
-                </div>
-                <p className="max-w-2xl text-sm leading-6 text-zinc-500">{questionnaireViewDescription}</p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  className="rounded-xl border-zinc-200 text-zinc-600 hover:text-zinc-950"
-                  onClick={() => goToQuestionnaireView(questionnairesView === "archived" ? "active" : "archived")}
-                  aria-label={
-                    questionnairesView === "archived"
-                      ? t("questionnaires.returnToActive")
-                      : t("questionnaires.openArchived")
-                  }
-                >
-                  {questionnairesView === "archived" ? (
-                    <ArchiveRestore className="size-4" />
-                  ) : (
-                    <Archive className="size-4" />
-                  )}
-                </Button>
-
-                <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
-                  <DialogTrigger
-                    render={
-                      <Button size="lg" className="rounded-xl font-bold shadow-md shadow-indigo-100">
-                        <FileText className="me-2 h-5 w-5" />
-                        {t("questionnaires.assign")}
-                      </Button>
-                    }
-                  />
-                  <DialogContent className="rounded-2xl sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl">{t("assignModal.title")}</DialogTitle>
-                      <DialogDescription>{t("assignModal.description")}</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="template" className="text-sm font-semibold">
-                          {t("assignModal.template")}
-                        </Label>
-                        <TemplateSearchPicker
-                          options={clinicTemplates ?? []}
-                          value={selectedTemplate}
-                          onChange={(value) => setSelectedTemplate(value as Id<"questionnaireTemplates">)}
-                          placeholder={t("assignModal.selectTemplate")}
-                          searchPlaceholder={t("assignModal.searchTemplate")}
-                          emptyLabel={t("assignModal.noTemplates")}
-                          title={t("assignModal.title")}
-                          description={t("assignModal.searchDescription")}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="frequency" className="text-sm font-semibold">
-                          {t("assignModal.frequency")}
-                        </Label>
-                        <Select
-                          value={selectedFrequency}
-                          onValueChange={(val) => setSelectedFrequency(val as "once" | "daily" | "weekly")}
-                        >
-                          <SelectTrigger id="frequency" className="h-12 rounded-lg border-zinc-200">
-                            <SelectValue>{(value: string) => (value ? t(`questionnaires.frequency.${value}`) : "")}</SelectValue>
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl">
-                            {(["once", "daily", "weekly"] as const).map((freq) => (
-                              <SelectItem key={freq} value={freq} className="rounded-lg">
-                                {t(`questionnaires.frequency.${freq}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                      <Button variant="ghost" onClick={() => setIsAssignOpen(false)} className="rounded-xl">
-                        {t("assignModal.cancel")}
-                      </Button>
-                      <Button onClick={handleAssign} disabled={!selectedTemplate || isAssigning} className="rounded-xl">
-                        {isAssigning ? "..." : t("assignModal.submit")}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {!assignments ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="rounded-2xl border-zinc-100 shadow-sm">
-                  <CardContent className="space-y-4 p-6">
-                    <div className="h-5 w-2/3 animate-pulse rounded-md bg-zinc-100"></div>
-                    <div className="h-4 w-1/3 animate-pulse rounded-md bg-zinc-100"></div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : visibleAssignments.length === 0 ? (
-              <div className="col-span-full rounded-3xl border border-dashed border-zinc-200 bg-white py-16 text-center">
-                <FileText className="mx-auto mb-3 h-10 w-10 text-zinc-300" />
-                <p className="font-medium text-zinc-500">
-                  {questionnairesView === "archived"
-                    ? t("questionnaires.noArchived")
-                    : t("questionnaires.noActive")}
-                </p>
-              </div>
-            ) : (
-              visibleAssignments.map((assignment) => {
-                const tpl = templates?.find((template) => template._id === assignment.templateId);
-                const summary = historyByTemplateId.get(assignment.templateId);
-                const metaLabel = summary?.lastEntryAt
-                  ? t("questionnaires.lastAdded", {
-                      date: new Date(summary.lastEntryAt).toLocaleString(),
-                    })
-                  : t("questionnaires.noResponsesYet");
-                const lastScoreLabel = summary?.latestScore
-                  ? summary.latestScore.max === null
-                    ? t("questionnaires.score", { value: summary.latestScore.value })
-                    : t("questionnaires.scoreWithMax", {
-                        value: summary.latestScore.value,
-                        max: summary.latestScore.max,
-                      })
-                  : t("questionnaires.noScoreYet");
-                return (
-                  <Card
-                    key={assignment._id}
-                    className="cursor-pointer rounded-2xl border-zinc-200/60 shadow-sm transition-shadow hover:shadow-md"
-                    onClick={() =>
-                      router.push(
-                        `/practitioner/patient/${patientId}/questionnaire-history/${assignment.templateId}`
-                      )
-                    }
-                  >
-                    <CardContent className="flex flex-col items-start gap-4 p-6">
-                      <div className="w-full space-y-1 text-start">
-                        <div className="flex items-center gap-2">
-                          <h4 className="line-clamp-1 font-bold text-zinc-900">{tpl?.title || "Loading..."}</h4>
-                          {summary?.unreadEntries ? (
-                            <Badge className="rounded-full border-none bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800 hover:bg-amber-100">
-                              <BellRing className="me-1 h-3 w-3" />
-                              {t("questionnaires.newEntries", { count: summary.unreadEntries })}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <p className="line-clamp-2 text-sm text-zinc-500">{tpl?.description}</p>
-                        <div className="pt-2">
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
-                                <CalendarDays className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">
-                                  {t("questionnaires.lastAddedIndicator")}
-                                </p>
-                                <p className="truncate text-sm font-semibold text-zinc-700">{metaLabel}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                                <Activity className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">
-                                  {t("questionnaires.lastScoreIndicator")}
-                                </p>
-                                <p className="truncate text-sm font-semibold text-zinc-700">{lastScoreLabel}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-auto flex w-full items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className={`rounded-lg capitalize ${
-                            assignment.status === "archived"
-                              ? "bg-amber-50 text-amber-700 hover:bg-amber-50"
-                              : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                          }`}
-                        >
-                          {t(`questionnaires.status.${assignment.status}`)}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className="ms-auto rounded-lg border-green-200 capitalize text-green-700"
-                        >
-                          {t(`questionnaires.status.${assignment.status}`)}
-                        </Badge>
-                        {assignment.status === "archived" ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="rounded-lg border-zinc-200"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleRestoreQuestionnaire(assignment._id);
-                            }}
-                            disabled={isRestoringAssignmentId === assignment._id}
-                          >
-                            <ArchiveRestore className="me-2 h-4 w-4" />
-                            {isRestoringAssignmentId === assignment._id
-                              ? t("questionnaires.restoring")
-                              : t("questionnaires.restorePrescription")}
-                          </Button>
-                        ) : null}
-                        {summary ? (
-                          <Badge variant="secondary" className="rounded-lg bg-zinc-100 text-zinc-700">
-                            {t("questionnaires.entriesCount", { count: summary.totalEntries })}
-                          </Badge>
-                        ) : null}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
+        <TabsContent value="questionnaires" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {questionnairesSection}
         </TabsContent>
       </Tabs>
 
