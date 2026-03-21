@@ -3,16 +3,18 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { History, FileText, Calendar, ChevronRight } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { resolveLocalizedText } from "@/lib/templateEditor";
 
 export default function PatientHistoryPage() {
   const router = useRouter();
   const history = useQuery(api.questionnaires.listPatientHistory, {});
   const t = useTranslations("PatientHome");
   const tQ = useTranslations("Questionnaire");
+  const locale = useLocale();
 
   return (
     <main className="flex-1 w-full max-w-2xl mx-auto p-4 sm:p-6 pb-12 flex flex-col gap-8">
@@ -61,7 +63,9 @@ export default function PatientHistoryPage() {
                       <FileText className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-zinc-900 text-base line-clamp-1">{tpl?.title}</h3>
+                      <h3 className="font-bold text-zinc-900 text-base line-clamp-1">
+                        {tpl ? resolveLocalizedText(locale, tpl.title, tpl.titleTranslations) : ""}
+                      </h3>
                       <div className="flex items-center gap-2 text-xs text-zinc-400 font-bold uppercase tracking-wider mt-0.5">
                         <Calendar className="w-3 h-3" />
                         <span>{formattedDate}</span>

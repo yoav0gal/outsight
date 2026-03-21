@@ -13,7 +13,9 @@ import {
   createEmptyTemplateValues,
   normalizeQuestions,
   normalizeTemplateDescription,
+  normalizeTemplateDescriptionTranslations,
   normalizeTemplateTitle,
+  normalizeTemplateTitleTranslations,
   type TemplateEditorValues,
 } from "@/lib/templateEditor";
 
@@ -51,7 +53,10 @@ export default function CreateTemplatePage() {
     return {
       title: existingTemplate.title,
       description: existingTemplate.description || "",
+      titleTranslations: existingTemplate.titleTranslations,
+      descriptionTranslations: existingTemplate.descriptionTranslations,
       tags: existingTemplate.tags || [],
+      tagTranslations: existingTemplate.tagTranslations || [],
       questions: existingTemplate.questions,
     };
   }, [existingTemplate]);
@@ -67,7 +72,10 @@ export default function CreateTemplatePage() {
     const normalizedValues = {
       title: normalizeTemplateTitle(values.title),
       description: normalizeTemplateDescription(values.description),
+      titleTranslations: normalizeTemplateTitleTranslations(values.titleTranslations),
+      descriptionTranslations: normalizeTemplateDescriptionTranslations(values.descriptionTranslations),
       tags: [],
+      tagTranslations: values.tagTranslations,
       questions: normalizeQuestions(values.questions),
     };
 
@@ -78,7 +86,10 @@ export default function CreateTemplatePage() {
         JSON.stringify({
           title: normalizeTemplateTitle(existingTemplate.title),
           description: normalizeTemplateDescription(existingTemplate.description || ""),
+          titleTranslations: normalizeTemplateTitleTranslations(existingTemplate.titleTranslations),
+          descriptionTranslations: normalizeTemplateDescriptionTranslations(existingTemplate.descriptionTranslations),
           tags: [],
+          tagTranslations: existingTemplate.tagTranslations,
           questions: normalizeQuestions(existingTemplate.questions),
         })
     ) {
@@ -94,14 +105,20 @@ export default function CreateTemplatePage() {
           templateId,
           title: normalizedValues.title,
           description: normalizedValues.description,
+          titleTranslations: normalizedValues.titleTranslations,
+          descriptionTranslations: normalizedValues.descriptionTranslations,
           tags: normalizedValues.tags,
+          tagTranslations: normalizedValues.tagTranslations,
           questions: normalizedValues.questions,
         });
       } else {
         await createTemplate({
           title: normalizedValues.title,
           description: normalizedValues.description,
+          titleTranslations: normalizedValues.titleTranslations,
+          descriptionTranslations: normalizedValues.descriptionTranslations,
           tags: normalizedValues.tags,
+          tagTranslations: normalizedValues.tagTranslations,
           questions: normalizedValues.questions,
         });
       }

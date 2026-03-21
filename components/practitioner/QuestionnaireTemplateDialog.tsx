@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
@@ -28,28 +28,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useFeedback } from "@/components/ui/feedback";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+  type TemplateQuestion,
+} from "@/lib/templateEditor";
 
 interface TemplateDialogTemplate {
   _id: Id<"questionnaireTemplates">;
   title: string;
   description?: string;
+  titleTranslations?: LocalizedText;
+  descriptionTranslations?: LocalizedText;
   source: "system" | "practitioner";
   isInClinic?: boolean;
   isQuickAccess?: boolean;
   archivedAt?: number;
-  questions: Array<{
-    id: string;
-    prompt: string;
-    type: string;
-    required?: boolean;
-    options?: string[];
-    scaleConfig?: {
-      min: number;
-      max: number;
-      minLabel?: string;
-      maxLabel?: string;
-    };
-  }>;
+  questions: TemplateQuestion[];
 }
 
 interface QuestionnaireTemplateDialogProps {
@@ -68,6 +63,7 @@ export function QuestionnaireTemplateDialog({
   const router = useRouter();
   const t = useTranslations("PractitionerQuestionnaires");
   const tActions = useTranslations("SharedActions");
+  const locale = useLocale();
   const pinTemplateToQuickAccess = useMutation(api.questionnaires.pinTemplateToQuickAccess);
   const unpinTemplateFromQuickAccess = useMutation(api.questionnaires.unpinTemplateFromQuickAccess);
   const deleteTemplate = useMutation(api.questionnaires.deleteTemplate);
@@ -88,6 +84,12 @@ export function QuestionnaireTemplateDialog({
   const canRestoreTemplate = template?.source === "practitioner" && !!template?.archivedAt;
   const canPinQuickAccess = !!template && !template.archivedAt && !template.isQuickAccess;
   const canUnpinQuickAccess = !!template?.isQuickAccess && !template.archivedAt;
+  const localizedTitle = template
+    ? resolveLocalizedText(locale, template.title, template.titleTranslations)
+    : "";
+  const localizedDescription = template
+    ? resolveLocalizedText(locale, template.description, template.descriptionTranslations)
+    : "";
 
   async function handlePinQuickAccess() {
     if (!template) return;
@@ -289,16 +291,20 @@ export function QuestionnaireTemplateDialog({
                     ) : null}
                   </div>
                   <DialogTitle className="text-2xl font-bold text-zinc-950 sm:text-3xl">
-                    {template.title}
+                    {localizedTitle}
                   </DialogTitle>
                   <DialogDescription className="text-sm text-zinc-500 sm:text-base">
-                    {template.description || t("preview.noDescription")}
+                    {localizedDescription || t("preview.noDescription")}
                   </DialogDescription>
                 </DialogHeader>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50/50 px-6 py-6 sm:px-8 sm:py-8">
-                <QuestionnairePreview questions={template.questions} />
+                <QuestionnairePreview
+                  questions={template.questions}
+                  title={localizedTitle}
+                  description={localizedDescription}
+                />
               </div>
 
               <DialogFooter className="shrink-0 flex-col gap-3 border-t border-zinc-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">

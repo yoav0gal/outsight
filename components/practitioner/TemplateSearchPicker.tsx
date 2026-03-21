@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { Check, ChevronsUpDown, Form, Pin, Search, PencilLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,11 +12,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { resolveLocalizedText, type LocalizedText } from "@/lib/templateEditor";
 
 interface TemplateOption {
   _id: string;
   title: string;
   description?: string;
+  titleTranslations?: LocalizedText;
+  descriptionTranslations?: LocalizedText;
   isQuickAccess?: boolean;
   source?: "system" | "practitioner";
   statusBadge?: {
@@ -51,6 +55,7 @@ export function TemplateSearchPicker({
 }: TemplateSearchPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const locale = useLocale();
 
   const selectedTemplate = options.find((option) => option._id === value);
   const filteredOptions = useMemo(() => {
@@ -58,9 +63,15 @@ export function TemplateSearchPicker({
     if (!normalizedSearch) return options;
 
     return options.filter((option) =>
-      [option.title, option.description ?? ""].join(" ").toLocaleLowerCase().includes(normalizedSearch)
+      [
+        resolveLocalizedText(locale, option.title, option.titleTranslations),
+        resolveLocalizedText(locale, option.description, option.descriptionTranslations),
+      ]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(normalizedSearch)
     );
-  }, [options, search]);
+  }, [locale, options, search]);
 
   const prioritizedOptions = useMemo(() => {
     const quickAccess = filteredOptions.filter((option) => option.isQuickAccess);
@@ -79,7 +90,9 @@ export function TemplateSearchPicker({
       >
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm text-zinc-900">
-            {selectedTemplate?.title || placeholder}
+            {selectedTemplate
+              ? resolveLocalizedText(locale, selectedTemplate.title, selectedTemplate.titleTranslations)
+              : placeholder}
           </span>
           {selectedTemplate?.isQuickAccess ? (
             <span
@@ -147,6 +160,7 @@ export function TemplateSearchPicker({
                     <PickerOption
                       key={option._id}
                       option={option}
+                      locale={locale}
                       quickAccessLabel={quickAccessLabel}
                       systemLabel={systemLabel}
                       customLabel={customLabel}
@@ -170,6 +184,7 @@ export function TemplateSearchPicker({
 
 function PickerOption({
   option,
+  locale,
   quickAccessLabel,
   systemLabel,
   customLabel,
@@ -177,12 +192,14 @@ function PickerOption({
   onSelect,
 }: {
   option: TemplateOption;
+  locale: string;
   quickAccessLabel: string;
   systemLabel: string;
   customLabel: string;
   isSelected: boolean;
   onSelect: () => void;
 }) {
+  const title = resolveLocalizedText(locale, option.title, option.titleTranslations);
   return (
     <button
       type="button"
@@ -201,7 +218,7 @@ function PickerOption({
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="block truncate text-sm font-semibold text-zinc-900">
-            {option.title}
+            {title}
           </span>
           {option.isQuickAccess ? (
             <span

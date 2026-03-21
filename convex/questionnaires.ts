@@ -2,6 +2,11 @@ import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
+const localizedTextValidator = v.object({
+  en: v.optional(v.string()),
+  he: v.optional(v.string()),
+});
+
 const questionValidator = v.object({
   id: v.string(),
   type: v.union(
@@ -13,14 +18,18 @@ const questionValidator = v.object({
     v.literal("numeric_scale")
   ),
   prompt: v.string(),
+  promptTranslations: v.optional(localizedTextValidator),
   required: v.boolean(),
   options: v.optional(v.array(v.string())),
+  optionTranslations: v.optional(v.array(localizedTextValidator)),
   scaleConfig: v.optional(
     v.object({
       min: v.number(),
       max: v.number(),
       minLabel: v.optional(v.string()),
       maxLabel: v.optional(v.string()),
+      minLabelTranslations: v.optional(localizedTextValidator),
+      maxLabelTranslations: v.optional(localizedTextValidator),
     })
   ),
 });
@@ -41,17 +50,38 @@ type TemplateScoring = {
 
 type QuestionnaireFrequency = "once" | "daily" | "weekly" | "onDemand";
 
+type LocalizedText = {
+  en?: string;
+  he?: string;
+};
+
 type TemplateQuestion = {
   id: string;
   type: "short_text" | "long_text" | "multiple_choice" | "cards" | "boolean" | "numeric_scale";
   prompt: string;
+  promptTranslations?: {
+    en?: string;
+    he?: string;
+  };
   required: boolean;
   options?: string[];
+  optionTranslations?: Array<{
+    en?: string;
+    he?: string;
+  }>;
   scaleConfig?: {
     min: number;
     max: number;
     minLabel?: string;
     maxLabel?: string;
+    minLabelTranslations?: {
+      en?: string;
+      he?: string;
+    };
+    maxLabelTranslations?: {
+      en?: string;
+      he?: string;
+    };
   };
 };
 
@@ -416,7 +446,10 @@ function normalizeTemplate<
     practitionerId?: Id<"users">;
     source?: "system" | "practitioner";
     tags?: string[];
+    tagTranslations?: LocalizedText[];
     archivedAt?: number;
+    titleTranslations?: LocalizedText;
+    descriptionTranslations?: LocalizedText;
   },
 >(template: T) {
   return {
@@ -469,6 +502,19 @@ function normalizeTags(tags: string[] | undefined) {
   }
 
   return normalizedTags.sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeTagTranslations(tagTranslations: LocalizedText[] | undefined) {
+  if (!tagTranslations) return undefined;
+
+  return tagTranslations.map((tagTranslation) => ({
+    ...(typeof tagTranslation.en === "string" && tagTranslation.en.trim()
+      ? { en: tagTranslation.en.trim() }
+      : {}),
+    ...(typeof tagTranslation.he === "string" && tagTranslation.he.trim()
+      ? { he: tagTranslation.he.trim() }
+      : {}),
+  }));
 }
 
 function normalizeTemplateTitle(title: string) {
@@ -538,7 +584,10 @@ export const createTemplate = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
+    titleTranslations: v.optional(localizedTextValidator),
+    descriptionTranslations: v.optional(localizedTextValidator),
     tags: v.optional(v.array(v.string())),
+    tagTranslations: v.optional(v.array(localizedTextValidator)),
     scoring: v.optional(scoringValidator),
     questions: v.array(questionValidator),
   },
@@ -552,10 +601,13 @@ export const createTemplate = mutation({
     const templateId = await ctx.db.insert("questionnaireTemplates", {
       title: sanitizedTitle,
       description: args.description,
+      titleTranslations: args.titleTranslations,
+      descriptionTranslations: args.descriptionTranslations,
       practitionerId: user._id,
       source: "practitioner",
       originTemplateId: undefined,
       tags: normalizedTags,
+      tagTranslations: normalizeTagTranslations(args.tagTranslations),
       scoring: args.scoring,
       questions: args.questions,
     });
@@ -638,7 +690,16 @@ export const listTemplatesExplorer = query({
       .filter((template) => {
         if (
           search &&
-          ![template.title, template.description ?? "", template.tags.join(" ")]
+          [
+            template.title,
+            template.description ?? "",
+            template.titleTranslations?.en ?? "",
+            template.titleTranslations?.he ?? "",
+            template.descriptionTranslations?.en ?? "",
+            template.descriptionTranslations?.he ?? "",
+            template.tags.join(" "),
+            ...(template.tagTranslations?.map((tag) => `${tag.en ?? ""} ${tag.he ?? ""}`) ?? []),
+          ]
             .join(" ")
             .toLocaleLowerCase()
             .includes(search)
@@ -923,10 +984,13 @@ export const createEditableTemplateCopy = mutation({
     const copyId = await ctx.db.insert("questionnaireTemplates", {
       title: copyTitle,
       description: template.description,
+      titleTranslations: template.titleTranslations,
+      descriptionTranslations: template.descriptionTranslations,
       practitionerId: user._id,
       source: "practitioner",
       originTemplateId: template._id,
       tags: normalizeTags(template.tags),
+      tagTranslations: normalizeTagTranslations(template.tagTranslations),
       scoring: template.scoring,
       questions: template.questions,
     });
@@ -942,7 +1006,10 @@ export const updateTemplate = mutation({
     templateId: v.id("questionnaireTemplates"),
     title: v.string(),
     description: v.optional(v.string()),
+    titleTranslations: v.optional(localizedTextValidator),
+    descriptionTranslations: v.optional(localizedTextValidator),
     tags: v.optional(v.array(v.string())),
+    tagTranslations: v.optional(v.array(localizedTextValidator)),
     scoring: v.optional(scoringValidator),
     questions: v.array(questionValidator),
   },
@@ -961,7 +1028,10 @@ export const updateTemplate = mutation({
     await ctx.db.patch(args.templateId, {
       title: sanitizedTitle,
       description: args.description,
+      titleTranslations: args.titleTranslations,
+      descriptionTranslations: args.descriptionTranslations,
       tags: normalizeTags(args.tags ?? template.tags ?? []),
+      tagTranslations: normalizeTagTranslations(args.tagTranslations ?? template.tagTranslations),
       scoring: args.scoring ?? template.scoring,
       questions: args.questions,
     });
@@ -982,6 +1052,7 @@ export const backfillTemplateMetadata = mutation({
       const patch: {
         source?: "system" | "practitioner";
         tags?: string[];
+        tagTranslations?: LocalizedText[];
         archivedAt?: number;
       } = {};
 
@@ -991,6 +1062,10 @@ export const backfillTemplateMetadata = mutation({
 
       if (!template.tags) {
         patch.tags = [];
+      }
+
+      if (!template.tagTranslations) {
+        patch.tagTranslations = [];
       }
 
       if (Object.keys(patch).length > 0) {
@@ -1009,6 +1084,14 @@ export const seedTemplates = mutation({
     await ctx.db.insert("questionnaireTemplates", {
       title: "Daily Mood Check-in",
       description: "A quick daily check-in on your mood and well-being.",
+      titleTranslations: {
+        en: "Daily Mood Check-in",
+        he: "בדיקת מצב רוח יומית",
+      },
+      descriptionTranslations: {
+        en: "A quick daily check-in on your mood and well-being.",
+        he: "בדיקה יומית קצרה של מצב הרוח וההרגשה הכללית שלך.",
+      },
       source: "system",
       tags: ["Mood", "Daily"],
       questions: [
@@ -1038,6 +1121,14 @@ export const seedTemplates = mutation({
     await ctx.db.insert("questionnaireTemplates", {
       title: "Weekly Reflection",
       description: "A comprehensive look at your past week.",
+      titleTranslations: {
+        en: "Weekly Reflection",
+        he: "רפלקציה שבועית",
+      },
+      descriptionTranslations: {
+        en: "A comprehensive look at your past week.",
+        he: "מבט מקיף על השבוע האחרון שלך.",
+      },
       source: "system",
       tags: ["Reflection", "Weekly"],
       questions: [

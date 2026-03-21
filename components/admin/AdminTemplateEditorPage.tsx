@@ -72,6 +72,7 @@ export function AdminTemplateEditorPage({
       titleError={titleError}
       clearTitleError={() => setTitleError("")}
       canEditTags
+      showTags={false}
     />
   );
 }

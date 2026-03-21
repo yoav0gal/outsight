@@ -2,6 +2,11 @@ import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
+const localizedTextValidator = v.object({
+  en: v.optional(v.string()),
+  he: v.optional(v.string()),
+});
+
 function assertAdminSecret(adminSecret: string) {
   const expectedSecret = process.env.ADMIN_DASHBOARD_API_SECRET;
   if (!expectedSecret || adminSecret !== expectedSecret) {
@@ -20,14 +25,18 @@ const questionValidator = v.object({
     v.literal("numeric_scale")
   ),
   prompt: v.string(),
+  promptTranslations: v.optional(localizedTextValidator),
   required: v.boolean(),
   options: v.optional(v.array(v.string())),
+  optionTranslations: v.optional(v.array(localizedTextValidator)),
   scaleConfig: v.optional(
     v.object({
       min: v.number(),
       max: v.number(),
       minLabel: v.optional(v.string()),
       maxLabel: v.optional(v.string()),
+      minLabelTranslations: v.optional(localizedTextValidator),
+      maxLabelTranslations: v.optional(localizedTextValidator),
     })
   ),
 });
@@ -58,6 +67,19 @@ function normalizeTags(tags: string[] | undefined) {
   }
 
   return normalizedTags.sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeTagTranslations(tagTranslations: { en?: string; he?: string }[] | undefined) {
+  if (!tagTranslations) return undefined;
+
+  return tagTranslations.map((tagTranslation) => ({
+    ...(typeof tagTranslation.en === "string" && tagTranslation.en.trim()
+      ? { en: tagTranslation.en.trim() }
+      : {}),
+    ...(typeof tagTranslation.he === "string" && tagTranslation.he.trim()
+      ? { he: tagTranslation.he.trim() }
+      : {}),
+  }));
 }
 
 function normalizeTemplateTitle(title: string) {
@@ -153,7 +175,10 @@ export const createSystemTemplatesAdmin = mutation({
       v.object({
         title: v.string(),
         description: v.optional(v.string()),
+        titleTranslations: v.optional(localizedTextValidator),
+        descriptionTranslations: v.optional(localizedTextValidator),
         tags: v.optional(v.array(v.string())),
+        tagTranslations: v.optional(v.array(localizedTextValidator)),
         scoring: v.optional(scoringValidator),
         questions: v.array(questionValidator),
       })
@@ -179,9 +204,12 @@ export const createSystemTemplatesAdmin = mutation({
       const templateId = await ctx.db.insert("questionnaireTemplates", {
         title: sanitizeTemplateTitle(template.title),
         description: template.description,
+        titleTranslations: template.titleTranslations,
+        descriptionTranslations: template.descriptionTranslations,
         source: "system",
         originTemplateId: undefined,
         tags: normalizeTags(template.tags),
+        tagTranslations: normalizeTagTranslations(template.tagTranslations),
         scoring: template.scoring,
         questions: template.questions,
       });
@@ -199,7 +227,10 @@ export const updateSystemTemplateAdmin = mutation({
     templateId: v.id("questionnaireTemplates"),
     title: v.string(),
     description: v.optional(v.string()),
+    titleTranslations: v.optional(localizedTextValidator),
+    descriptionTranslations: v.optional(localizedTextValidator),
     tags: v.optional(v.array(v.string())),
+    tagTranslations: v.optional(v.array(localizedTextValidator)),
     scoring: v.optional(scoringValidator),
     questions: v.array(questionValidator),
   },
@@ -217,7 +248,10 @@ export const updateSystemTemplateAdmin = mutation({
     await ctx.db.patch(args.templateId, {
       title: sanitizedTitle,
       description: args.description,
+      titleTranslations: args.titleTranslations,
+      descriptionTranslations: args.descriptionTranslations,
       tags: normalizeTags(args.tags),
+      tagTranslations: normalizeTagTranslations(args.tagTranslations),
       scoring: args.scoring ?? template.scoring,
       questions: args.questions,
     });

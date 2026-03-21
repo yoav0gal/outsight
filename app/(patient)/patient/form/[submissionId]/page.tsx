@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AlertCircle, ArrowLeft } from "lucide-react";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { resolveLocalizedText, type TemplateQuestion } from "@/lib/templateEditor";
 
 type AnswerValue = string | number | boolean | string[];
 
@@ -41,6 +42,7 @@ export default function QuestionnaireFormPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("Questionnaire");
+  const locale = useLocale();
   const instanceId = params.submissionId as Id<"questionnaireInstances">;
 
   const instance = useQuery(api.questionnaires.getInstance, { instanceId });
@@ -64,6 +66,38 @@ export default function QuestionnaireFormPage() {
   const handleAnswerChange = (questionId: string, value: AnswerValue) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
     setError(null);
+  };
+
+  const getPrompt = (question: TemplateQuestion) =>
+    resolveLocalizedText(locale, question.prompt, question.promptTranslations);
+  const getTemplateTitle = () =>
+    instance?.template
+      ? resolveLocalizedText(locale, instance.template.title, instance.template.titleTranslations)
+      : "";
+
+  const getOptionLabel = (question: TemplateQuestion, optionIndex: number) =>
+    resolveLocalizedText(
+      locale,
+      question.options?.[optionIndex],
+      question.optionTranslations?.[optionIndex]
+    );
+
+  const getAnswerLabel = (
+    question: TemplateQuestion,
+    answer: AnswerValue | undefined
+  ) => {
+    if (typeof answer === "boolean") {
+      return answer ? t("yes") : t("no");
+    }
+
+    if (typeof answer === "string" && question.options?.length) {
+      const optionIndex = question.options.findIndex((option) => option === answer);
+      if (optionIndex >= 0) {
+        return getOptionLabel(question, optionIndex);
+      }
+    }
+
+    return answer !== undefined ? String(answer) : t("noAnswer");
   };
 
   const handleSubmit = async () => {
@@ -139,7 +173,7 @@ export default function QuestionnaireFormPage() {
             {t(`status.${instance.status}`)}
           </Badge>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-950 mb-4 tracking-tight">
-            {instance.template.title}
+            {getTemplateTitle()}
           </h1>
           {scoreLabel ? (
             <p className="text-sm font-semibold text-indigo-700">{scoreLabel}</p>
@@ -155,12 +189,12 @@ export default function QuestionnaireFormPage() {
                   <CardHeader className="bg-white p-6 sm:p-8">
                     <CardTitle className="text-xl leading-relaxed font-bold text-zinc-900 flex items-start gap-3">
                       <span className="text-indigo-400 font-mono text-lg mt-0.5">{index + 1}.</span>
-                      <span>{question.prompt}</span>
+                      <span>{getPrompt(question)}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-6 pb-8 sm:px-8 bg-zinc-50/50">
                     <div className="p-4 bg-white rounded-xl border border-zinc-200 text-zinc-700 font-medium">
-                      {answer !== undefined ? String(answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
+                      {answer !== undefined ? getAnswerLabel(question, answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
                     </div>
                   </CardContent>
                 </Card>
@@ -188,7 +222,7 @@ export default function QuestionnaireFormPage() {
             {t(`status.${instance.status}`)}
           </Badge>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-950 mb-4 tracking-tight">
-            {instance.template.title}
+            {getTemplateTitle()}
           </h1>
         </div>
 
@@ -208,7 +242,7 @@ export default function QuestionnaireFormPage() {
                   <CardTitle className="flex items-start gap-3 text-lg font-bold leading-relaxed text-zinc-900">
                     <span className="mt-0.5 font-mono text-lg text-indigo-400">{index + 1}.</span>
                     <span>
-                      {question.prompt}
+                      {getPrompt(question)}
                       {question.required && <span className="ms-1 text-red-500">*</span>}
                     </span>
                   </CardTitle>
@@ -220,7 +254,7 @@ export default function QuestionnaireFormPage() {
                     <div className="flex items-center justify-between gap-2">
                       {choiceAnswer ? (
                         <span className="inline-flex max-w-[52%] items-center rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-700 shadow-sm sm:px-3.5 sm:text-xs">
-                          <span className="min-w-0 truncate">{choiceAnswer}</span>
+                          <span className="min-w-0 truncate">{getAnswerLabel(question, choiceAnswer)}</span>
                         </span>
                       ) : (
                         <span className="inline-flex max-w-[52%] items-center rounded-full border border-transparent px-3 py-1 text-[11px] font-medium text-transparent sm:px-3.5 sm:text-xs">
@@ -233,7 +267,7 @@ export default function QuestionnaireFormPage() {
                     </div>
 
                     <h2 className="max-w-none text-start text-[clamp(1.12rem,3.9vw,1.7rem)] font-black leading-[1.14] tracking-tight text-zinc-950">
-                      {question.prompt}
+                      {getPrompt(question)}
                       {question.required ? <span className="ms-1 text-red-500">*</span> : null}
                     </h2>
                   </>
@@ -264,7 +298,7 @@ export default function QuestionnaireFormPage() {
                       onCheckedChange={(checked) => handleAnswerChange(question.id, checked)}
                     />
                     <Label className="text-base font-medium cursor-pointer" onClick={() => handleAnswerChange(question.id, !booleanAnswer)}>
-                      {booleanAnswer ? "Yes" : "No"}
+                      {booleanAnswer ? t("yes") : t("no")}
                     </Label>
                   </div>
                 )}
@@ -272,7 +306,7 @@ export default function QuestionnaireFormPage() {
                 {question.type === "cards" && question.options && (
                   <div
                     role="radiogroup"
-                    aria-label={question.prompt}
+                    aria-label={getPrompt(question)}
                     className="grid gap-1.5"
                     style={{
                       gridTemplateColumns: `repeat(${question.options.length}, minmax(0, 1fr))`,
@@ -295,7 +329,7 @@ export default function QuestionnaireFormPage() {
                           }`}
                         >
                           <span className="min-w-0 whitespace-normal wrap-break-word text-center text-[10.5px] font-medium leading-[1.15] sm:text-[12px] sm:leading-[1.2]">
-                            {option}
+                            {getOptionLabel(question, i)}
                           </span>
                         </button>
                       );
@@ -319,7 +353,7 @@ export default function QuestionnaireFormPage() {
                         }`}
                       >
                         <RadioGroupItem value={option} className="w-5 h-5 text-indigo-600" />
-                        <span className="text-base font-medium">{option}</span>
+                        <span className="text-base font-medium">{getOptionLabel(question, i)}</span>
                       </Label>
                     ))}
                   </RadioGroup>
@@ -336,9 +370,21 @@ export default function QuestionnaireFormPage() {
                       className="w-full"
                     />
                     <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
-                      <span>{question.scaleConfig.minLabel || question.scaleConfig.min}</span>
+                      <span>
+                        {resolveLocalizedText(
+                          locale,
+                          question.scaleConfig.minLabel || String(question.scaleConfig.min),
+                          question.scaleConfig.minLabelTranslations
+                        )}
+                      </span>
                       <span className="text-indigo-600 font-bold text-lg">{numericAnswer}</span>
-                      <span>{question.scaleConfig.maxLabel || question.scaleConfig.max}</span>
+                      <span>
+                        {resolveLocalizedText(
+                          locale,
+                          question.scaleConfig.maxLabel || String(question.scaleConfig.max),
+                          question.scaleConfig.maxLabelTranslations
+                        )}
+                      </span>
                     </div>
                   </div>
                 )}

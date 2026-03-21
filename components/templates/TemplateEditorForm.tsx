@@ -8,10 +8,15 @@ import {
   createEmptyQuestion,
   createEmptyTemplateValues,
   normalizeQuestions,
+  normalizeTemplateDescriptionTranslations,
+  resolveFallbackText,
   normalizeTemplateDescription,
   normalizeTemplateTags,
+  normalizeTemplateTitleTranslations,
   normalizeTemplateTitle,
+  type LocalizedText,
   type QuestionType,
+  type SupportedLocale,
   type TemplateEditorValues,
   type TemplateQuestion,
 } from "@/lib/templateEditor";
@@ -42,6 +47,33 @@ interface TemplateEditorFormProps {
   submitLabel?: string;
 }
 
+function hydrateQuestionTranslations(question: TemplateQuestion): TemplateQuestion {
+  return {
+    ...question,
+    promptTranslations: question.promptTranslations ?? {
+      en: question.prompt,
+      he: question.prompt,
+    },
+    optionTranslations: question.options?.map((option, index) => {
+      const existingTranslations = question.optionTranslations?.[index];
+      return existingTranslations ?? { en: option, he: option };
+    }),
+    scaleConfig: question.scaleConfig
+      ? {
+          ...question.scaleConfig,
+          minLabelTranslations: question.scaleConfig.minLabelTranslations ?? {
+            en: question.scaleConfig.minLabel ?? "",
+            he: question.scaleConfig.minLabel ?? "",
+          },
+          maxLabelTranslations: question.scaleConfig.maxLabelTranslations ?? {
+            en: question.scaleConfig.maxLabel ?? "",
+            he: question.scaleConfig.maxLabel ?? "",
+          },
+        }
+      : undefined,
+  };
+}
+
 export function TemplateEditorForm({
   mode,
   initialValues,
@@ -63,9 +95,21 @@ export function TemplateEditorForm({
   const seedValues = initialValues ?? createEmptyTemplateValues();
   const [title, setTitle] = useState(seedValues.title);
   const [description, setDescription] = useState(seedValues.description);
+  const [titleTranslations, setTitleTranslations] = useState<LocalizedText>(
+    seedValues.titleTranslations ?? { en: seedValues.title, he: seedValues.title }
+  );
+  const [descriptionTranslations, setDescriptionTranslations] = useState<LocalizedText>(
+    seedValues.descriptionTranslations ?? {
+      en: seedValues.description,
+      he: seedValues.description,
+    }
+  );
   const [tags, setTags] = useState<string[]>(seedValues.tags);
+  const [tagTranslations] = useState<LocalizedText[]>(seedValues.tagTranslations ?? []);
   const [customTag, setCustomTag] = useState("");
-  const [questions, setQuestions] = useState<TemplateQuestion[]>(seedValues.questions);
+  const [questions, setQuestions] = useState<TemplateQuestion[]>(
+    seedValues.questions.map((question) => hydrateQuestionTranslations(question))
+  );
   const [scoring] = useState(seedValues.scoring);
 
   const toggleTag = (tag: string) => {
@@ -121,32 +165,106 @@ export function TemplateEditorForm({
   const handleAddOption = (questionIndex: number) => {
     const question = questions[questionIndex];
     const options = question.options || [];
-    handleUpdateQuestion(questionIndex, { options: [...options, ""] });
+    const optionTranslations = question.optionTranslations || [];
+    handleUpdateQuestion(questionIndex, {
+      options: [...options, ""],
+      optionTranslations: [...optionTranslations, { en: "", he: "" }],
+    });
   };
 
-  const handleUpdateOption = (questionIndex: number, optionIndex: number, value: string) => {
+  const updateLocalizedValue = (
+    currentValue: LocalizedText | undefined,
+    locale: SupportedLocale,
+    value: string
+  ) => ({
+    ...(currentValue ?? {}),
+    [locale]: value,
+  });
+
+  const handleUpdatePrompt = (
+    questionIndex: number,
+    locale: SupportedLocale,
+    value: string
+  ) => {
     const question = questions[questionIndex];
-    if (!question.options) return;
-    const options = [...question.options];
-    options[optionIndex] = value;
-    handleUpdateQuestion(questionIndex, { options });
+    const promptTranslations = updateLocalizedValue(question.promptTranslations, locale, value);
+    handleUpdateQuestion(questionIndex, {
+      prompt: resolveFallbackText(question.prompt, promptTranslations),
+      promptTranslations,
+    });
+  };
+
+  const handleUpdateOption = (
+    questionIndex: number,
+    optionIndex: number,
+    locale: SupportedLocale,
+    value: string
+  ) => {
+    const question = questions[questionIndex];
+    const nextOptionTranslations = [...(question.optionTranslations ?? [])];
+    nextOptionTranslations[optionIndex] = updateLocalizedValue(
+      nextOptionTranslations[optionIndex],
+      locale,
+      value
+    );
+
+    const nextOptions = [...(question.options ?? [])];
+    nextOptions[optionIndex] = resolveFallbackText(nextOptions[optionIndex], nextOptionTranslations[optionIndex]);
+
+    handleUpdateQuestion(questionIndex, {
+      options: nextOptions,
+      optionTranslations: nextOptionTranslations,
+    });
   };
 
   const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
     const question = questions[questionIndex];
     if (!question.options) return;
     const options = [...question.options];
+    const optionTranslations = [...(question.optionTranslations ?? [])];
     options.splice(optionIndex, 1);
-    handleUpdateQuestion(questionIndex, { options });
+    optionTranslations.splice(optionIndex, 1);
+    handleUpdateQuestion(questionIndex, { options, optionTranslations });
+  };
+
+  const handleUpdateScaleLabel = (
+    questionIndex: number,
+    field: "minLabel" | "maxLabel",
+    locale: SupportedLocale,
+    value: string
+  ) => {
+    const question = questions[questionIndex];
+    if (!question.scaleConfig) return;
+
+    const translationField =
+      field === "minLabel" ? "minLabelTranslations" : "maxLabelTranslations";
+    const nextTranslations = updateLocalizedValue(
+      question.scaleConfig[translationField],
+      locale,
+      value
+    );
+
+    handleUpdateQuestion(questionIndex, {
+      scaleConfig: {
+        ...question.scaleConfig,
+        [field]: resolveFallbackText(question.scaleConfig[field], nextTranslations),
+        [translationField]: nextTranslations,
+      },
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     await onSubmit({
-      title: normalizeTemplateTitle(title),
-      description: normalizeTemplateDescription(description),
+      title: normalizeTemplateTitle(resolveFallbackText(title, titleTranslations)),
+      description: normalizeTemplateDescription(
+        resolveFallbackText(description, descriptionTranslations)
+      ),
+      titleTranslations: normalizeTemplateTitleTranslations(titleTranslations),
+      descriptionTranslations: normalizeTemplateDescriptionTranslations(descriptionTranslations),
       tags: normalizeTemplateTags(tags),
+      tagTranslations,
       questions: normalizeQuestions(questions),
       scoring,
     });
@@ -194,29 +312,81 @@ export function TemplateEditorForm({
             <CardContent className="space-y-4 px-6 pb-6 sm:px-8">
               <div className="space-y-2">
                 <Label htmlFor="title">{t("templateName")}</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(event) => {
-                    setTitle(event.target.value);
-                    clearTitleError?.();
-                  }}
-                  placeholder={t("templateName")}
-                  required
-                  aria-invalid={!!titleError}
-                />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{t("templateNameEnglish")}</Label>
+                    <Input
+                      id="title"
+                      value={titleTranslations.en ?? ""}
+                      onChange={(event) => {
+                        const nextTranslations = { ...titleTranslations, en: event.target.value };
+                        setTitleTranslations(nextTranslations);
+                        setTitle(resolveFallbackText(title, nextTranslations));
+                        clearTitleError?.();
+                      }}
+                      placeholder={t("templateName")}
+                      required
+                      aria-invalid={!!titleError}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("templateNameHebrew")}</Label>
+                    <Input
+                      dir="rtl"
+                      value={titleTranslations.he ?? ""}
+                      onChange={(event) => {
+                        const nextTranslations = { ...titleTranslations, he: event.target.value };
+                        setTitleTranslations(nextTranslations);
+                        setTitle(resolveFallbackText(title, nextTranslations));
+                        clearTitleError?.();
+                      }}
+                      placeholder={t("templateName")}
+                      required
+                      aria-invalid={!!titleError}
+                    />
+                  </div>
+                </div>
                 {titleError ? <p className="text-sm text-red-600">{titleError}</p> : null}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">{t("templateDesc")}</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder={t("templateDesc")}
-                  rows={3}
-                />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{t("templateDescEnglish")}</Label>
+                    <Textarea
+                      id="description"
+                      value={descriptionTranslations.en ?? ""}
+                      onChange={(event) => {
+                        const nextTranslations = {
+                          ...descriptionTranslations,
+                          en: event.target.value,
+                        };
+                        setDescriptionTranslations(nextTranslations);
+                        setDescription(resolveFallbackText(description, nextTranslations));
+                      }}
+                      placeholder={t("templateDesc")}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("templateDescHebrew")}</Label>
+                    <Textarea
+                      dir="rtl"
+                      value={descriptionTranslations.he ?? ""}
+                      onChange={(event) => {
+                        const nextTranslations = {
+                          ...descriptionTranslations,
+                          he: event.target.value,
+                        };
+                        setDescriptionTranslations(nextTranslations);
+                        setDescription(resolveFallbackText(description, nextTranslations));
+                      }}
+                      placeholder={t("templateDesc")}
+                      rows={3}
+                    />
+                  </div>
+                </div>
               </div>
 
               {showTags ? (
@@ -338,13 +508,29 @@ export function TemplateEditorForm({
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <div className="space-y-2 md:col-span-2">
                         <Label>{t("questionPrompt")}</Label>
-                        <Input
-                          value={question.prompt}
-                          onChange={(event) =>
-                            handleUpdateQuestion(questionIndex, { prompt: event.target.value })
-                          }
-                          required
-                        />
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>{t("questionPromptEnglish")}</Label>
+                            <Input
+                              value={question.promptTranslations?.en ?? ""}
+                              onChange={(event) =>
+                                handleUpdatePrompt(questionIndex, "en", event.target.value)
+                              }
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{t("questionPromptHebrew")}</Label>
+                            <Input
+                              dir="rtl"
+                              value={question.promptTranslations?.he ?? ""}
+                              onChange={(event) =>
+                                handleUpdatePrompt(questionIndex, "he", event.target.value)
+                              }
+                              required
+                            />
+                          </div>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label>{t("questionType")}</Label>
@@ -355,9 +541,20 @@ export function TemplateEditorForm({
                             const updates: Partial<TemplateQuestion> = { type: nextType };
                             if ((nextType === "multiple_choice" || nextType === "cards") && !question.options) {
                               updates.options = ["Option 1", "Option 2"];
+                              updates.optionTranslations = [
+                                { en: "", he: "" },
+                                { en: "", he: "" },
+                              ];
                             }
                             if (nextType === "numeric_scale" && !question.scaleConfig) {
-                              updates.scaleConfig = { min: 1, max: 10, minLabel: "", maxLabel: "" };
+                              updates.scaleConfig = {
+                                min: 1,
+                                max: 10,
+                                minLabel: "",
+                                maxLabel: "",
+                                minLabelTranslations: { en: "", he: "" },
+                                maxLabelTranslations: { en: "", he: "" },
+                              };
                             }
                             handleUpdateQuestion(questionIndex, updates);
                           }}
@@ -394,26 +591,43 @@ export function TemplateEditorForm({
                       <div className="space-y-3 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
                         <Label className="font-bold">{t("options")}</Label>
                         {(question.options || []).map((option, optionIndex) => (
-                          <div key={`${question.id}-${optionIndex}`} className="flex items-center gap-2">
-                            <Input
-                              value={option}
-                              onChange={(event) =>
-                                handleUpdateOption(questionIndex, optionIndex, event.target.value)
-                              }
-                              placeholder={t("optionPlaceholder", { index: optionIndex + 1 })}
-                              required
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveOption(questionIndex, optionIndex)}
-                              disabled={(question.options?.length || 0) <= 2}
-                              className="text-zinc-400 hover:text-red-500"
-                              aria-label={t("removeOption")}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div key={`${question.id}-${optionIndex}`} className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto]">
+                            <div className="space-y-2">
+                              <Label>{t("optionEnglish")}</Label>
+                              <Input
+                                value={question.optionTranslations?.[optionIndex]?.en ?? ""}
+                                onChange={(event) =>
+                                  handleUpdateOption(questionIndex, optionIndex, "en", event.target.value)
+                                }
+                                placeholder={t("optionPlaceholder", { index: optionIndex + 1 })}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>{t("optionHebrew")}</Label>
+                              <Input
+                                dir="rtl"
+                                value={question.optionTranslations?.[optionIndex]?.he ?? ""}
+                                onChange={(event) =>
+                                  handleUpdateOption(questionIndex, optionIndex, "he", event.target.value)
+                                }
+                                placeholder={t("optionPlaceholder", { index: optionIndex + 1 })}
+                                required
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveOption(questionIndex, optionIndex)}
+                                disabled={(question.options?.length || 0) <= 2}
+                                className="text-zinc-400 hover:text-red-500"
+                                aria-label={t("removeOption")}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                         <Button type="button" variant="link" onClick={() => handleAddOption(questionIndex)} className="px-0">
@@ -458,31 +672,43 @@ export function TemplateEditorForm({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>{t("minLabel")}</Label>
+                          <Label>{t("minLabelEnglish")}</Label>
                           <Input
-                            value={question.scaleConfig?.minLabel || ""}
+                            value={question.scaleConfig?.minLabelTranslations?.en ?? ""}
                             onChange={(event) =>
-                              handleUpdateQuestion(questionIndex, {
-                                scaleConfig: {
-                                  ...question.scaleConfig!,
-                                  minLabel: event.target.value,
-                                },
-                              })
+                              handleUpdateScaleLabel(questionIndex, "minLabel", "en", event.target.value)
                             }
                             placeholder={t("minLabelPlaceholder")}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>{t("maxLabel")}</Label>
+                          <Label>{t("minLabelHebrew")}</Label>
                           <Input
-                            value={question.scaleConfig?.maxLabel || ""}
+                            dir="rtl"
+                            value={question.scaleConfig?.minLabelTranslations?.he ?? ""}
                             onChange={(event) =>
-                              handleUpdateQuestion(questionIndex, {
-                                scaleConfig: {
-                                  ...question.scaleConfig!,
-                                  maxLabel: event.target.value,
-                                },
-                              })
+                              handleUpdateScaleLabel(questionIndex, "minLabel", "he", event.target.value)
+                            }
+                            placeholder={t("minLabelPlaceholder")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>{t("maxLabelEnglish")}</Label>
+                          <Input
+                            value={question.scaleConfig?.maxLabelTranslations?.en ?? ""}
+                            onChange={(event) =>
+                              handleUpdateScaleLabel(questionIndex, "maxLabel", "en", event.target.value)
+                            }
+                            placeholder={t("maxLabelPlaceholder")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>{t("maxLabelHebrew")}</Label>
+                          <Input
+                            dir="rtl"
+                            value={question.scaleConfig?.maxLabelTranslations?.he ?? ""}
+                            onChange={(event) =>
+                              handleUpdateScaleLabel(questionIndex, "maxLabel", "he", event.target.value)
                             }
                             placeholder={t("maxLabelPlaceholder")}
                           />

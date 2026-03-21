@@ -2,7 +2,7 @@
 
 import { type ComponentType, type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery } from "convex/react";
 import {
   Archive,
@@ -23,24 +23,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+  type TemplateQuestion,
+} from "@/lib/templateEditor";
 
 type TemplateItem = {
   _id: Id<"questionnaireTemplates">;
   title: string;
   description?: string;
-  questions: Array<{
-    id: string;
-    prompt: string;
-    type: string;
-    required?: boolean;
-    options?: string[];
-    scaleConfig?: {
-      min: number;
-      max: number;
-      minLabel?: string;
-      maxLabel?: string;
-    };
-  }>;
+  titleTranslations?: LocalizedText;
+  descriptionTranslations?: LocalizedText;
+  questions: TemplateQuestion[];
   source: "system" | "practitioner";
   isInClinic?: boolean;
   isQuickAccess?: boolean;
@@ -62,6 +57,13 @@ function TemplateCard({
   onClick: () => void;
 }) {
   const t = useTranslations("PractitionerQuestionnaires");
+  const locale = useLocale();
+  const title = resolveLocalizedText(locale, template.title, template.titleTranslations);
+  const description = resolveLocalizedText(
+    locale,
+    template.description,
+    template.descriptionTranslations
+  );
 
   return (
     <Card
@@ -84,7 +86,7 @@ function TemplateCard({
 
           <div className="min-w-0 flex-1 space-y-2">
             <div className="space-y-1">
-              <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{template.title}</h3>
+              <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{title}</h3>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-zinc-500">
                 <span className="inline-flex items-center gap-1.5">
                   {t("questionsCount", { count: template.questions.length })}
@@ -99,7 +101,7 @@ function TemplateCard({
             </div>
 
             <p className="line-clamp-2 text-sm leading-6 text-zinc-500">
-              {template.description || t("preview.noDescription")}
+              {description || t("preview.noDescription")}
             </p>
           </div>
 

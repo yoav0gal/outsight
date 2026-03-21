@@ -1,8 +1,11 @@
 import {
   normalizeQuestions,
+  normalizeLocalizedText,
   normalizeTemplateDescription,
   normalizeTemplateTags,
   normalizeTemplateTitle,
+  resolveFallbackText,
+  type LocalizedText,
   type QuestionType,
   type TemplateScoring,
   type TemplateEditorValues,
@@ -15,6 +18,87 @@ interface RawTemplateUploadInput {
   tags?: unknown;
   questions?: unknown;
   scoring?: unknown;
+}
+
+function parseLocalizedTag(
+  value: unknown,
+  templateIndex: number,
+  tagIndex: number
+): { fallback: string; translations?: LocalizedText } {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      throw new Error(`Template ${templateIndex + 1}: invalid tag at index ${tagIndex + 1}`);
+    }
+
+    return { fallback: trimmed };
+  }
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Template ${templateIndex + 1}: invalid tag at index ${tagIndex + 1}`);
+  }
+
+  const translations = normalizeLocalizedText(value as LocalizedText);
+  if (!translations) {
+    throw new Error(`Template ${templateIndex + 1}: invalid tag at index ${tagIndex + 1}`);
+  }
+
+  return {
+    fallback: resolveFallbackText(undefined, translations),
+    translations,
+  };
+}
+
+function parseLocalizedText(
+  value: unknown,
+  templateIndex: number,
+  questionIndex: number,
+  field: string
+): { fallback: string; translations?: LocalizedText } {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: missing ${field}`);
+    }
+
+    return { fallback: trimmed };
+  }
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(
+      `Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid ${field}`
+    );
+  }
+
+  const translations = normalizeLocalizedText(value as LocalizedText);
+  if (!translations) {
+    throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: missing ${field}`);
+  }
+
+  return {
+    fallback: resolveFallbackText(undefined, translations),
+    translations,
+  };
+}
+
+function parseOptionalLocalizedText(
+  value: unknown,
+  templateIndex: number,
+  questionIndex: number,
+  field: string
+) {
+  if (value === undefined) {
+    return {
+      fallback: undefined,
+      translations: undefined,
+    };
+  }
+
+  const parsed = parseLocalizedText(value, templateIndex, questionIndex, field);
+  return {
+    fallback: parsed.fallback,
+    translations: parsed.translations,
+  };
 }
 
 function validateScoring(
@@ -119,9 +203,7 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
   ) {
     throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid question type`);
   }
-  if (typeof candidate.prompt !== "string" || !candidate.prompt.trim()) {
-    throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: missing prompt`);
-  }
+  const prompt = parseLocalizedText(candidate.prompt, templateIndex, questionIndex, "prompt");
   if (typeof candidate.required !== "boolean") {
     throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid required flag`);
   }
@@ -130,19 +212,23 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
     if (!Array.isArray(candidate.options) || candidate.options.length < 2) {
       throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: choice questions require at least two options`);
     }
-    const options = candidate.options.map((option) => {
-      if (typeof option !== "string" || !option.trim()) {
-        throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: invalid choice option`);
-      }
-      return option;
+    const parsedOptions = candidate.options.map((option) => {
+      return parseLocalizedText(
+        option,
+        templateIndex,
+        questionIndex,
+        "choice option"
+      );
     });
 
     return {
       id: candidate.id,
       type: questionType,
-      prompt: candidate.prompt,
+      prompt: prompt.fallback,
+      promptTranslations: prompt.translations,
       required: candidate.required,
-      options,
+      options: parsedOptions.map((option) => option.fallback),
+      optionTranslations: parsedOptions.map((option) => option.translations ?? {}),
     };
   }
 
@@ -159,16 +245,32 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
       throw new Error(`Template ${templateIndex + 1}, question ${questionIndex + 1}: scale max must be greater than min`);
     }
 
+    const minLabel = parseOptionalLocalizedText(
+      scaleConfig.minLabel,
+      templateIndex,
+      questionIndex,
+      "scale minLabel"
+    );
+    const maxLabel = parseOptionalLocalizedText(
+      scaleConfig.maxLabel,
+      templateIndex,
+      questionIndex,
+      "scale maxLabel"
+    );
+
     return {
       id: candidate.id,
       type: questionType,
-      prompt: candidate.prompt,
+      prompt: prompt.fallback,
+      promptTranslations: prompt.translations,
       required: candidate.required,
       scaleConfig: {
         min: scaleConfig.min,
         max: scaleConfig.max,
-        minLabel: typeof scaleConfig.minLabel === "string" ? scaleConfig.minLabel : undefined,
-        maxLabel: typeof scaleConfig.maxLabel === "string" ? scaleConfig.maxLabel : undefined,
+        minLabel: minLabel.fallback,
+        maxLabel: maxLabel.fallback,
+        minLabelTranslations: minLabel.translations,
+        maxLabelTranslations: maxLabel.translations,
       },
     };
   }
@@ -176,19 +278,18 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
   return {
     id: candidate.id,
     type: questionType,
-    prompt: candidate.prompt,
+    prompt: prompt.fallback,
+    promptTranslations: prompt.translations,
     required: candidate.required,
   };
 }
 
 function validateTemplate(input: RawTemplateUploadInput, index: number, selectedTags: string[]) {
-  if (typeof input.title !== "string" || !input.title.trim()) {
-    throw new Error(`Template ${index + 1}: missing title`);
-  }
-
-  if (input.description !== undefined && typeof input.description !== "string") {
-    throw new Error(`Template ${index + 1}: description must be a string`);
-  }
+  const title = parseLocalizedText(input.title, index, 0, "title");
+  const description =
+    input.description === undefined
+      ? { fallback: "", translations: undefined }
+      : parseLocalizedText(input.description, index, 0, "description");
 
   if (!Array.isArray(input.questions) || input.questions.length === 0) {
     throw new Error(`Template ${index + 1}: at least one question is required`);
@@ -196,19 +297,26 @@ function validateTemplate(input: RawTemplateUploadInput, index: number, selected
 
   if (
     input.tags !== undefined &&
-    (!Array.isArray(input.tags) || input.tags.some((tag) => typeof tag !== "string"))
+    !Array.isArray(input.tags)
   ) {
-    throw new Error(`Template ${index + 1}: tags must be an array of strings`);
+    throw new Error(`Template ${index + 1}: tags must be an array`);
   }
+
+  const parsedTags = (input.tags as unknown[] | undefined ?? []).map((tag, tagIndex) =>
+    parseLocalizedTag(tag, index, tagIndex)
+  );
 
   const questions = normalizeQuestions(
     input.questions.map((question, questionIndex) => validateQuestion(question, index, questionIndex))
   );
 
   return {
-    title: normalizeTemplateTitle(input.title),
-    description: normalizeTemplateDescription(input.description ?? ""),
-    tags: normalizeTemplateTags([...(input.tags as string[] | undefined ?? []), ...selectedTags]),
+    title: normalizeTemplateTitle(title.fallback),
+    description: normalizeTemplateDescription(description.fallback),
+    titleTranslations: title.translations,
+    descriptionTranslations: description.translations,
+    tags: normalizeTemplateTags([...parsedTags.map((tag) => tag.fallback), ...selectedTags]),
+    tagTranslations: [...parsedTags.map((tag) => tag.translations ?? {}), ...selectedTags.map(() => ({}))],
     questions,
     scoring: input.scoring === undefined ? undefined : validateScoring(input.scoring, questions, index),
   } satisfies TemplateEditorValues;

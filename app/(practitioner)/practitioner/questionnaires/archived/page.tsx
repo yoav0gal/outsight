@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "convex/react";
 import { Archive, ChevronRight, FileText, PencilLine } from "lucide-react";
 
@@ -13,24 +13,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  resolveLocalizedText,
+  type LocalizedText,
+  type TemplateQuestion,
+} from "@/lib/templateEditor";
 
 type TemplateItem = {
   _id: Id<"questionnaireTemplates">;
   title: string;
   description?: string;
-  questions: Array<{
-    id: string;
-    prompt: string;
-    type: string;
-    required?: boolean;
-    options?: string[];
-    scaleConfig?: {
-      min: number;
-      max: number;
-      minLabel?: string;
-      maxLabel?: string;
-    };
-  }>;
+  titleTranslations?: LocalizedText;
+  descriptionTranslations?: LocalizedText;
+  questions: TemplateQuestion[];
   source: "system" | "practitioner";
   isQuickAccess?: boolean;
   archivedAt?: number;
@@ -76,6 +71,13 @@ function TemplateCard({
   onClick: () => void;
 }) {
   const t = useTranslations("PractitionerQuestionnaires");
+  const locale = useLocale();
+  const title = resolveLocalizedText(locale, template.title, template.titleTranslations);
+  const description = resolveLocalizedText(
+    locale,
+    template.description,
+    template.descriptionTranslations
+  );
 
   return (
     <Card
@@ -99,7 +101,7 @@ function TemplateCard({
           <div className="min-w-0 flex-1 space-y-3">
             <div className="space-y-2">
               <div className="flex flex-wrap items-start gap-2">
-                <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{template.title}</h3>
+                <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{title}</h3>
                 <Badge
                   variant="outline"
                   className="rounded-full border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700"
@@ -109,7 +111,7 @@ function TemplateCard({
                 </Badge>
               </div>
               <p className="line-clamp-2 text-sm leading-6 text-zinc-500">
-                {template.description || t("preview.noDescription")}
+                {description || t("preview.noDescription")}
               </p>
             </div>
 

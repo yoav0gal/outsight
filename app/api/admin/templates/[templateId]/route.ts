@@ -24,7 +24,10 @@ export async function PATCH(
     await updateSystemTemplateAdmin(templateId, {
       title: body.title,
       description: body.description || undefined,
+      titleTranslations: body.titleTranslations,
+      descriptionTranslations: body.descriptionTranslations,
       tags: body.tags,
+      tagTranslations: body.tagTranslations,
       scoring: body.scoring,
       questions: body.questions,
     });

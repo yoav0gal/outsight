@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,23 +8,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-
-interface Question {
-  id: string;
-  prompt: string;
-  type: string;
-  required?: boolean;
-  options?: string[];
-  scaleConfig?: {
-    min: number;
-    max: number;
-    minLabel?: string;
-    maxLabel?: string;
-  };
-}
+import { resolveLocalizedText, type TemplateQuestion } from "@/lib/templateEditor";
 
 interface QuestionnairePreviewProps {
-  questions: Question[];
+  questions: TemplateQuestion[];
   title?: string;
   description?: string;
   answers?: Record<string, string | number | boolean | string[]>;
@@ -32,6 +19,35 @@ interface QuestionnairePreviewProps {
 
 export function QuestionnairePreview({ questions, title, description, answers }: QuestionnairePreviewProps) {
   const t = useTranslations("Questionnaire");
+  const locale = useLocale();
+
+  const getPrompt = (question: TemplateQuestion) =>
+    resolveLocalizedText(locale, question.prompt, question.promptTranslations);
+
+  const getOptionLabel = (question: TemplateQuestion, optionIndex: number) =>
+    resolveLocalizedText(
+      locale,
+      question.options?.[optionIndex],
+      question.optionTranslations?.[optionIndex]
+    );
+
+  const getAnswerLabel = (
+    question: TemplateQuestion,
+    answer: string | number | boolean | string[] | undefined
+  ) => {
+    if (typeof answer === "boolean") {
+      return answer ? t("yes") : t("no");
+    }
+
+    if (typeof answer === "string" && question.options?.length) {
+      const optionIndex = question.options.findIndex((option) => option === answer);
+      if (optionIndex >= 0) {
+        return getOptionLabel(question, optionIndex);
+      }
+    }
+
+    return answer !== undefined ? String(answer) : t("noAnswer");
+  };
 
   return (
     <div className="space-y-8 pb-8">
@@ -64,7 +80,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                   <CardTitle className="flex items-start gap-3 text-xl font-bold leading-relaxed text-zinc-900">
                     <span className="mt-0.5 font-mono text-lg text-indigo-400">{index + 1}.</span>
                     <span>
-                      {question.prompt}
+                      {getPrompt(question)}
                       {!hasAnswer && question.required && <span className="ms-1 text-red-500">*</span>}
                     </span>
                   </CardTitle>
@@ -77,7 +93,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                     <div className="flex items-center justify-between gap-2">
                       {answer !== undefined ? (
                         <span className="inline-flex max-w-[52%] items-center rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-700 shadow-sm sm:px-3.5 sm:text-xs">
-                          <span className="min-w-0 truncate">{String(answer)}</span>
+                          <span className="min-w-0 truncate">{getAnswerLabel(question, answer)}</span>
                         </span>
                       ) : (
                         <span className="inline-flex max-w-[52%] items-center rounded-full border border-transparent px-3 py-1 text-[11px] font-medium text-transparent sm:px-3.5 sm:text-xs">
@@ -90,7 +106,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                     </div>
 
                     <h2 className="max-w-none text-start text-[clamp(1.12rem,3.9vw,1.7rem)] font-black leading-[1.14] tracking-tight text-zinc-950">
-                      {question.prompt}
+                      {getPrompt(question)}
                       {question.required ? <span className="ms-1 text-red-500">*</span> : null}
                     </h2>
 
@@ -113,7 +129,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                               }`}
                             >
                               <span className="min-w-0 whitespace-normal break-words text-center text-[11px] font-medium leading-[1.2] sm:text-[13px] sm:leading-[1.25]">
-                                {option}
+                                {getOptionLabel(question, optionIndex)}
                               </span>
                             </div>
                         );
@@ -122,7 +138,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                   </>
                 ) : hasAnswer ? (
                   <div className="rounded-xl border border-zinc-200 bg-white p-4 text-lg font-bold text-zinc-700 shadow-inner">
-                    {answer !== undefined ? String(answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
+                    {answer !== undefined ? getAnswerLabel(question, answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
                   </div>
                 ) : (
                   <>
@@ -146,7 +162,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm w-fit opacity-50">
                         <Switch disabled />
                         <Label className="text-base font-medium">
-                          Yes / No
+                          {t("yes")} / {t("no")}
                         </Label>
                       </div>
                     )}
@@ -159,7 +175,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                             className="flex items-center gap-4 p-4 rounded-xl border border-zinc-200 bg-white opacity-50"
                           >
                             <RadioGroupItem value={option} className="w-5 h-5 text-indigo-600" />
-                            <span className="text-base font-medium">{option}</span>
+                            <span className="text-base font-medium">{getOptionLabel(question, i)}</span>
                           </Label>
                         ))}
                       </RadioGroup>
@@ -176,9 +192,21 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                           className="w-full"
                         />
                         <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
-                          <span>{question.scaleConfig.minLabel || question.scaleConfig.min}</span>
+                          <span>
+                            {resolveLocalizedText(
+                              locale,
+                              question.scaleConfig.minLabel || String(question.scaleConfig.min),
+                              question.scaleConfig.minLabelTranslations
+                            )}
+                          </span>
                           <span className="text-indigo-600 font-bold text-lg">{question.scaleConfig.min}</span>
-                          <span>{question.scaleConfig.maxLabel || question.scaleConfig.max}</span>
+                          <span>
+                            {resolveLocalizedText(
+                              locale,
+                              question.scaleConfig.maxLabel || String(question.scaleConfig.max),
+                              question.scaleConfig.maxLabelTranslations
+                            )}
+                          </span>
                         </div>
                       </div>
                     )}

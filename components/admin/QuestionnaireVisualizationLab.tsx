@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   LayoutList,
   Layers3,
@@ -16,19 +16,22 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { resolveLocalizedText, type TemplateQuestion } from "@/lib/templateEditor";
 import { cn } from "@/lib/utils";
 
-type QuestionnaireQuestion = {
-  id: string;
-  prompt: string;
-  type?: string;
-  required?: boolean;
-  options?: string[];
-};
+type QuestionnaireQuestion = TemplateQuestion;
 
-type QuestionnaireTemplate = {
+export type QuestionnaireTemplate = {
   title: string;
   description?: string;
+  titleTranslations?: {
+    en?: string;
+    he?: string;
+  };
+  descriptionTranslations?: {
+    en?: string;
+    he?: string;
+  };
   tags?: string[];
   questions: QuestionnaireQuestion[];
 };
@@ -38,6 +41,22 @@ type ViewMode = "slider" | "table" | "cards" | "grouped";
 interface QuestionnaireVisualizationLabProps {
   template: QuestionnaireTemplate;
   backHref: string;
+}
+
+function localizePrompt(question: QuestionnaireQuestion, locale: string) {
+  return resolveLocalizedText(locale, question.prompt, question.promptTranslations);
+}
+
+function localizeOptions(question: QuestionnaireQuestion, locale: string, sharedOptions: string[]) {
+  const options = question.options?.length ? question.options : sharedOptions;
+
+  if (!question.options?.length) {
+    return options;
+  }
+
+  return options.map((option, index) =>
+    resolveLocalizedText(locale, option, question.optionTranslations?.[index])
+  );
 }
 
 function isSharedOptionSet(questions: QuestionnaireQuestion[]) {
@@ -133,13 +152,15 @@ function QuestionCard({
   question,
   index,
   sharedOptions,
+  locale,
 }: {
   question: QuestionnaireQuestion;
   index: number;
   sharedOptions: string[];
+  locale: string;
 }) {
   const t = useTranslations("Admin");
-  const options = question.options?.length ? question.options : sharedOptions;
+  const options = localizeOptions(question, locale, sharedOptions);
   const selectedIndex = getSelectedIndex(index, options.length);
   const selectedLabel = options[selectedIndex] ?? "";
 
@@ -155,7 +176,7 @@ function QuestionCard({
           </Badge>
           <div className="min-w-0 flex-1">
             <p className="text-base font-semibold leading-6 text-zinc-950">
-              {question.prompt}
+              {localizePrompt(question, locale)}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
               {question.required && (
@@ -200,6 +221,7 @@ export function QuestionnaireVisualizationLab({
   backHref,
 }: QuestionnaireVisualizationLabProps) {
   const t = useTranslations("Admin");
+  const locale = useLocale();
   const [mode, setMode] = useState<ViewMode>("slider");
 
   const sharedOptions = useMemo(
@@ -253,10 +275,16 @@ export function QuestionnaireVisualizationLab({
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                     {t("playground.templateLabel")}
                   </p>
-                  <p className="mt-2 text-lg font-semibold text-zinc-950">{template.title}</p>
+                  <p className="mt-2 text-lg font-semibold text-zinc-950">
+                    {resolveLocalizedText(locale, template.title, template.titleTranslations)}
+                  </p>
                   {template.description && (
                     <p className="mt-2 text-sm leading-6 text-zinc-600">
-                      {template.description}
+                      {resolveLocalizedText(
+                        locale,
+                        template.description,
+                        template.descriptionTranslations
+                      )}
                     </p>
                   )}
                 </CardContent>
@@ -330,6 +358,7 @@ export function QuestionnaireVisualizationLab({
                     question={question}
                     index={index}
                     sharedOptions={sharedOptions}
+                    locale={locale}
                   />
                 ))}
               </div>
@@ -340,7 +369,7 @@ export function QuestionnaireVisualizationLab({
                 <CardContent className="p-0">
                   <div className="grid gap-4 p-4 sm:hidden">
                     {template.questions.map((question, index) => {
-                      const options = question.options?.length ? question.options : sharedOptions;
+                      const options = localizeOptions(question, locale, sharedOptions);
                       const selectedIndex = getSelectedIndex(index, options.length);
 
                       return (
@@ -360,7 +389,7 @@ export function QuestionnaireVisualizationLab({
                             </span>
                           </div>
                           <p className="text-sm font-semibold leading-6 text-zinc-950">
-                            {question.prompt}
+                            {localizePrompt(question, locale)}
                           </p>
                           {renderOptionStrip(options, selectedIndex, t("playground.noOptions"), true)}
                         </div>
@@ -385,7 +414,7 @@ export function QuestionnaireVisualizationLab({
                       </thead>
                       <tbody>
                         {template.questions.map((question, index) => {
-                          const options = question.options?.length ? question.options : sharedOptions;
+                          const options = localizeOptions(question, locale, sharedOptions);
                           const selectedIndex = getSelectedIndex(index, options.length);
                           const selectedLabel = options[selectedIndex] ?? "";
 
@@ -400,7 +429,7 @@ export function QuestionnaireVisualizationLab({
                                     {t("playground.question", { index: index + 1 })}
                                   </Badge>
                                   <p className="text-sm font-semibold leading-6 text-zinc-950">
-                                    {question.prompt}
+                                    {localizePrompt(question, locale)}
                                   </p>
                                 </div>
                               </td>
@@ -425,7 +454,7 @@ export function QuestionnaireVisualizationLab({
             <TabsContent value="cards" className="mt-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {template.questions.map((question, index) => {
-                  const options = question.options?.length ? question.options : sharedOptions;
+                  const options = localizeOptions(question, locale, sharedOptions);
                   const selectedIndex = getSelectedIndex(index, options.length);
 
                   return (
@@ -446,7 +475,7 @@ export function QuestionnaireVisualizationLab({
                           </span>
                         </div>
                         <p className="text-base font-semibold leading-6 text-zinc-950">
-                          {question.prompt}
+                          {localizePrompt(question, locale)}
                         </p>
                       </CardHeader>
                       <CardContent className="px-5 pb-5 pt-0">
@@ -460,7 +489,7 @@ export function QuestionnaireVisualizationLab({
 
             <TabsContent value="grouped" className="mt-5">
               <div className="grid gap-4 lg:grid-cols-2">
-                {groupedQuestions.map((group) => (
+                      {groupedQuestions.map((group) => (
                   <Card
                     key={group.label}
                     className="overflow-hidden rounded-[1.75rem] border-zinc-200 bg-white shadow-sm"
@@ -483,7 +512,7 @@ export function QuestionnaireVisualizationLab({
                     </CardHeader>
                     <CardContent className="space-y-3 p-5">
                       {group.items.map(({ question, index }) => {
-                        const options = question.options?.length ? question.options : sharedOptions;
+                        const options = localizeOptions(question, locale, sharedOptions);
                         const selectedIndex = getSelectedIndex(index, options.length);
 
                         return (
@@ -493,7 +522,7 @@ export function QuestionnaireVisualizationLab({
                           >
                             <div className="flex items-start justify-between gap-3">
                               <p className="text-sm font-semibold leading-6 text-zinc-950">
-                                {question.prompt}
+                                {localizePrompt(question, locale)}
                               </p>
                               <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-500">
                                 #{index + 1}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Archive, FileUp, PencilLine, Plus, Search, Tags, Trash2 } from "lucide-react";
 
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
@@ -11,11 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { resolveLocalizedText, type LocalizedText } from "@/lib/templateEditor";
 
 interface AdminTemplateSummary {
   _id: string;
   title: string;
   description?: string;
+  titleTranslations?: LocalizedText;
+  descriptionTranslations?: LocalizedText;
   tags: string[];
   questions: Array<{ id: string }>;
   archivedAt?: number;
@@ -32,6 +35,7 @@ export function AdminTemplatesDashboard({
 }: AdminTemplatesDashboardProps) {
   const router = useRouter();
   const t = useTranslations("Admin");
+  const locale = useLocale();
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [uploadTags, setUploadTags] = useState<string[]>([]);
@@ -47,7 +51,16 @@ export function AdminTemplatesDashboard({
     const tagFilter = new Set(selectedTags.map((tag) => tag.toLocaleLowerCase()));
 
     return templates.filter((template) => {
-      if (normalizedSearch && !template.title.toLocaleLowerCase().includes(normalizedSearch)) {
+      if (
+        normalizedSearch &&
+        ![
+          resolveLocalizedText(locale, template.title, template.titleTranslations),
+          resolveLocalizedText(locale, template.description, template.descriptionTranslations),
+        ]
+          .join(" ")
+          .toLocaleLowerCase()
+          .includes(normalizedSearch)
+      ) {
         return false;
       }
 
@@ -60,7 +73,7 @@ export function AdminTemplatesDashboard({
 
       return true;
     });
-  }, [search, selectedTags, templates]);
+  }, [locale, search, selectedTags, templates]);
 
   function toggleFilterTag(tag: string) {
     setSelectedTags((currentTags) =>
@@ -353,7 +366,9 @@ export function AdminTemplatesDashboard({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="truncate text-lg font-semibold text-zinc-950">{template.title}</h3>
+                            <h3 className="truncate text-lg font-semibold text-zinc-950">
+                              {resolveLocalizedText(locale, template.title, template.titleTranslations)}
+                            </h3>
                             {template.archivedAt ? (
                               <Badge className="rounded-full border-none bg-amber-100 px-2.5 py-1 text-amber-700">
                                 {t("dashboard.archived")}
@@ -361,7 +376,11 @@ export function AdminTemplatesDashboard({
                             ) : null}
                           </div>
                           <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-500">
-                            {template.description || t("dashboard.noDescription")}
+                            {resolveLocalizedText(
+                              locale,
+                              template.description,
+                              template.descriptionTranslations
+                            ) || t("dashboard.noDescription")}
                           </p>
                         </div>
                       </div>

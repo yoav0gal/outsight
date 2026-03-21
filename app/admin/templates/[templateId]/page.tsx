@@ -30,7 +30,10 @@ export default async function AdminTemplateEditPage({
         _id: template._id,
         title: template.title,
         description: template.description || "",
+        titleTranslations: template.titleTranslations,
+        descriptionTranslations: template.descriptionTranslations,
         tags: template.tags || [],
+        tagTranslations: template.tagTranslations || [],
         questions: template.questions,
       }}
       availableTags={availableTags}

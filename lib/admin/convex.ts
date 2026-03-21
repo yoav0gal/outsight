@@ -66,7 +66,10 @@ export function listSystemTemplatesAdmin() {
       _id: string;
       title: string;
       description?: string;
+      titleTranslations?: LocalizedText;
+      descriptionTranslations?: LocalizedText;
       tags: string[];
+      tagTranslations?: LocalizedText[];
       source: "system";
       archivedAt?: number;
       scoring?: TemplateScoring;
@@ -84,7 +87,10 @@ export function getSystemTemplateAdmin(templateId: string) {
     _id: string;
     title: string;
     description?: string;
+    titleTranslations?: LocalizedText;
+    descriptionTranslations?: LocalizedText;
     tags: string[];
+    tagTranslations?: LocalizedText[];
     source: "system";
     archivedAt?: number;
     scoring?: TemplateScoring;
@@ -96,7 +102,10 @@ export function createSystemTemplatesAdmin(
   templates: Array<{
     title: string;
     description?: string;
+    titleTranslations?: LocalizedText;
+    descriptionTranslations?: LocalizedText;
     tags?: string[];
+    tagTranslations?: LocalizedText[];
     scoring?: TemplateScoring;
     questions: unknown[];
   }>
@@ -111,7 +120,10 @@ export function updateSystemTemplateAdmin(
   values: {
     title: string;
     description?: string;
+    titleTranslations?: LocalizedText;
+    descriptionTranslations?: LocalizedText;
     tags?: string[];
+    tagTranslations?: LocalizedText[];
     scoring?: TemplateScoring;
     questions: unknown[];
   }
@@ -139,4 +151,4 @@ export function deleteSystemTemplateAdmin(templateId: string) {
     templateId,
   });
 }
-import type { TemplateQuestion, TemplateScoring } from "@/lib/templateEditor";
+import type { LocalizedText, TemplateQuestion, TemplateScoring } from "@/lib/templateEditor";

@@ -1,48 +1,91 @@
 {
-  "title": "DML2 - יומן מחשבות",
-  "description": "תבנית יומן מחשבות שהותאמה לייבוא למערכת התבניות. שימי לב: המקור כלל בלוק אירועים חוזר ובחירת מספר טעויות חשיבה, ולכן בגרסה זו הבלוק מיוצג כאירוע אחד ושדה טעויות החשיבה הומר לשדה טקסט חופשי.",
-  "tags": ["CBT", "יומן מחשבות", "מחשבות אוטומטיות"],
+  "title": {
+    "en": "DML2 - Thought Diary",
+    "he": "DML2 - יומן מחשבות"
+  },
+  "description": {
+    "en": "A thought diary template adapted for import into the template system. Note: the original source included a repeating event block and selection of multiple thinking mistakes, so in this version the block is represented as a single event and the thinking mistakes field was converted into a free-text field.",
+    "he": "תבנית יומן מחשבות שהותאמה לייבוא למערכת התבניות. שימי לב: המקור כלל בלוק אירועים חוזר ובחירת מספר טעויות חשיבה, ולכן בגרסה זו הבלוק מיוצג כאירוע אחד ושדה טעויות החשיבה הומר לשדה טקסט חופשי."
+  },
+  "tags": [
+    {
+      "en": "CBT",
+      "he": "CBT"
+    },
+    {
+      "en": "Thought Diary",
+      "he": "יומן מחשבות"
+    },
+    {
+      "en": "Automatic Thoughts",
+      "he": "מחשבות אוטומטיות"
+    }
+  ],
   "questions": [
     {
       "id": "event",
       "type": "long_text",
-      "prompt": "אירוע",
+      "prompt": {
+        "en": "Event",
+        "he": "אירוע"
+      },
       "required": true
     },
     {
       "id": "thought",
       "type": "long_text",
-      "prompt": "מחשבה",
+      "prompt": {
+        "en": "Thought",
+        "he": "מחשבה"
+      },
       "required": true
     },
     {
       "id": "emotion",
       "type": "long_text",
-      "prompt": "רגש",
+      "prompt": {
+        "en": "Emotion",
+        "he": "רגש"
+      },
       "required": true
     },
     {
       "id": "emotion_intensity",
       "type": "numeric_scale",
-      "prompt": "עוצמת הרגש באחוזים %",
+      "prompt": {
+        "en": "Emotion intensity in percent %",
+        "he": "עוצמת הרגש באחוזים %"
+      },
       "required": true,
       "scaleConfig": {
         "min": 0,
         "max": 100,
-        "minLabel": "0%",
-        "maxLabel": "100%"
+        "minLabel": {
+          "en": "0%",
+          "he": "0%"
+        },
+        "maxLabel": {
+          "en": "100%",
+          "he": "100%"
+        }
       }
     },
     {
       "id": "thinking_mistake",
       "type": "long_text",
-      "prompt": "טעות חשיבה. ניתן לכתוב אחת או יותר מתוך: הכל או כלום, הכללה, מסננת שלילית, הקטנה בערך התכונה החיובית, קפיצה למסקנות, קריאת מחשבות, ראיית עתיד, העצמה או הקטנה, טיעון רגשי, הצהרות חמ\"צ, שימוש בתוויות, האשמה עצמית או האשמת האחר.",
+      "prompt": {
+        "en": "Thinking mistake. You may write one or more of the following: all-or-nothing thinking, overgeneralization, mental filter, discounting the positive, jumping to conclusions, mind reading, fortune telling, magnification or minimization, emotional reasoning, should statements, labeling, self-blame, or blaming others.",
+        "he": "טעות חשיבה. ניתן לכתוב אחת או יותר מתוך: הכל או כלום, הכללה, מסננת שלילית, הקטנה בערך התכונה החיובית, קפיצה למסקנות, קריאת מחשבות, ראיית עתיד, העצמה או הקטנה, טיעון רגשי, הצהרות חמ\"צ, שימוש בתוויות, האשמה עצמית או האשמת האחר."
+      },
       "required": false
     },
     {
       "id": "alternative_thought",
       "type": "long_text",
-      "prompt": "מחשבה חלופית",
+      "prompt": {
+        "en": "Alternative thought",
+        "he": "מחשבה חלופית"
+      },
       "required": false
     }
   ]

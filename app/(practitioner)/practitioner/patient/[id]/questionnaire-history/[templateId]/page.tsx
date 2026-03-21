@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
   Archive,
@@ -26,6 +26,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DestructiveActionDialog } from "@/components/ui/destructiveActionDialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useFeedback } from "@/components/ui/feedback";
+import { resolveLocalizedText } from "@/lib/templateEditor";
 
 type ScoreSummary = {
   mode: "standard";
@@ -57,6 +58,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
   const t = useTranslations("PractitionerPatient");
   const tQ = useTranslations("Questionnaire");
   const tActions = useTranslations("SharedActions");
+  const locale = useLocale();
   const patientId = params.id as Id<"users">;
   const templateId = params.templateId as Id<"questionnaireTemplates">;
   const [selectedSubmission, setSelectedSubmission] = useState<HistoryInstance | null>(null);
@@ -181,6 +183,20 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
 
   const assignment = (templateHistory as { assignment?: AssignmentDoc | null }).assignment;
   const hasHistory = templateHistory.history.length > 0;
+  const localizedTemplateTitle = templateHistory.template
+    ? resolveLocalizedText(
+        locale,
+        templateHistory.template.title,
+        templateHistory.template.titleTranslations
+      )
+    : t("questionnaires.history");
+  const localizedTemplateDescription = templateHistory.template
+    ? resolveLocalizedText(
+        locale,
+        templateHistory.template.description,
+        templateHistory.template.descriptionTranslations
+      )
+    : "";
   const scoreTrendPoints = templateHistory.history
     .filter((instance) => instance.score)
     .map((instance, index) => {
@@ -220,7 +236,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
           ) : null}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-950">
-          {templateHistory.template?.title ?? t("questionnaires.history")}
+          {localizedTemplateTitle}
         </h1>
         <p className="mt-2 text-sm font-medium text-zinc-500">
           {patient?.name || t("unnamed")} · {patient?.email}
@@ -346,8 +362,8 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
             <div className="bg-zinc-50/30 p-8 sm:p-12">
               <QuestionnairePreview
                 questions={templateHistory.template.questions}
-                title={templateHistory.template.title}
-                description={templateHistory.template.description}
+                title={localizedTemplateTitle}
+                description={localizedTemplateDescription}
               />
             </div>
           ) : null}
@@ -393,7 +409,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
                   {t(`questionnaires.status.${selectedSubmission.status}`)}
                 </Badge>
                 <h2 className="mb-2 text-4xl font-black tracking-tight text-zinc-950">
-                  {templateHistory.template?.title}
+                  {localizedTemplateTitle}
                 </h2>
                 <p className="font-medium text-zinc-500">
                   {tQ("submittedOn", {

@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { type ComponentType, type ReactNode, useEffect, useState } from "react";
 import {
@@ -38,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveLocalizedText } from "@/lib/templateEditor";
 
 type SessionReviewDoc = Doc<"sessionReviews">;
 
@@ -174,6 +175,7 @@ function SectionShell({ title, description, badge, actions, children }: SectionS
 }
 
 export default function PatientDetailsPage() {
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -633,7 +635,11 @@ export default function PatientDetailsPage() {
                   <div className="min-w-0 flex-1 space-y-4">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-start gap-2">
-                        <h3 className="line-clamp-1 text-base font-bold text-zinc-900">{tpl?.title || "Loading..."}</h3>
+                        <h3 className="line-clamp-1 text-base font-bold text-zinc-900">
+                          {tpl
+                            ? resolveLocalizedText(locale, tpl.title, tpl.titleTranslations)
+                            : "Loading..."}
+                        </h3>
                         {summary ? (
                           <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
                             {t("questionnaires.entriesCount", { count: summary.totalEntries })}

@@ -1,8 +1,27 @@
 [
   {
-    "title": "2in1 - שאלון חרדה",
-    "description": "שאלון חרדה שבועי המבוסס על התוכן שמופיע בקובץ 2in1.",
-    "tags": ["חרדה", "GAD-7", "סקר"],
+    "title": {
+      "en": "2in1 - Anxiety Questionnaire",
+      "he": "2in1 - שאלון חרדה"
+    },
+    "description": {
+      "en": "A weekly anxiety questionnaire based on the content that appears in the 2in1 file.",
+      "he": "שאלון חרדה שבועי המבוסס על התוכן שמופיע בקובץ 2in1."
+    },
+    "tags": [
+      {
+        "en": "Anxiety",
+        "he": "חרדה"
+      },
+      {
+        "en": "GAD-7",
+        "he": "GAD-7"
+      },
+      {
+        "en": "Screening",
+        "he": "סקר"
+      }
+    ],
     "scoring": {
       "mode": "standard",
       "includedQuestionIds": [
@@ -19,58 +38,217 @@
       {
         "id": "anxiety_1",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: הרגשתי עצבנות, חרדה או מתח רב",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: feeling nervous, anxious, or very tense",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: הרגשתי עצבנות, חרדה או מתח רב"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "anxiety_2",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: לא הייתי מסוגל/ת להפסיק לדאוג או לשלוט בחרדה",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: not being able to stop or control worrying",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: לא הייתי מסוגל/ת להפסיק לדאוג או לשלוט בחרדה"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "anxiety_3",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: הייתי מודאג/ת יותר מדי בקשר לדברים שונים",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: worrying too much about different things",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: הייתי מודאג/ת יותר מדי בקשר לדברים שונים"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "anxiety_4",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: התקשיתי להירגע",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: having trouble relaxing",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: התקשיתי להירגע"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "anxiety_5",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: הייתי כל כך חסר/ת מנוחה שהיה לי קשה לשבת בלי לנוע",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: being so restless that it was hard to sit still",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: הייתי כל כך חסר/ת מנוחה שהיה לי קשה לשבת בלי לנוע"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "anxiety_6",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: התעצבנתי או התרגזתי בקלות",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: becoming easily annoyed or irritable",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: התעצבנתי או התרגזתי בקלות"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "anxiety_7",
         "type": "cards",
-        "prompt": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: פחדתי שמשהו נורא עומד לקרות",
+        "prompt": {
+          "en": "Over the last week, how often have you been bothered by the following: feeling afraid that something awful might happen",
+          "he": "במהלך השבוע האחרון, עד כמה היית מוטרד/ת מהנושא הבא: פחדתי שמשהו נורא עומד לקרות"
+        },
         "required": true,
-        "options": ["כלל לא", "כמה ימים", "יותר ממחצית הימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "כמה ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "יותר ממחצית הימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       }
     ]
   },
   {
-    "title": "2in1 - שאלון דיכאון",
-    "description": "שאלון דיכאון שבועי המבוסס על התוכן שמופיע בקובץ 2in1, כולל שאלת תפקוד מסכמת.",
-    "tags": ["דיכאון", "PHQ-9", "סקר"],
+    "title": {
+      "en": "2in1 - Depression Questionnaire",
+      "he": "2in1 - שאלון דיכאון"
+    },
+    "description": {
+      "en": "A weekly depression questionnaire based on the content that appears in the 2in1 file, including a summary functioning question.",
+      "he": "שאלון דיכאון שבועי המבוסס על התוכן שמופיע בקובץ 2in1, כולל שאלת תפקוד מסכמת."
+    },
+    "tags": [
+      {
+        "en": "Depression",
+        "he": "דיכאון"
+      },
+      {
+        "en": "PHQ-9",
+        "he": "PHQ-9"
+      },
+      {
+        "en": "Screening",
+        "he": "סקר"
+      }
+    ],
     "scoring": {
       "mode": "standard",
       "includedQuestionIds": [
@@ -89,72 +267,272 @@
       {
         "id": "depression_1",
         "type": "cards",
-        "prompt": "עניין או הנאה מועטים מעשיית דברים",
+        "prompt": {
+          "en": "Little interest or pleasure in doing things",
+          "he": "עניין או הנאה מועטים מעשיית דברים"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_2",
         "type": "cards",
-        "prompt": "תחושת דכדוך, דיכאון, או חוסר תקווה",
+        "prompt": {
+          "en": "Feeling down, depressed, or hopeless",
+          "he": "תחושת דכדוך, דיכאון, או חוסר תקווה"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_3",
         "type": "cards",
-        "prompt": "קשיים בהירדמות או בשינה רציפה, או עודף שינה",
+        "prompt": {
+          "en": "Trouble falling asleep, staying asleep, or sleeping too much",
+          "he": "קשיים בהירדמות או בשינה רציפה, או עודף שינה"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_4",
         "type": "cards",
-        "prompt": "תחושה של עייפות או אנרגיה מועטה",
+        "prompt": {
+          "en": "Feeling tired or having little energy",
+          "he": "תחושה של עייפות או אנרגיה מועטה"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_5",
         "type": "cards",
-        "prompt": "תיאבון מועט או אכילת יתר",
+        "prompt": {
+          "en": "Poor appetite or overeating",
+          "he": "תיאבון מועט או אכילת יתר"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_6",
         "type": "cards",
-        "prompt": "הרגשה רעה לגבי עצמך - מרגיש/ה שאת/ה כישלון או שאכזבת את עצמך או את משפחתך",
+        "prompt": {
+          "en": "Feeling bad about yourself, or that you are a failure or have let yourself or your family down",
+          "he": "הרגשה רעה לגבי עצמך - מרגיש/ה שאת/ה כישלון או שאכזבת את עצמך או את משפחתך"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_7",
         "type": "cards",
-        "prompt": "קושי להתרכז בדברים, כמו קריאה בעיתון או צפייה בטלוויזיה",
+        "prompt": {
+          "en": "Trouble concentrating on things, such as reading the newspaper or watching television",
+          "he": "קושי להתרכז בדברים, כמו קריאה בעיתון או צפייה בטלוויזיה"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_8",
         "type": "cards",
-        "prompt": "דיבור או תנועה באיטיות רבה מהרגיל או להיפך, חוסר שקט כה רב עד כי צריך להסתובב יותר מן הרגיל",
+        "prompt": {
+          "en": "Moving or speaking so slowly that other people could have noticed, or the opposite, being so fidgety or restless that you moved around more than usual",
+          "he": "דיבור או תנועה באיטיות רבה מהרגיל או להיפך, חוסר שקט כה רב עד כי צריך להסתובב יותר מן הרגיל"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_9",
         "type": "cards",
-        "prompt": "מחשבות שהיה עדיף לו היית מת/ה או מחשבות על פגיעה בעצמך בדרך כלשהי",
+        "prompt": {
+          "en": "Thoughts that you would be better off dead, or thoughts of hurting yourself in some way",
+          "he": "מחשבות שהיה עדיף לו היית מת/ה או מחשבות על פגיעה בעצמך בדרך כלשהי"
+        },
         "required": true,
-        "options": ["כלל לא", "מספר ימים", "ביותר ממחצית מהימים", "כמעט כל יום"]
+        "options": [
+          {
+            "en": "Not at all",
+            "he": "כלל לא"
+          },
+          {
+            "en": "Several days",
+            "he": "מספר ימים"
+          },
+          {
+            "en": "More than half the days",
+            "he": "ביותר ממחצית מהימים"
+          },
+          {
+            "en": "Nearly every day",
+            "he": "כמעט כל יום"
+          }
+        ]
       },
       {
         "id": "depression_function",
         "type": "cards",
-        "prompt": "אם סימנת בעיות כלשהן, עד כמה הקשו עליך לבצע את עבודתך, לטפל בדברים בבית, או להסתדר עם אנשים אחרים",
+        "prompt": {
+          "en": "If you marked any problems, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people",
+          "he": "אם סימנת בעיות כלשהן, עד כמה הקשו עליך לבצע את עבודתך, לטפל בדברים בבית, או להסתדר עם אנשים אחרים"
+        },
         "required": true,
-        "options": ["לא הקשו כלל", "הקשו במידת מה", "הקשו מאוד", "הקשו באופן קיצוני"]
+        "options": [
+          {
+            "en": "Not difficult at all",
+            "he": "לא הקשו כלל"
+          },
+          {
+            "en": "Somewhat difficult",
+            "he": "הקשו במידת מה"
+          },
+          {
+            "en": "Very difficult",
+            "he": "הקשו מאוד"
+          },
+          {
+            "en": "Extremely difficult",
+            "he": "הקשו באופן קיצוני"
+          }
+        ]
       }
     ]
   }

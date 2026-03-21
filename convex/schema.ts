@@ -7,6 +7,11 @@ const scoringValidator = v.object({
   answerScores: v.optional(v.record(v.string(), v.record(v.string(), v.number()))),
 });
 
+const localizedTextValidator = v.object({
+  en: v.optional(v.string()),
+  he: v.optional(v.string()),
+});
+
 export default defineSchema({
   users: defineTable({
     name: v.optional(v.string()),
@@ -26,10 +31,13 @@ export default defineSchema({
   questionnaireTemplates: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
+    titleTranslations: v.optional(localizedTextValidator),
+    descriptionTranslations: v.optional(localizedTextValidator),
     practitionerId: v.optional(v.id("users")), // System-wide if undefined
     source: v.optional(v.union(v.literal("system"), v.literal("practitioner"))),
     originTemplateId: v.optional(v.id("questionnaireTemplates")),
     tags: v.optional(v.array(v.string())),
+    tagTranslations: v.optional(v.array(localizedTextValidator)),
     archivedAt: v.optional(v.number()),
     scoring: v.optional(scoringValidator),
     questions: v.array(
@@ -44,14 +52,18 @@ export default defineSchema({
           v.literal("numeric_scale")
         ),
         prompt: v.string(),
+        promptTranslations: v.optional(localizedTextValidator),
         required: v.boolean(),
         options: v.optional(v.array(v.string())), // For multiple choice / cards
+        optionTranslations: v.optional(v.array(localizedTextValidator)),
         scaleConfig: v.optional(
           v.object({
             min: v.number(),
             max: v.number(),
             minLabel: v.optional(v.string()),
             maxLabel: v.optional(v.string()),
+            minLabelTranslations: v.optional(localizedTextValidator),
+            maxLabelTranslations: v.optional(localizedTextValidator),
           })
         ), // For numeric_scale
       })

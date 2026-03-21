@@ -3,15 +3,17 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { FileText, ArrowRight, CheckCircle2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { resolveLocalizedText } from "@/lib/templateEditor";
 
 export default function PatientHome() {
   const user = useQuery(api.users.viewer);
   const pendingInstances = useQuery(api.questionnaires.listPendingInstances);
   const t = useTranslations("PatientHome");
+  const locale = useLocale();
 
   return (
     <main className="flex-1 w-full max-w-2xl mx-auto p-4 sm:p-6 pb-12 flex flex-col gap-8">
@@ -58,7 +60,7 @@ export default function PatientHome() {
                 <Card key={instance._id} className="group border-none bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all rounded-[2rem] overflow-hidden flex flex-col">
                   <CardHeader className="p-6 pb-4">
                     <CardTitle className="text-xl font-black text-zinc-900 line-clamp-1">
-                      {tpl?.title}
+                      {tpl ? resolveLocalizedText(locale, tpl.title, tpl.titleTranslations) : ""}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 pt-0 mt-auto">
