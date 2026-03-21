@@ -1,11 +1,11 @@
 {
   "title": {
-    "en": "DML2 - Thought Diary",
-    "he": "DML2 - יומן מחשבות"
+    "en": "CBT Thought Record",
+    "he": "יומן מחשבות (CBT)"
   },
   "description": {
-    "en": "A thought diary template adapted for import into the template system. Note: the original source included a repeating event block and selection of multiple thinking mistakes, so in this version the block is represented as a single event and the thinking mistakes field was converted into a free-text field.",
-    "he": "תבנית יומן מחשבות שהותאמה לייבוא למערכת התבניות. שימי לב: המקור כלל בלוק אירועים חוזר ובחירת מספר טעויות חשיבה, ולכן בגרסה זו הבלוק מיוצג כאירוע אחד ושדה טעויות החשיבה הומר לשדה טקסט חופשי."
+    "en": "A Cognitive Behavioral Therapy (CBT) thought record used to identify automatic negative thoughts, analyze thinking mistakes, and formulate balanced alternative thoughts.",
+    "he": "דף לרישום מחשבות בגישת טיפול קוגניטיבי-התנהגותי (CBT). נועד לזיהוי מחשבות אוטומטיות, ניתוח טעויות חשיבה וניסוח מחשבות חלופיות מאוזנות."
   },
   "tags": [
     {

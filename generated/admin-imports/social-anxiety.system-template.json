@@ -1,11 +1,11 @@
 {
   "title": {
-    "en": "Social Anxiety Assessment Questionnaire",
-    "he": "שאלון לאבחון חרדה חברתית"
+    "en": "Liebowitz Social Anxiety Scale (LSAS)",
+    "he": "שאלון ליבוביץ לחרדה חברתית (LSAS)"
   },
   "description": {
-    "en": "A social anxiety questionnaire based on the form \"Social Anxiety Assessment Questionnaire\". The questionnaire includes two separate ratings for each situation: fear or anxiety, and avoidance.",
-    "he": "שאלון חרדה חברתית המבוסס על הטופס \"שאלון לאבחון חרדה חברתית\". השאלון כולל שני דירוגים נפרדים לכל סיטואציה: פחד או חרדה, והימנעות."
+    "en": "The Liebowitz Social Anxiety Scale (LSAS) is a clinical tool used to assess the role that social phobia plays in your life across a variety of situations. It includes two separate ratings for each situation: fear and avoidance.",
+    "he": "שאלון ליבוביץ לחרדה חברתית (LSAS) הוא כלי קליני נפוץ המשמש להערכת רמות הפחד וההימנעות ב-24 סיטואציות חברתיות וביצועיות שונות."
   },
   "tags": [
     {

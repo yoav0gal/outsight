@@ -1,12 +1,12 @@
 [
   {
     "title": {
-      "en": "2in1 - Anxiety Questionnaire",
-      "he": "2in1 - שאלון חרדה"
+      "en": "Generalized Anxiety Questionnaire (GAD-7)",
+      "he": "שאלון חרדה כללית (GAD-7)"
     },
     "description": {
-      "en": "A weekly anxiety questionnaire based on the content that appears in the 2in1 file.",
-      "he": "שאלון חרדה שבועי המבוסס על התוכן שמופיע בקובץ 2in1."
+      "en": "The GAD-7 is a standardized clinical questionnaire used for screening, diagnosing, and measuring the severity of generalized anxiety disorder.",
+      "he": "שאלון ה-GAD-7 הוא כלי מתוקף להערכה קלינית ומעקב אחר חומרת תסמינים של חרדה כללית."
     },
     "tags": [
       {
@@ -228,12 +228,12 @@
   },
   {
     "title": {
-      "en": "2in1 - Depression Questionnaire",
-      "he": "2in1 - שאלון דיכאון"
+      "en": "Patient Health Questionnaire (PHQ-9)",
+      "he": "שאלון דיכאון (PHQ-9)"
     },
     "description": {
-      "en": "A weekly depression questionnaire based on the content that appears in the 2in1 file, including a summary functioning question.",
-      "he": "שאלון דיכאון שבועי המבוסס על התוכן שמופיע בקובץ 2in1, כולל שאלת תפקוד מסכמת."
+      "en": "The PHQ-9 is a standardized diagnostic tool used to screen for, diagnose, and measure the severity of depression, including a summary functioning question.",
+      "he": "שאלון ה-PHQ-9 הוא כלי אבחוני מתוקף המשמש להערכה ולמדידה של חומרת דיכאון, כולל שאלת תפקוד מסכמת."
     },
     "tags": [
       {
