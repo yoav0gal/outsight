@@ -2,6 +2,12 @@ import { mutation, query, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
+const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isExpiredInvitation(invitation: { _creationTime: number }) {
+  return Date.now() - invitation._creationTime >= INVITE_TTL_MS;
+}
+
 function getInstanceHistoryTimestamp(instance: {
   submittedAt?: number;
   expiresAt?: number;
@@ -53,7 +59,7 @@ export const store = mutation({
         .filter((q) => q.eq(q.field("status"), "pending"))
         .unique();
 
-      if (invitation) {
+      if (invitation && !isExpiredInvitation(invitation)) {
         role = "patient";
         practitionerId = invitation.practitionerId;
         // Mark invitation as accepted

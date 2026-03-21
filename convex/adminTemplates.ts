@@ -94,6 +94,59 @@ function isArchivedTemplate(template: { archivedAt?: number }) {
   return typeof template.archivedAt === "number";
 }
 
+async function deleteQuestionnaireInstancesForAssignment(
+  ctx: MutationCtx,
+  assignmentId: Id<"questionnaireAssignments">
+) {
+  const instances = await ctx.db
+    .query("questionnaireInstances")
+    .withIndex("by_assignment", (q) => q.eq("assignmentId", assignmentId))
+    .collect();
+
+  for (const instance of instances) {
+    await ctx.db.delete(instance._id);
+  }
+}
+
+async function deleteQuestionnaireDataForTemplate(
+  ctx: MutationCtx,
+  templateId: Id<"questionnaireTemplates">
+) {
+  const [assignments, historyViews, memberships, instances] = await Promise.all([
+    ctx.db.query("questionnaireAssignments").collect(),
+    ctx.db.query("questionnaireHistoryViews").collect(),
+    ctx.db.query("clinicQuestionnaireTemplates").collect(),
+    ctx.db.query("questionnaireInstances").collect(),
+  ]);
+
+  for (const membership of memberships) {
+    if (membership.templateId === templateId) {
+      await ctx.db.delete(membership._id);
+    }
+  }
+
+  for (const historyView of historyViews) {
+    if (historyView.templateId === templateId) {
+      await ctx.db.delete(historyView._id);
+    }
+  }
+
+  for (const instance of instances) {
+    if (instance.templateId === templateId) {
+      await ctx.db.delete(instance._id);
+    }
+  }
+
+  for (const assignment of assignments) {
+    if (assignment.templateId !== templateId) {
+      continue;
+    }
+
+    await deleteQuestionnaireInstancesForAssignment(ctx, assignment._id);
+    await ctx.db.delete(assignment._id);
+  }
+}
+
 async function ensureUniqueSystemTemplateTitle(
   ctx: MutationCtx,
   title: string,
@@ -313,22 +366,7 @@ export const deleteSystemTemplateAdmin = mutation({
       throw new Error("Template not found");
     }
 
-    const assignments = await ctx.db.query("questionnaireAssignments").collect();
-    if (assignments.some((assignment) => assignment.templateId === args.templateId)) {
-      throw new Error("This system template cannot be deleted because it has assignments");
-    }
-
-    const instances = await ctx.db.query("questionnaireInstances").collect();
-    if (instances.some((instance) => instance.templateId === args.templateId)) {
-      throw new Error("This system template cannot be deleted because it has submissions");
-    }
-
-    const memberships = await ctx.db.query("clinicQuestionnaireTemplates").collect();
-    for (const membership of memberships) {
-      if (membership.templateId === args.templateId) {
-        await ctx.db.delete(membership._id);
-      }
-    }
+    await deleteQuestionnaireDataForTemplate(ctx, args.templateId);
 
     await ctx.db.delete(args.templateId);
   },

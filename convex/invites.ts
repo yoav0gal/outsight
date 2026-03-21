@@ -2,6 +2,12 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { QueryCtx } from "./_generated/server";
 
+const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isExpiredInvitation(invitation: { _creationTime: number }) {
+  return Date.now() - invitation._creationTime >= INVITE_TTL_MS;
+}
+
 export const validate = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
@@ -10,7 +16,7 @@ export const validate = query({
       .withIndex("by_token", (q) => q.eq("token", args.token))
       .unique();
 
-    if (!invitation || invitation.status !== "pending") {
+    if (!invitation || invitation.status !== "pending" || isExpiredInvitation(invitation)) {
       return false;
     }
     return true;

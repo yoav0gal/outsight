@@ -10,16 +10,16 @@
     "history": "History"
   },
   "LandingPage": {
-    "title": "Outsight",
+    "title": "Outsight Therapy",
     "features": "Features",
     "pricing": "Pricing",
     "about": "About",
     "goToDashboard": "Go to Dashboard",
     "logIn": "Log In",
-    "heroTitleLine1": "The Modern Tool for",
-    "heroTitleLine2": "CBT Practitioners",
-    "heroSubtitle": "Streamline your practice, track patient progress, and manage exercises with ease. Built specifically for the needs of CBT therapy.",
-    "startForFree": "Start for free",
+    "heroTitleLine1": "Outsight",
+    "heroTitleLine2": "Therapy",
+    "heroSubtitle": "A simple system to organize your therapy practice.",
+    "startForFree": "Log In",
     "bookDemo": "Book a demo",
     "feature1Title": "Patient Management",
     "feature1Desc": "Easily add patients and track their journey through the CBT process.",
@@ -27,7 +27,7 @@
     "feature2Desc": "Assign thought records and behavioral experiments with a click.",
     "feature3Title": "Secure & Compliant",
     "feature3Desc": "Your patient data is protected with industry-standard encryption.",
-    "footer": "© 2024 Outsight. All rights reserved."
+    "footer": "© 2026 Outsight."
   },
   "PractitionerMyPatients": {
     "title": "Outsight",
@@ -39,9 +39,9 @@
     "searchEmpty": "No patients match this search.",
     "newEntries": "{count, plural, one {# new entry} other {# new entries}}",
     "inviteCodeTitle": "One-time invite code",
-    "inviteCodeDesc": "Share this code once with your patient. After it is used, it will stop working.",
+    "inviteCodeDesc": "Share this code once with your patient. It expires after 24 hours or after it is used.",
     "inviteLinkGenerated": "Patient Invitation Link Generated",
-    "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice.",
+    "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice. The link expires after 24 hours.",
     "copy": "Copy",
     "copiedText": "Copied to clipboard!",
     "failedInvite": "Failed to create invitation",

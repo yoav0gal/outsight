@@ -29,8 +29,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Outsight",
-  description: "Advanced CBT Patient Management",
+  title: "Outsight Therapy",
+  description: "A simple system to organize your therapy practice.",
 };
 
 export default async function RootLayout({

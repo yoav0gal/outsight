@@ -15,7 +15,7 @@ function JoinContent() {
   const isValidToken = useQuery(api.invites.validate, token ? { token } : "skip");
   const error =
     !authLoading && isValidToken !== undefined && (!token || isValidToken === false)
-      ? "This invitation link is invalid or has already been used."
+      ? "This invitation link is invalid, expired, or has already been used."
       : null;
 
   useEffect(() => {
