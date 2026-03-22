@@ -4,8 +4,30 @@ import { v } from "convex/values";
 
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
-function isExpiredInvitation(invitation: { _creationTime: number }) {
-  return Date.now() - invitation._creationTime >= INVITE_TTL_MS;
+function getInvitationExpiry(invitation: { _creationTime: number; expiresAt?: number }) {
+  return invitation.expiresAt ?? invitation._creationTime + INVITE_TTL_MS;
+}
+
+function isExpiredInvitation(invitation: { _creationTime: number; expiresAt?: number }) {
+  return getInvitationExpiry(invitation) <= Date.now();
+}
+
+async function getPendingWorkosInvitation(ctx: QueryCtx, invitationToken: string) {
+  const invitation = await ctx.db
+    .query("invitations")
+    .withIndex("by_token", (q) => q.eq("token", invitationToken))
+    .filter((q) => q.eq(q.field("status"), "pending"))
+    .unique();
+
+  if (
+    !invitation ||
+    (invitation.mode ?? "workos") !== "workos" ||
+    isExpiredInvitation(invitation)
+  ) {
+    throw new Error("Invalid or already used invitation token.");
+  }
+
+  return invitation;
 }
 
 function getInstanceHistoryTimestamp(instance: {
@@ -24,8 +46,8 @@ function isHistoryInstance<T extends { status: "pending" | "completed" | "expire
 
 export const store = mutation({
   args: { 
-    name: v.optional(v.string()), 
-    email: v.string(),
+    accountName: v.optional(v.string()),
+    email: v.optional(v.string()),
     invitationToken: v.optional(v.string())
   },
   handler: async (ctx, args) => {
@@ -34,6 +56,10 @@ export const store = mutation({
       throw new Error("Called storeUser without authentication identifier");
     }
 
+    const pendingInvitation = args.invitationToken
+      ? await getPendingWorkosInvitation(ctx, args.invitationToken)
+      : null;
+
     // Check if user already exists
     const user = await ctx.db
       .query("users")
@@ -41,9 +67,59 @@ export const store = mutation({
       .unique();
 
     if (user !== null) {
-      // If user exists, we might want to update their name/email
-      if (user.name !== args.name || user.email !== args.email) {
-        await ctx.db.patch(user._id, { name: args.name, email: args.email });
+      if (pendingInvitation) {
+        if (user.authType !== "workos" || user.role !== "patient") {
+          throw new Error("Only existing patient accounts can accept this invitation.");
+        }
+
+        if (
+          user.practitionerId &&
+          user.practitionerId !== pendingInvitation.practitionerId
+        ) {
+          throw new Error("This patient account is already linked to another practitioner.");
+        }
+
+        await ctx.db.patch(user._id, {
+          name: pendingInvitation.patientName ?? user.name,
+          accountName: args.accountName,
+          email: args.email,
+          practitionerId: pendingInvitation.practitionerId,
+          loginIdentifier: args.email,
+          loginIdentifierNormalized: args.email?.toLocaleLowerCase(),
+        });
+
+        await ctx.db.patch(pendingInvitation._id, {
+          status: "accepted",
+          acceptedAt: Date.now(),
+          acceptedUserId: user._id,
+        });
+
+        return user._id;
+      }
+
+      if (user.role === "patient" && user.authType === "workos") {
+        const nextLoginIdentifier = args.email;
+        const nextLoginIdentifierNormalized = args.email?.toLocaleLowerCase();
+
+        if (
+          user.accountName !== args.accountName ||
+          user.email !== args.email ||
+          user.loginIdentifier !== nextLoginIdentifier ||
+          user.loginIdentifierNormalized !== nextLoginIdentifierNormalized
+        ) {
+          await ctx.db.patch(user._id, {
+            accountName: args.accountName,
+            email: args.email,
+            loginIdentifier: nextLoginIdentifier,
+            loginIdentifierNormalized: nextLoginIdentifierNormalized,
+          });
+        }
+
+        return user._id;
+      }
+
+      if (user.name !== args.accountName || user.email !== args.email) {
+        await ctx.db.patch(user._id, { name: args.accountName, email: args.email });
       }
       return user._id;
     }
@@ -51,31 +127,37 @@ export const store = mutation({
     // New user logic
     let role: "practitioner" | "patient" = "practitioner";
     let practitionerId: Id<"users"> | undefined;
+    let clinicName = args.accountName;
+    let acceptedInvitationId: Id<"invitations"> | undefined;
 
-    if (args.invitationToken) {
-      const invitation = await ctx.db
-        .query("invitations")
-        .withIndex("by_token", (q) => q.eq("token", args.invitationToken!))
-        .filter((q) => q.eq(q.field("status"), "pending"))
-        .unique();
-
-      if (invitation && !isExpiredInvitation(invitation)) {
-        role = "patient";
-        practitionerId = invitation.practitionerId;
-        // Mark invitation as accepted
-        await ctx.db.patch(invitation._id, { status: "accepted" });
-      } else {
-        throw new Error("Invalid or already used invitation token.");
-      }
+    if (pendingInvitation) {
+      role = "patient";
+      practitionerId = pendingInvitation.practitionerId;
+      clinicName = pendingInvitation.patientName;
+      acceptedInvitationId = pendingInvitation._id;
     }
 
-    return await ctx.db.insert("users", {
-      name: args.name,
+    const userId = await ctx.db.insert("users", {
+      name: clinicName,
+      accountName: role === "patient" ? args.accountName : undefined,
       email: args.email,
       tokenIdentifier: identity.subject,
       role,
       practitionerId,
+      authType: "workos",
+      loginIdentifier: args.email,
+      loginIdentifierNormalized: args.email?.toLocaleLowerCase(),
     });
+
+    if (acceptedInvitationId) {
+      await ctx.db.patch(acceptedInvitationId, {
+        status: "accepted",
+        acceptedAt: Date.now(),
+        acceptedUserId: userId,
+      });
+    }
+
+    return userId;
   },
 });
 

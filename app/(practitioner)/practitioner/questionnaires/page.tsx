@@ -173,7 +173,7 @@ function FilterChip({
       type="button"
       variant={active ? "default" : "outline"}
       onClick={onClick}
-      className={`rounded-full px-4 ${active ? "bg-zinc-900 text-white hover:bg-zinc-800" : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"}`}
+      className={`h-11 rounded-full px-5 text-sm font-medium ${active ? "bg-zinc-900 text-white hover:bg-zinc-800" : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"}`}
     >
       {Icon ? <Icon className="me-2 size-3.5" /> : null}
       {children}
@@ -250,8 +250,8 @@ export default function PractitionerQuestionnaires() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-4 sm:gap-8 sm:px-8 sm:py-8 lg:px-10">
-      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-4 sm:gap-8 sm:px-8 sm:py-8 lg:px-10 2xl:max-w-[88rem]">
+      <section className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-4">
           <h1 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">{t("title")}</h1>
           <p className="max-w-3xl text-sm leading-6 text-zinc-600 sm:text-base">{t("description")}</p>
@@ -276,45 +276,65 @@ export default function PractitionerQuestionnaires() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-[1.75rem] border border-zinc-200/70 bg-white p-5 shadow-sm sm:p-6">
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-          <div className="relative">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="h-12 rounded-xl border-zinc-200 bg-white ps-9"
-            />
-          </div>
-        </div>
+      <section className="space-y-5 rounded-[1.75rem] border border-zinc-200/70 bg-white p-5 shadow-sm sm:p-6">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:items-start">
+          <div className="space-y-3">
+            <div className="relative max-w-2xl">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="h-12 rounded-xl border-zinc-200 bg-white ps-9 pe-4 text-sm"
+              />
+            </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <FilterChip active={sourceFilter === "all"} onClick={() => setSourceFilter("all")} icon={Layers3}>
-              {t("filters.allSources")}
-            </FilterChip>
-            <FilterChip active={sourceFilter === "system"} onClick={() => setSourceFilter("system")} icon={Form}>
-              {t("filters.sourceSystem")}
-            </FilterChip>
-            <FilterChip active={sourceFilter === "practitioner"} onClick={() => setSourceFilter("practitioner")} icon={PencilLine}>
-              {t("filters.sourceCustom")}
-            </FilterChip>
-            <Button type="button" variant="ghost" onClick={clearFilters} className="ms-auto rounded-full px-3 text-zinc-500">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={clearFilters}
+              className="w-fit rounded-full px-4 text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 xl:ms-0"
+            >
               {t("filters.clear")}
             </Button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-            <FilterChip active={stateFilter === "all"} onClick={() => setStateFilter("all")} icon={Filter}>
-              {t("filters.allAccess")}
-            </FilterChip>
-            <FilterChip active={stateFilter === "normalAccess"} onClick={() => setStateFilter("normalAccess")} icon={PinOff}>
-              {t("filters.normalAccess")}
-            </FilterChip>
-            <FilterChip active={stateFilter === "quickAccess"} onClick={() => setStateFilter("quickAccess")} icon={Pin}>
-              {t("filters.stateQuickAccess")}
-            </FilterChip>
+          <div className="grid gap-3 xl:justify-items-end">
+            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+              <FilterChip active={sourceFilter === "all"} onClick={() => setSourceFilter("all")} icon={Layers3}>
+                {t("filters.allSources")}
+              </FilterChip>
+              <FilterChip active={sourceFilter === "system"} onClick={() => setSourceFilter("system")} icon={Form}>
+                {t("filters.sourceSystem")}
+              </FilterChip>
+              <FilterChip
+                active={sourceFilter === "practitioner"}
+                onClick={() => setSourceFilter("practitioner")}
+                icon={PencilLine}
+              >
+                {t("filters.sourceCustom")}
+              </FilterChip>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+              <FilterChip active={stateFilter === "all"} onClick={() => setStateFilter("all")} icon={Filter}>
+                {t("filters.allAccess")}
+              </FilterChip>
+              <FilterChip
+                active={stateFilter === "normalAccess"}
+                onClick={() => setStateFilter("normalAccess")}
+                icon={PinOff}
+              >
+                {t("filters.normalAccess")}
+              </FilterChip>
+              <FilterChip
+                active={stateFilter === "quickAccess"}
+                onClick={() => setStateFilter("quickAccess")}
+                icon={Pin}
+              >
+                {t("filters.stateQuickAccess")}
+              </FilterChip>
+            </div>
           </div>
         </div>
       </section>

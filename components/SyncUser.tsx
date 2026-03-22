@@ -15,21 +15,21 @@ export function SyncUser() {
 
   useEffect(() => {
     if (user && !loading) {
-      // Check for invitation token in cookies
       const invitationToken = document.cookie
         .split("; ")
         .find((row) => row.startsWith("invitation_token="))
         ?.split("=")[1];
 
       storeUser({ 
-        name: user.firstName ? `${user.firstName} ${user.lastName || ""}` : undefined,
+        accountName: user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : undefined,
         email: user.email,
-        invitationToken: invitationToken || undefined
+        invitationToken: invitationToken || undefined,
       }).then(() => {
-        // Clear the cookie after sync
         if (invitationToken) {
           document.cookie = "invitation_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         }
+
+        return undefined;
       });
     }
   }, [user, loading, storeUser]);

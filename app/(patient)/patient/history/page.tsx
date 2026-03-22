@@ -11,7 +11,11 @@ import { resolveLocalizedText } from "@/lib/templateEditor";
 
 export default function PatientHistoryPage() {
   const router = useRouter();
-  const history = useQuery(api.questionnaires.listPatientHistory, {});
+  const user = useQuery(api.users.viewer);
+  const history = useQuery(
+    api.questionnaires.listPatientHistory,
+    user && user.role === "patient" ? {} : "skip",
+  );
   const t = useTranslations("PatientHome");
   const tQ = useTranslations("Questionnaire");
   const locale = useLocale();

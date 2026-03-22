@@ -2,7 +2,16 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { UserPlus, Users, Link as LinkIcon, ArrowRight, Search, BellRing } from "lucide-react";
+import {
+  ArrowRight,
+  BellRing,
+  Chrome,
+  KeyRound,
+  Link as LinkIcon,
+  Search,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -10,13 +19,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PractitionerMyPatients() {
   const patients = useQuery(api.users.listPatients);
   const createInvite = useMutation(api.invites.create);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<{ url: string; mode: "patient_credentials" | "workos" } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [patientName, setPatientName] = useState("");
+  const [inviteMode, setInviteMode] = useState<"patient_credentials" | "workos">("workos");
   const [search, setSearch] = useState("");
   const t = useTranslations("PractitionerMyPatients");
 
@@ -32,17 +47,32 @@ export default function PractitionerMyPatients() {
 
     return patients.filter((patient) => {
       const name = patient.name?.toLocaleLowerCase() ?? "";
-      const email = patient.email.toLocaleLowerCase();
-      return name.includes(normalizedSearch) || email.includes(normalizedSearch);
+      const accountName = patient.accountName?.toLocaleLowerCase() ?? "";
+      const email = patient.email?.toLocaleLowerCase() ?? "";
+      const username = patient.loginIdentifier?.toLocaleLowerCase() ?? "";
+      return (
+        name.includes(normalizedSearch) ||
+        accountName.includes(normalizedSearch) ||
+        email.includes(normalizedSearch) ||
+        username.includes(normalizedSearch)
+      );
     });
   }, [patients, search]);
 
   const handleGenerateInvite = async () => {
+    const normalizedPatientName = patientName.trim();
+    if (!normalizedPatientName) {
+      return;
+    }
+
     setLoading(true);
     try {
-      const token = await createInvite({});
+      const invitation = await createInvite({ patientName: normalizedPatientName, mode: inviteMode });
       const baseUrl = window.location.origin;
-      setInviteLink(`${baseUrl}/join?token=${token}`);
+      setInviteLink({ url: `${baseUrl}/join?token=${invitation.token}`, mode: invitation.mode });
+      setPatientName("");
+      setInviteMode("workos");
+      setIsDialogOpen(false);
     } catch (err) {
       console.error(err);
       alert(t("failedInvite"));
@@ -58,7 +88,7 @@ export default function PractitionerMyPatients() {
             <h1 className="text-3xl font-bold tracking-tight text-zinc-950">{t("myPatients")}</h1>
           </div>
           <Button 
-            onClick={handleGenerateInvite}
+            onClick={() => setIsDialogOpen(true)}
             disabled={loading}
             size="lg"
             className="flex items-center gap-2 self-start rounded-2xl font-bold shadow-md shadow-indigo-100 lg:self-auto"
@@ -69,26 +99,28 @@ export default function PractitionerMyPatients() {
         </div>
 
         {inviteLink && (
-          <div className="animate-in fade-in slide-in-from-top-4 rounded-[1.75rem] border border-indigo-100 bg-indigo-50 p-6 duration-300">
+          <div className="animate-in fade-in slide-in-from-top-4 rounded-[1.75rem] border border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.95),rgba(255,255,255,0.98))] p-6 duration-300">
             <h3 className="mb-2 flex items-center gap-2 font-bold text-indigo-900">
               <LinkIcon className="w-4 h-4" />
-              {t("inviteCodeTitle")}
+              {inviteLink.mode === "patient_credentials" ? t("inviteCodeTitle") : t("regularInviteTitle")}
             </h3>
-            <p className="mb-4 text-sm text-indigo-700">{t("inviteCodeDesc")}</p>
-            <div className="flex items-center gap-2 text-start">
+            <p className="mb-4 text-sm text-indigo-700">
+              {inviteLink.mode === "patient_credentials" ? t("inviteCodeDesc") : t("regularInviteDesc")}
+            </p>
+            <div className="flex flex-col gap-2 text-start sm:flex-row sm:items-center">
               <Input 
                 readOnly 
-                value={inviteLink}
+                value={inviteLink.url}
                 dir="ltr"
                 className="flex-1 rounded-lg border-indigo-200 bg-white text-sm text-zinc-900 text-start focus:ring-indigo-500"
               />
               <Button 
                 variant="outline"
                 onClick={() => {
-                  navigator.clipboard.writeText(inviteLink);
+                  navigator.clipboard.writeText(inviteLink.url);
                   alert(t("copiedText"));
                 }}
-                className="rounded-lg border-indigo-200 text-sm font-bold text-indigo-600 transition-all hover:bg-indigo-50"
+                className="rounded-xl border-indigo-200 text-sm font-bold text-indigo-700 transition-all hover:bg-indigo-50"
               >
                 {t("copy")}
               </Button>
@@ -180,7 +212,7 @@ export default function PractitionerMyPatients() {
                             </Badge>
                           ) : null}
                         </div>
-                        <p className="text-sm text-zinc-500">{patient.email}</p>
+                        <p className="text-sm text-zinc-500">{patient.email ?? patient.loginIdentifier ?? t("anonymousPatient")}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -193,6 +225,100 @@ export default function PractitionerMyPatients() {
             ))
           )}
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="overflow-hidden rounded-[1.9rem] border border-zinc-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.94))] p-0 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:max-w-xl">
+            <div className="space-y-6 p-6 sm:p-7">
+              <DialogHeader className="text-start">
+                <DialogTitle className="text-2xl font-black tracking-tight text-zinc-950">{t("inviteDialog.title")}</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <Label htmlFor="patient-name" className="text-sm font-semibold text-zinc-900">
+                  {t("inviteDialog.patientNameLabel")}
+                </Label>
+                <Input
+                  id="patient-name"
+                  value={patientName}
+                  onChange={(event) => setPatientName(event.target.value)}
+                  placeholder={t("inviteDialog.patientNamePlaceholder")}
+                  className="h-12 rounded-2xl border-zinc-200 bg-white text-base shadow-sm focus-visible:ring-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-zinc-900">{t("inviteDialog.accountTypeLabel")}</Label>
+                <RadioGroup
+                  value={inviteMode}
+                  onValueChange={(value) => setInviteMode(value as "patient_credentials" | "workos")}
+                  className="grid gap-3"
+                >
+                  <label
+                    htmlFor="invite-mode-workos"
+                    className={`grid cursor-pointer grid-cols-[auto_1fr_auto] items-start gap-4 rounded-[1.5rem] border p-4 text-start shadow-sm transition-all ${
+                      inviteMode === "workos"
+                        ? "border-indigo-300 bg-indigo-50/70 ring-1 ring-indigo-100"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl ${
+                        inviteMode === "workos"
+                          ? "bg-indigo-100 text-indigo-700"
+                          : "bg-zinc-100 text-zinc-500"
+                      }`}
+                    >
+                      <Chrome className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-zinc-950">{t("inviteDialog.options.quickAccess.title")}</p>
+                        <Badge className="rounded-full border-0 bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 hover:bg-emerald-100">
+                          {t("inviteDialog.options.quickAccess.badge")}
+                        </Badge>
+                      </div>
+                      <p className="text-sm leading-6 text-zinc-500">{t("inviteDialog.options.quickAccess.description")}</p>
+                    </div>
+                    <RadioGroupItem value="workos" id="invite-mode-workos" className="mt-1" />
+                  </label>
+
+                  <label
+                    htmlFor="invite-mode-password"
+                    className={`grid cursor-pointer grid-cols-[auto_1fr_auto] items-start gap-4 rounded-[1.5rem] border p-4 text-start shadow-sm transition-all ${
+                      inviteMode === "patient_credentials"
+                        ? "border-zinc-300 bg-white ring-1 ring-zinc-100"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl ${
+                        inviteMode === "patient_credentials"
+                          ? "bg-zinc-100 text-zinc-700"
+                          : "bg-zinc-100 text-zinc-500"
+                      }`}
+                    >
+                      <KeyRound className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-zinc-950">{t("inviteDialog.options.password.title")}</p>
+                      <p className="text-sm leading-6 text-zinc-500">{t("inviteDialog.options.password.description")}</p>
+                    </div>
+                    <RadioGroupItem value="patient_credentials" id="invite-mode-password" className="mt-1" />
+                  </label>
+                </RadioGroup>
+              </div>
+
+              <DialogFooter className="gap-2 sm:justify-between">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-2xl border-zinc-200">
+                  {t("inviteDialog.cancel")}
+                </Button>
+                <Button onClick={handleGenerateInvite} disabled={loading || !patientName.trim()} className="rounded-2xl px-5">
+                  {loading ? t("inviteDialog.creating") : t("inviteDialog.submit")}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
   );
 }

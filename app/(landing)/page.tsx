@@ -1,15 +1,18 @@
 "use client";
 
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
+import { useQuery } from "convex/react";
 import Link from "next/link";
 import { SyncUser } from "@/components/SyncUser";
 import { Suspense, useEffect, useState } from "react";
-import { ArrowRight, Signpost } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Signpost } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UserMenu } from "@/components/UserMenu";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { api } from "@/convex/_generated/api";
 
 const WaterRipplesBackground = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -99,7 +102,22 @@ const WaterRipplesBackground = () => {
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const viewer = useQuery(api.users.viewer);
+  const router = useRouter();
   const t = useTranslations("LandingPage");
+
+  useEffect(() => {
+    if (user || !viewer) {
+      return;
+    }
+
+    if (viewer.role === "practitioner") {
+      router.replace("/practitioner/my-patients");
+      return;
+    }
+
+    router.replace("/patient/home");
+  }, [user, viewer, router]);
 
   return (
     <div className="flex min-h-screen flex-col font-sans text-zinc-900 relative">
@@ -124,29 +142,33 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-4xl mx-auto z-10 w-full mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-        <div className="space-y-6 mb-12 relative">
-          <h1 className="text-6xl md:text-8xl font-black tracking-tight text-zinc-950 flex flex-col items-center">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-6 pb-16 text-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div className="relative mb-8 space-y-3">
+          <h1 className="flex flex-col items-center text-5xl font-black tracking-tight text-zinc-950 md:text-7xl">
             {t("heroTitleLine1")} 
-            <span className="text-indigo-600 font-medium italic mt-2 drop-shadow-sm">{t("heroTitleLine2")}</span>
+            <span className="mt-2 font-medium italic text-indigo-600 drop-shadow-sm">{t("heroTitleLine2")}</span>
           </h1>
-          <p className="text-xl md:text-2xl text-zinc-600 max-w-2xl mx-auto leading-relaxed font-medium mt-6">
-            {t("heroSubtitle")}
-          </p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link 
-            href="/sign-in" 
+
+        <div className="grid w-full max-w-md gap-3 sm:grid-cols-2">
+          <Link
+            href="/api/auth/sign-in"
             className={cn(
-              buttonVariants({ size: "lg" }), 
-              "bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-lg font-bold group h-auto py-4 px-10 shadow-xl shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95"
+              buttonVariants({ size: "lg" }),
+              "h-11 rounded-full bg-indigo-600 px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(79,70,229,0.22)] transition-transform duration-200 hover:bg-indigo-700 hover:-translate-y-0.5"
             )}
           >
-            {t("startForFree")}
-            <div className="w-5 h-5 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform rtl:rotate-180 text-white group-hover:text-white">
-              <ArrowRight className="w-full h-full stroke-[3]" />
-            </div>
+            {t("quickLoginTitle")}
+          </Link>
+
+          <Link
+            href="/anonymous/sign-in"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "h-11 rounded-full border-zinc-200 bg-white/90 px-5 text-sm font-semibold text-zinc-800 shadow-sm backdrop-blur transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white"
+            )}
+          >
+            {t("anonymousLoginTitle")}
           </Link>
         </div>
       </main>

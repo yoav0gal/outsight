@@ -393,7 +393,7 @@ export default function PatientDetailsPage() {
   const latestSessionLabel = sessionHistory?.latestSessionDate
     ? new Date(sessionHistory.latestSessionDate).toLocaleDateString()
     : t("history.noLastSession");
-  const defaultTab = searchParams.get("tab") === "questionnaires" ? "questionnaires" : "history";
+  const defaultTab = searchParams.get("tab") === "history" ? "history" : "questionnaires";
   const [mobileTab, setMobileTab] = useState<"history" | "questionnaires">(defaultTab);
   const historyByTemplateId = new Map(
     (history ?? []).map((summary) => [summary.templateId, summary] as const)
@@ -726,7 +726,9 @@ export default function PatientDetailsPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
                   {patient.name || t("unnamed")}
                 </h1>
-                <p className="truncate text-sm font-medium text-zinc-500 sm:text-base">{patient.email}</p>
+                <p className="truncate text-sm font-medium text-zinc-500 sm:text-base">
+                  {patient.email ?? patient.loginIdentifier ?? t("anonymousAccount")}
+                </p>
               </div>
             </div>
 

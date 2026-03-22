@@ -239,7 +239,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
           {localizedTemplateTitle}
         </h1>
         <p className="mt-2 text-sm font-medium text-zinc-500">
-          {patient?.name || t("unnamed")} · {patient?.email}
+          {patient?.name || t("unnamed")} · {patient?.email ?? patient?.loginIdentifier ?? t("anonymousAccount")}
         </p>
         {templateHistory.lastEntryAt ? (
           <p className="mt-4 text-sm font-semibold text-zinc-600">

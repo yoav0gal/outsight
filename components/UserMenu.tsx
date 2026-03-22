@@ -7,6 +7,7 @@ import { LogOut } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { setLanguage } from "@/app/actions/language";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ export function UserMenu() {
   const { signOut } = useAuth();
   const t = useTranslations("UserMenu");
   const locale = useLocale();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleLanguageChange = (nextLocale: "en" | "he") => {
@@ -36,14 +38,20 @@ export function UserMenu() {
     });
   };
 
-  const handleSignOut = () => {
-    const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-    
-    if (isLocalhost) {
-      signOut({ returnTo: "http://localhost:3000" });
-    } else {
-      signOut();
+  const handleSignOut = async () => {
+    await fetch("/api/patient-auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (user?.authType === "patient_credentials") {
+      router.push("/anonymous/sign-in");
+      router.refresh();
+      return;
     }
+
+    const returnTo = typeof window !== "undefined" ? window.location.origin : undefined;
+    signOut(returnTo ? { returnTo } : undefined);
   };
 
   if (user === undefined) {
@@ -52,15 +60,22 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const initials = user.name
-    ? user.name
+  const primaryLabel =
+    user.role === "patient"
+      ? user.accountName ?? user.loginIdentifier ?? user.name ?? t("anonymousPatient")
+      : user.name ?? user.email ?? t("anonymousPatient");
+
+  const initials = primaryLabel
+    ? primaryLabel
         .split(" ")
         .filter(Boolean)
         .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
-    : user.email.charAt(0).toUpperCase();
+    : (user.loginIdentifier ?? user.email ?? "P").charAt(0).toUpperCase();
+
+  const secondaryLabel = user.email ?? user.loginIdentifier ?? t("anonymousPatient");
 
   return (
     <DropdownMenu>
@@ -69,7 +84,7 @@ export function UserMenu() {
           {initials}
         </div>
         <div className="hidden sm:flex flex-col items-start leading-none gap-1">
-          <span className="text-sm font-bold text-zinc-900 line-clamp-1">{user.name}</span>
+          <span className="text-sm font-bold text-zinc-900 line-clamp-1">{primaryLabel}</span>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 mt-2 rounded-xl p-2 shadow-xl border-zinc-200">
@@ -77,14 +92,14 @@ export function UserMenu() {
           <DropdownMenuLabel className="px-3 py-2">
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-zinc-950">{user.name}</p>
+                <p className="text-sm font-bold text-zinc-950">{primaryLabel}</p>
                 {user.role === "practitioner" && (
                   <span className="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-wide">
                     {t("practitioner")}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-zinc-500 font-medium">{user.email}</p>
+              <p className="text-xs text-zinc-500 font-medium">{secondaryLabel}</p>
             </div>
           </DropdownMenuLabel>
         </DropdownMenuGroup>

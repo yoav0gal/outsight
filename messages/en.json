@@ -19,7 +19,11 @@
     "heroTitleLine1": "Outsight",
     "heroTitleLine2": "Therapy",
     "heroSubtitle": "A simple system to organize your therapy practice.",
+    "quickLoginTitle": "Quick sign-in",
+    "anonymousLoginTitle": "Anonymous sign-in",
     "startForFree": "Log In",
+    "practitionerLogIn": "Log In for Practitioners",
+    "patientLogIn": "Log In for Patients",
     "bookDemo": "Book a demo",
     "feature1Title": "Patient Management",
     "feature1Desc": "Easily add patients and track their journey through the CBT process.",
@@ -35,11 +39,13 @@
     "myPatients": "My Patients",
     "myPatientsDesc": "Manage and track your patients' progress.",
     "addPatient": "Add Patient",
-    "searchPlaceholder": "Search by patient name or email",
+    "searchPlaceholder": "Search by patient name, account name, email, or username",
     "searchEmpty": "No patients match this search.",
     "newEntries": "{count, plural, one {# new entry} other {# new entries}}",
-    "inviteCodeTitle": "One-time invite code",
-    "inviteCodeDesc": "Share this code once with your patient. It expires after 24 hours or after it is used.",
+    "inviteCodeTitle": "Patient setup link",
+    "inviteCodeDesc": "Share this one-time link with your patient. They will choose a username and password the first time they open it.",
+    "regularInviteTitle": "Quick sign-up link",
+    "regularInviteDesc": "Share this one-time link with your patient. It will take them through a fast WorkOS sign-up flow.",
     "inviteLinkGenerated": "Patient Invitation Link Generated",
     "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice. The link expires after 24 hours.",
     "copy": "Copy",
@@ -49,7 +55,29 @@
     "noPatients": "No patients yet",
     "noPatientsDesc": "Click \"Add Patient\" to invite your first patient to the platform.",
     "unnamedPatient": "Unnamed Patient",
-    "activeStatus": "Active"
+    "anonymousPatient": "Anonymous patient account",
+    "activeStatus": "Active",
+    "inviteDialog": {
+      "title": "Create patient invite",
+      "description": "Set the patient name, then choose an account type.",
+      "patientNameLabel": "Patient name",
+      "patientNamePlaceholder": "e.g. Maya Cohen",
+      "accountTypeLabel": "Account type",
+      "options": {
+        "quickAccess": {
+          "title": "Quick access",
+          "badge": "Recommended",
+          "description": "Google sign-in."
+        },
+        "password": {
+          "title": "Username + password",
+          "description": "Local account with a username and password."
+        }
+      },
+      "cancel": "Cancel",
+      "submit": "Create invite",
+      "creating": "Creating..."
+    }
   },
   "PractitionerQuestionnaires": {
     "title": "Questionnaires",
@@ -145,6 +173,7 @@
     "backToDashboard": "Back to My Patients",
     "backToPatient": "Back to Patient",
     "unnamed": "Unnamed Patient",
+    "anonymousAccount": "Anonymous patient account",
     "tabs": {
       "overview": "Overview",
       "history": "History",
@@ -324,10 +353,62 @@
   "UserMenu": {
     "signOut": "Sign Out",
     "displayLanguage": "Display language",
+    "anonymousPatient": "Anonymous patient account",
     "practitioner": "Practitioner",
     "languages": {
       "en": "English",
       "he": "עברית"
+    }
+  },
+  "PatientAuth": {
+    "signIn": {
+      "brand": "Outsight",
+      "title": "Sign in",
+      "backHome": "Back home",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "errors": {
+        "invalidCredentials": "That username or password was not accepted.",
+        "generic": "Could not sign you in. Please try again."
+      }
+    },
+    "register": {
+      "eyebrow": "Patient invite",
+      "title": "Create your patient account",
+      "description": "Choose a username and password to access your questionnaires.",
+      "descriptionWithName": "Create the account for {name} by choosing a username and password.",
+      "patientNameLabel": "Patient name in the clinic",
+      "unnamedPatient": "Patient",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Choose a username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Choose a password",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Enter the password again",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "invalidInviteTitle": "This invitation is not available",
+      "backToSignIn": "Go to patient sign in",
+      "errors": {
+        "invalidInvite": "This invitation link is invalid, expired, or has already been used.",
+        "passwordMismatch": "The passwords do not match.",
+        "usernameTaken": "That username is already taken.",
+        "invalidUsername": "Use 3-32 lowercase letters, numbers, dots, underscores, or hyphens.",
+        "invalidPassword": "Use a password with at least 4 characters.",
+        "generic": "Could not create the account. Please try again."
+      }
+    },
+    "workosInvite": {
+      "eyebrow": "Patient invite",
+      "title": "Continue with quick sign up",
+      "description": "This invite will take you through a quick WorkOS sign-up flow to create your account.",
+      "descriptionWithName": "Continue with the quick sign-up flow to create the account for {name}.",
+      "continue": "Continue to sign up",
+      "continueSignedIn": "Use my current account"
     }
   },
   "CreateTemplate": {

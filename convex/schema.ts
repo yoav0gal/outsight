@@ -15,18 +15,58 @@ const localizedTextValidator = v.object({
 export default defineSchema({
   users: defineTable({
     name: v.optional(v.string()),
-    email: v.string(),
+    accountName: v.optional(v.string()),
+    email: v.optional(v.string()),
     tokenIdentifier: v.string(), // WorkOS user ID or subject
     role: v.union(v.literal("practitioner"), v.literal("patient")),
     practitionerId: v.optional(v.id("users")), // Only for patients
-  }).index("by_token", ["tokenIdentifier"]),
+    authType: v.optional(v.union(v.literal("workos"), v.literal("patient_credentials"))),
+    loginIdentifier: v.optional(v.string()),
+    loginIdentifierNormalized: v.optional(v.string()),
+  })
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_login_identifier", ["loginIdentifierNormalized"]),
 
   invitations: defineTable({
     token: v.string(),
     practitionerId: v.id("users"),
-    email: v.optional(v.string()), // Optional: target email
-    status: v.union(v.literal("pending"), v.literal("accepted")),
+    email: v.optional(v.string()), // Legacy field for older invites
+    patientName: v.optional(v.string()),
+    mode: v.optional(v.union(v.literal("workos"), v.literal("patient_credentials"))),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("revoked")),
+    expiresAt: v.optional(v.number()),
+    acceptedAt: v.optional(v.number()),
+    acceptedUserId: v.optional(v.id("users")),
   }).index("by_token", ["token"]),
+
+  patientCredentials: defineTable({
+    userId: v.id("users"),
+    username: v.string(),
+    usernameNormalized: v.string(),
+    passwordHash: v.string(),
+    passwordVersion: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    disabledAt: v.optional(v.number()),
+    lastLoginAt: v.optional(v.number()),
+  })
+    .index("by_username", ["usernameNormalized"])
+    .index("by_user", ["userId"]),
+
+  patientSessions: defineTable({
+    userId: v.id("users"),
+    sessionId: v.string(),
+    refreshTokenHash: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastSeenAt: v.number(),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    deviceLabel: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_session", ["sessionId"]),
 
   questionnaireTemplates: defineTable({
     title: v.string(),

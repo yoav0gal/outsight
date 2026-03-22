@@ -19,7 +19,11 @@
     "heroTitleLine1": "Outsight",
     "heroTitleLine2": "Therapy",
     "heroSubtitle": "מערכת פשוטה לארגון קליניקת הטיפול שלך.",
+    "quickLoginTitle": "התחברות מהירה",
+    "anonymousLoginTitle": "התחברות אנונימית",
     "startForFree": "התחברות",
+    "practitionerLogIn": "כניסה למטפלים",
+    "patientLogIn": "כניסה למטופלים",
     "bookDemo": "תיאום הדגמה",
     "feature1Title": "ניהול מטופלים",
     "feature1Desc": "הוסף מטופלים בקלות ועקוב אחר המסע שלהם בתהליך ה-CBT.",
@@ -35,11 +39,13 @@
     "myPatients": "המטופלים שלי",
     "myPatientsDesc": "נהל ועקוב אחר ההתקדמות של המטופלים שלך.",
     "addPatient": "הוסף מטופל",
-    "searchPlaceholder": "חיפוש לפי שם המטופל או האימייל",
+    "searchPlaceholder": "חיפוש לפי שם המטופל, שם החשבון, אימייל, או שם משתמש",
     "searchEmpty": "לא נמצאו מטופלים עבור החיפוש הזה.",
     "newEntries": "{count, plural, one {# רשומה חדשה} two {# רשומות חדשות} other {# רשומות חדשות}}",
-    "inviteCodeTitle": "קוד הזמנה חד-פעמי",
-    "inviteCodeDesc": "אפשר לשתף את הקוד הזה פעם אחת עם המטופל. הוא יפוג אחרי 24 שעות או אחרי שימוש אחד.",
+    "inviteCodeTitle": "קישור הקמת חשבון למטופל",
+    "inviteCodeDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. בכניסה הראשונה הוא יבחר שם משתמש וסיסמה.",
+    "regularInviteTitle": "קישור להרשמה מהירה",
+    "regularInviteDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. הוא יעביר אותו לזרימת הרשמה מהירה דרך WorkOS.",
     "inviteLinkGenerated": "נוצר קישור הזמנה למטופל",
     "inviteLinkDesc": "שלח קישור זה למטופל שלך. הם יכולים להשתמש בו כדי ליצור חשבון המקושר לקליניקה שלך. הקישור יפוג אחרי 24 שעות.",
     "copy": "העתק",
@@ -49,7 +55,29 @@
     "noPatients": "עדיין אין מטופלים",
     "noPatientsDesc": "לחץ על \"הוסף מטופל\" כדי להזמין את המטופל הראשון שלך למערכת.",
     "unnamedPatient": "מטופל ללא שם",
-    "activeStatus": "פעיל"
+    "anonymousPatient": "חשבון מטופל אנונימי",
+    "activeStatus": "פעיל",
+    "inviteDialog": {
+      "title": "יצירת הזמנה למטופל",
+      "description": "הגדר את שם המטופל ואז בחר סוג חשבון.",
+      "patientNameLabel": "שם המטופל",
+      "patientNamePlaceholder": "למשל: מאיה כהן",
+      "accountTypeLabel": "סוג חשבון",
+      "options": {
+        "quickAccess": {
+          "title": "גישה מהירה",
+          "badge": "מומלץ",
+          "description": "התחברות דרך Google."
+        },
+        "password": {
+          "title": "שם משתמש + סיסמה",
+          "description": "חשבון מקומי עם שם משתמש וסיסמה."
+        }
+      },
+      "cancel": "ביטול",
+      "submit": "יצירת הזמנה",
+      "creating": "יוצר..."
+    }
   },
   "PractitionerQuestionnaires": {
     "title": "שאלונים",
@@ -145,6 +173,7 @@
     "backToDashboard": "חזרה למטופלים שלי",
     "backToPatient": "חזרה למטופל",
     "unnamed": "מטופל ללא שם",
+    "anonymousAccount": "חשבון מטופל אנונימי",
     "tabs": {
       "overview": "סקירה",
       "history": "היסטוריה",
@@ -324,10 +353,62 @@
   "UserMenu": {
     "signOut": "התנתק",
     "displayLanguage": "שפת תצוגה",
+    "anonymousPatient": "חשבון מטופל אנונימי",
     "practitioner": "מטפל",
     "languages": {
       "en": "English",
       "he": "עברית"
+    }
+  },
+  "PatientAuth": {
+    "signIn": {
+      "brand": "Outsight",
+      "title": "התחברות",
+      "backHome": "חזרה הביתה",
+      "usernameLabel": "שם משתמש",
+      "usernamePlaceholder": "הזן את שם המשתמש שלך",
+      "passwordLabel": "סיסמה",
+      "passwordPlaceholder": "הזן את הסיסמה שלך",
+      "submit": "התחברות",
+      "submitting": "מתחבר...",
+      "errors": {
+        "invalidCredentials": "שם המשתמש או הסיסמה לא התקבלו.",
+        "generic": "לא הצלחנו לחבר אותך. נסה שוב."
+      }
+    },
+    "register": {
+      "eyebrow": "הזמנת מטופל",
+      "title": "יצירת חשבון מטופל",
+      "description": "בחר שם משתמש וסיסמה כדי לגשת לשאלונים שלך.",
+      "descriptionWithName": "צור את החשבון עבור {name} על ידי בחירת שם משתמש וסיסמה.",
+      "patientNameLabel": "שם המטופל בקליניקה",
+      "unnamedPatient": "מטופל",
+      "usernameLabel": "שם משתמש",
+      "usernamePlaceholder": "בחר שם משתמש",
+      "passwordLabel": "סיסמה",
+      "passwordPlaceholder": "בחר סיסמה",
+      "confirmPasswordLabel": "אימות סיסמה",
+      "confirmPasswordPlaceholder": "הזן שוב את הסיסמה",
+      "submit": "יצירת חשבון",
+      "submitting": "יוצר חשבון...",
+      "invalidInviteTitle": "ההזמנה הזו אינה זמינה",
+      "backToSignIn": "מעבר להתחברות מטופל",
+      "errors": {
+        "invalidInvite": "קישור ההזמנה הזה לא תקין, פג תוקף, או כבר נוצל.",
+        "passwordMismatch": "הסיסמאות אינן תואמות.",
+        "usernameTaken": "שם המשתמש הזה כבר תפוס.",
+        "invalidUsername": "יש להשתמש ב-3 עד 32 תווים באנגלית, מספרים, נקודות, קווים תחתונים או מקפים.",
+        "invalidPassword": "יש לבחור סיסמה באורך של לפחות 4 תווים.",
+        "generic": "לא הצלחנו ליצור את החשבון. נסה שוב."
+      }
+    },
+    "workosInvite": {
+      "eyebrow": "הזמנת מטופל",
+      "title": "המשך להרשמה מהירה",
+      "description": "ההזמנה הזו תעביר אותך לזרימת הרשמה מהירה דרך WorkOS כדי ליצור חשבון.",
+      "descriptionWithName": "המשך לזרימת ההרשמה המהירה כדי ליצור את החשבון עבור {name}.",
+      "continue": "המשך להרשמה",
+      "continueSignedIn": "השתמש בחשבון הנוכחי שלי"
     }
   },
   "CreateTemplate": {
