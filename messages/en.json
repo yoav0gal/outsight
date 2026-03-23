@@ -19,8 +19,8 @@
     "heroTitleLine1": "Outsight",
     "heroTitleLine2": "Therapy",
     "heroSubtitle": "A simple system to organize your therapy practice.",
-    "quickLoginTitle": "Quick sign-in",
-    "anonymousLoginTitle": "Anonymous sign-in",
+    "quickLoginTitle": "Sign in with Google",
+    "anonymousLoginTitle": "Username + password sign in",
     "startForFree": "Log In",
     "practitionerLogIn": "Log In for Practitioners",
     "patientLogIn": "Log In for Patients",
@@ -42,10 +42,10 @@
     "searchPlaceholder": "Search by patient name, account name, email, or username",
     "searchEmpty": "No patients match this search.",
     "newEntries": "{count, plural, one {# new entry} other {# new entries}}",
-    "inviteCodeTitle": "Patient setup link",
+    "inviteCodeTitle": "Username + password sign-up link",
     "inviteCodeDesc": "Share this one-time link with your patient. They will choose a username and password the first time they open it.",
-    "regularInviteTitle": "Quick sign-up link",
-    "regularInviteDesc": "Share this one-time link with your patient. It will take them through a fast WorkOS sign-up flow.",
+    "regularInviteTitle": "Sign in with Google link",
+    "regularInviteDesc": "Share this one-time link with your patient. It will take them through a Google sign-in flow.",
     "inviteLinkGenerated": "Patient Invitation Link Generated",
     "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice. The link expires after 24 hours.",
     "copy": "Copy",
@@ -65,13 +65,13 @@
       "accountTypeLabel": "Account type",
       "options": {
         "quickAccess": {
-          "title": "Quick access",
+          "title": "Sign in with Google",
           "badge": "Recommended",
-          "description": "Google sign-in."
+          "description": "Use Google to sign in."
         },
         "password": {
-          "title": "Username + password",
-          "description": "Local account with a username and password."
+          "title": "Username + password sign up",
+          "description": "Create a local account with a username and password."
         }
       },
       "cancel": "Cancel",
@@ -404,10 +404,10 @@
     },
     "workosInvite": {
       "eyebrow": "Patient invite",
-      "title": "Continue with quick sign up",
-      "description": "This invite will take you through a quick WorkOS sign-up flow to create your account.",
-      "descriptionWithName": "Continue with the quick sign-up flow to create the account for {name}.",
-      "continue": "Continue to sign up",
+      "title": "Sign in with Google",
+      "description": "This invite will take you through a Google sign-in flow to create your account.",
+      "descriptionWithName": "Continue with the Google sign-in flow to create the account for {name}.",
+      "continue": "Continue with Google",
       "continueSignedIn": "Use my current account"
     }
   },

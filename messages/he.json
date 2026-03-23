@@ -19,8 +19,8 @@
     "heroTitleLine1": "Outsight",
     "heroTitleLine2": "Therapy",
     "heroSubtitle": "מערכת פשוטה לארגון קליניקת הטיפול שלך.",
-    "quickLoginTitle": "התחברות מהירה",
-    "anonymousLoginTitle": "התחברות אנונימית",
+    "quickLoginTitle": "התחברות עם Google",
+    "anonymousLoginTitle": "התחברות עם שם משתמש וסיסמה",
     "startForFree": "התחברות",
     "practitionerLogIn": "כניסה למטפלים",
     "patientLogIn": "כניסה למטופלים",
@@ -42,10 +42,10 @@
     "searchPlaceholder": "חיפוש לפי שם המטופל, שם החשבון, אימייל, או שם משתמש",
     "searchEmpty": "לא נמצאו מטופלים עבור החיפוש הזה.",
     "newEntries": "{count, plural, one {# רשומה חדשה} two {# רשומות חדשות} other {# רשומות חדשות}}",
-    "inviteCodeTitle": "קישור הקמת חשבון למטופל",
+    "inviteCodeTitle": "קישור הרשמה עם שם משתמש וסיסמה",
     "inviteCodeDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. בכניסה הראשונה הוא יבחר שם משתמש וסיסמה.",
-    "regularInviteTitle": "קישור להרשמה מהירה",
-    "regularInviteDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. הוא יעביר אותו לזרימת הרשמה מהירה דרך WorkOS.",
+    "regularInviteTitle": "קישור להתחברות עם Google",
+    "regularInviteDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. הוא יעביר אותו לזרימת התחברות דרך Google.",
     "inviteLinkGenerated": "נוצר קישור הזמנה למטופל",
     "inviteLinkDesc": "שלח קישור זה למטופל שלך. הם יכולים להשתמש בו כדי ליצור חשבון המקושר לקליניקה שלך. הקישור יפוג אחרי 24 שעות.",
     "copy": "העתק",
@@ -65,13 +65,13 @@
       "accountTypeLabel": "סוג חשבון",
       "options": {
         "quickAccess": {
-          "title": "גישה מהירה",
+          "title": "התחברות עם Google",
           "badge": "מומלץ",
-          "description": "התחברות דרך Google."
+          "description": "השתמש ב-Google כדי להתחבר."
         },
         "password": {
-          "title": "שם משתמש + סיסמה",
-          "description": "חשבון מקומי עם שם משתמש וסיסמה."
+          "title": "הרשמה עם שם משתמש וסיסמה",
+          "description": "צור חשבון מקומי עם שם משתמש וסיסמה."
         }
       },
       "cancel": "ביטול",
@@ -404,10 +404,10 @@
     },
     "workosInvite": {
       "eyebrow": "הזמנת מטופל",
-      "title": "המשך להרשמה מהירה",
-      "description": "ההזמנה הזו תעביר אותך לזרימת הרשמה מהירה דרך WorkOS כדי ליצור חשבון.",
-      "descriptionWithName": "המשך לזרימת ההרשמה המהירה כדי ליצור את החשבון עבור {name}.",
-      "continue": "המשך להרשמה",
+      "title": "התחברות עם Google",
+      "description": "ההזמנה הזו תעביר אותך לזרימת התחברות דרך Google כדי ליצור חשבון.",
+      "descriptionWithName": "המשך לזרימת ההתחברות דרך Google כדי ליצור את החשבון עבור {name}.",
+      "continue": "המשך עם Google",
       "continueSignedIn": "השתמש בחשבון הנוכחי שלי"
     }
   },
