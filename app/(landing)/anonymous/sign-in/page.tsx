@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { ArrowLeft, Signpost } from "lucide-react";
+import { ArrowLeft, Sprout } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +76,7 @@ export default function AnonymousSignInPage() {
 
           <div className="flex items-center gap-3 text-zinc-900">
             <div className="flex size-11 items-center justify-center rounded-2xl bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)] ring-1 ring-zinc-200/80">
-              <Signpost className="size-5 text-indigo-600" />
+              <Sprout className="size-5 text-indigo-600" strokeWidth={2.3} />
             </div>
             <span className="text-lg font-semibold tracking-tight">{t("signIn.brand")}</span>
           </div>

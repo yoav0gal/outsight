@@ -6,10 +6,10 @@ import Link from "next/link";
 import { SyncUser } from "@/components/SyncUser";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Signpost } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UserMenu } from "@/components/UserMenu";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { OutsightMark } from "@/components/brand/OutsightMark";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/convex/_generated/api";
@@ -128,7 +128,7 @@ export default function LandingPage() {
 
       <header className="flex items-center justify-between px-8 py-8 w-full z-10 transition-opacity">
         <Link href="/" className="flex items-center gap-3 font-bold text-2xl tracking-tight text-indigo-600 hover:opacity-80 transition-opacity">
-          <Signpost className="w-8 h-8" />
+          <OutsightMark className="size-8" />
           <span>{t("title")}</span>
         </Link>
         <div className="flex items-center gap-4">

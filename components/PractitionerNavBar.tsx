@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Signpost, Users, FileText } from "lucide-react";
+import { Users, FileText, Sprout } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 
 interface PractitionerNavBarProps {
@@ -38,7 +38,7 @@ export function PractitionerNavBar({ children }: PractitionerNavBarProps) {
       <header className="bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-8">
           <Link href="/practitioner/my-patients" className="flex items-center gap-2 font-black text-2xl text-indigo-600 tracking-tight">
-            <Signpost className="w-7 h-7" />
+            <Sprout className="size-7 text-indigo-600" strokeWidth={2.2} />
             <span className="hidden xs:inline">{t("title")}</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
