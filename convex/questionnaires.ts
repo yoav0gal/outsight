@@ -1,5 +1,13 @@
-import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import {
+  internalAction,
+  internalQuery,
+  mutation,
+  query,
+  QueryCtx,
+  MutationCtx,
+} from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
 const localizedTextValidator = v.object({
@@ -38,6 +46,11 @@ const scoringValidator = v.object({
   mode: v.literal("standard"),
   includedQuestionIds: v.array(v.string()),
   answerScores: v.optional(v.record(v.string(), v.record(v.string(), v.number()))),
+});
+
+const answerEntryValidator = v.object({
+  questionId: v.string(),
+  value: v.union(v.string(), v.number(), v.boolean(), v.array(v.string())),
 });
 
 type AnswerValue = string | number | boolean | string[];
@@ -92,6 +105,107 @@ type ScoreSummary = {
   answeredQuestions: number;
   totalQuestions: number;
 };
+
+type EmailAnswerRow = {
+  prompt: string;
+  answer: string;
+};
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatAnswerValue(value: AnswerValue) {
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.join(", ") : "No answer";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : "No answer";
+}
+
+function formatScoreSummary(score: ScoreSummary | null) {
+  if (!score) {
+    return null;
+  }
+
+  return score.max === null
+    ? `${score.value}`
+    : `${score.value}/${score.max}`;
+}
+
+function buildSubmissionEmailText(payload: {
+  practitionerName: string;
+  patientName: string;
+  patientEmail?: string;
+  questionnaireTitle: string;
+  submittedAt: number;
+  scoreLabel: string | null;
+  answers: EmailAnswerRow[];
+}) {
+  const lines = [
+    `Hi ${payload.practitionerName},`,
+    "",
+    `${payload.patientName} has submitted the questionnaire "${payload.questionnaireTitle}".`,
+    payload.patientEmail ? `Patient email: ${payload.patientEmail}` : null,
+    `Submitted at: ${new Date(payload.submittedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`,
+    payload.scoreLabel ? `Score: ${payload.scoreLabel}` : null,
+    "",
+    "Answers:",
+    ...payload.answers.map((answer, index) => `${index + 1}. ${answer.prompt}: ${answer.answer}`),
+  ];
+
+  return lines.filter((line): line is string => line !== null).join("\n");
+}
+
+function buildSubmissionEmailHtml(payload: {
+  practitionerName: string;
+  patientName: string;
+  patientEmail?: string;
+  questionnaireTitle: string;
+  submittedAt: number;
+  scoreLabel: string | null;
+  answers: EmailAnswerRow[];
+}) {
+  const submittedAt = new Date(payload.submittedAt).toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const answerRows = payload.answers
+    .map(
+      (answer) =>
+        `<tr><td style="padding:12px;border-top:1px solid #e4e4e7;vertical-align:top;font-weight:600;">${escapeHtml(answer.prompt)}</td><td style="padding:12px;border-top:1px solid #e4e4e7;vertical-align:top;">${escapeHtml(answer.answer)}</td></tr>`
+    )
+    .join("");
+
+  return [
+    "<div style=\"font-family:Arial,sans-serif;color:#18181b;line-height:1.5;\">",
+    `<p>Hi ${escapeHtml(payload.practitionerName)},</p>`,
+    `<p><strong>${escapeHtml(payload.patientName)}</strong> has submitted the questionnaire <strong>${escapeHtml(payload.questionnaireTitle)}</strong>.</p>`,
+    "<ul style=\"padding-left:20px;\">",
+    payload.patientEmail
+      ? `<li><strong>Patient email:</strong> ${escapeHtml(payload.patientEmail)}</li>`
+      : "",
+    `<li><strong>Submitted at:</strong> ${escapeHtml(submittedAt)}</li>`,
+    payload.scoreLabel ? `<li><strong>Score:</strong> ${escapeHtml(payload.scoreLabel)}</li>` : "",
+    "</ul>",
+    "<table style=\"width:100%;border-collapse:collapse;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;\">",
+    "<thead><tr style=\"background:#f4f4f5;\"><th style=\"padding:12px;text-align:left;\">Question</th><th style=\"padding:12px;text-align:left;\">Answer</th></tr></thead>",
+    `<tbody>${answerRows}</tbody>`,
+    "</table>",
+    "</div>",
+  ].join("");
+}
 
 function getAnswerScoreKey(value: AnswerValue) {
   if (Array.isArray(value)) {
@@ -1641,12 +1755,7 @@ export const markPractitionerPatientTemplateHistoryViewed = mutation({
 export const submitInstance = mutation({
   args: {
     instanceId: v.id("questionnaireInstances"),
-    answers: v.array(
-      v.object({
-        questionId: v.string(),
-        value: v.union(v.string(), v.number(), v.boolean(), v.array(v.string())),
-      })
-    ),
+    answers: v.array(answerEntryValidator),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -1681,6 +1790,107 @@ export const submitInstance = mutation({
         }
       );
     }
+
+    await ctx.scheduler.runAfter(0, internal.questionnaires.sendSubmissionNotificationEmail, {
+      instanceId: args.instanceId,
+    });
+  },
+});
+
+export const getSubmissionNotificationEmailPayload = internalQuery({
+  args: {
+    instanceId: v.id("questionnaireInstances"),
+  },
+  handler: async (ctx, args) => {
+    const instance = await ctx.db.get(args.instanceId);
+    if (!instance || instance.status !== "completed" || !instance.answers?.length || !instance.submittedAt) {
+      return null;
+    }
+
+    const [assignment, patient, template] = await Promise.all([
+      ctx.db.get(instance.assignmentId),
+      ctx.db.get(instance.patientId),
+      ctx.db.get(instance.templateId),
+    ]);
+
+    if (!assignment || !patient || !template) {
+      return null;
+    }
+
+    const practitioner = await ctx.db.get(assignment.practitionerId);
+    if (!practitioner?.email) {
+      return null;
+    }
+
+    const answersByQuestionId = new Map(
+      instance.answers.map((answer) => [answer.questionId, answer.value] as const)
+    );
+
+    const answers = template.questions
+      .filter((question) => answersByQuestionId.has(question.id))
+      .map((question) => ({
+        prompt: question.prompt,
+        answer: formatAnswerValue(answersByQuestionId.get(question.id) as AnswerValue),
+      }));
+
+    return {
+      practitionerEmail: practitioner.email,
+      practitionerName: practitioner.name ?? practitioner.accountName ?? "Practitioner",
+      patientName: patient.name ?? patient.accountName ?? "Patient",
+      patientEmail: patient.email ?? patient.loginIdentifier,
+      questionnaireTitle: template.title,
+      submittedAt: instance.submittedAt,
+      answers,
+      scoreLabel: formatScoreSummary(calculateScore(template, instance.answers)),
+    };
+  },
+});
+
+export const sendSubmissionNotificationEmail = internalAction({
+  args: {
+    instanceId: v.id("questionnaireInstances"),
+  },
+  handler: async (ctx, args) => {
+    const payload = await ctx.runQuery(internal.questionnaires.getSubmissionNotificationEmailPayload, {
+      instanceId: args.instanceId,
+    });
+
+    if (!payload) {
+      return { skipped: true };
+    }
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resendFromEmail = process.env.RESEND_FROM_EMAIL;
+
+    if (!resendApiKey) {
+      throw new Error("Missing RESEND_API_KEY");
+    }
+
+    if (!resendFromEmail) {
+      throw new Error("Missing RESEND_FROM_EMAIL");
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: resendFromEmail,
+        to: [payload.practitionerEmail],
+        subject: `New questionnaire submission: ${payload.patientName} - ${payload.questionnaireTitle}`,
+        text: buildSubmissionEmailText(payload),
+        html: buildSubmissionEmailHtml(payload),
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Resend request failed: ${response.status} ${body}`);
+    }
+
+    return { sent: true };
   },
 });
 
