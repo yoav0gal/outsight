@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PATIENT_PASSWORD_MIN_LENGTH } from "@/lib/patientAuth/password";
 
 function JoinContent() {
   const router = useRouter();
@@ -84,7 +85,7 @@ function JoinContent() {
             : code === "invalid_username"
               ? t("register.errors.invalidUsername")
               : code === "invalid_password"
-                ? t("register.errors.invalidPassword")
+                ? t("register.errors.invalidPassword", { min: PATIENT_PASSWORD_MIN_LENGTH })
                 : code === "invalid_invite"
                   ? t("register.errors.invalidInvite")
                   : t("register.errors.generic"),
@@ -217,6 +218,7 @@ function JoinContent() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder={t("register.passwordPlaceholder")}
               required
+              minLength={PATIENT_PASSWORD_MIN_LENGTH}
             />
           </div>
 

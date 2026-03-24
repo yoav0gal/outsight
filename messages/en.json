@@ -398,7 +398,7 @@
         "passwordMismatch": "The passwords do not match.",
         "usernameTaken": "That username is already taken.",
         "invalidUsername": "Use 3-32 lowercase letters, numbers, dots, underscores, or hyphens.",
-        "invalidPassword": "Use a password with at least 4 characters.",
+        "invalidPassword": "Use a password with at least {min} characters.",
         "generic": "Could not create the account. Please try again."
       }
     },

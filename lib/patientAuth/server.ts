@@ -12,6 +12,7 @@ import {
   getPatientAuthKeyId,
   getPatientAuthPrivateKeyPem,
 } from "@/lib/patientAuth/config";
+export { isValidPassword } from "@/lib/patientAuth/password";
 import {
   getPatientSessionForRefreshToken,
   revokePatientSession,
@@ -78,10 +79,6 @@ export function normalizeUsername(username: string) {
 
 export function isValidUsername(username: string) {
   return /^[a-z0-9._-]{3,32}$/.test(username);
-}
-
-export function isValidPassword(password: string) {
-  return password.length >= 4;
 }
 
 export function createPatientTokenIdentifier() {
