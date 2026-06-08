@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Outsight
+
+> Status: This project was stopped mid-development and is not maintained. It is published as-is for reference, learning, and reuse. Expect incomplete flows, rough edges, and outdated dependencies.
+
+Outsight is an experimental therapy-practice web app with practitioner and patient flows, questionnaire templates, patient assignment, and multilingual UI work.
 
 ## Getting Started
 
