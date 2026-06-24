@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
@@ -30,6 +30,7 @@ function JoinContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [linkOnlyError, setLinkOnlyError] = useState<string | null>(null);
 
   const inviteState = useMemo(() => {
     if (!token) {
@@ -46,6 +47,43 @@ function JoinContent() {
 
     return "ready";
   }, [invite, token]);
+
+  useEffect(() => {
+    if (inviteState === "ready" && invite?.mode === "link_only" && token) {
+      let isMounted = true;
+      const autoLogin = async () => {
+        try {
+          const response = await fetch("/api/patient-auth/link-login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+          });
+
+          if (!isMounted) return;
+
+          if (response.ok) {
+            const redirectTo = searchParams.get("redirectTo") || "/patient/home";
+            window.location.assign(redirectTo);
+          } else {
+            setLinkOnlyError(t("register.errors.generic"));
+          }
+        } catch (err) {
+          console.error(err);
+          if (isMounted) {
+            setLinkOnlyError(t("register.errors.generic"));
+          }
+        }
+      };
+
+      autoLogin();
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [inviteState, invite?.mode, token, t, searchParams]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,7 +132,8 @@ function JoinContent() {
       }
 
       setIsRedirectingAfterSubmit(true);
-      window.location.assign("/patient/home");
+      const redirectTo = searchParams.get("redirectTo") || "/patient/home";
+      window.location.assign(redirectTo);
     } catch (submitError) {
       console.error(submitError);
       setError(t("register.errors.generic"));
@@ -128,6 +167,32 @@ function JoinContent() {
   }
 
   const resolvedInvite = invite!;
+
+  if (resolvedInvite.mode === "link_only") {
+    return (
+      <Card className="w-full max-w-lg rounded-[2rem] border-zinc-200 shadow-xl shadow-zinc-200/40">
+        <CardHeader className="space-y-3 text-center">
+          <CardTitle className="text-2xl font-black text-zinc-950">
+            {linkOnlyError ? t("register.errors.generic") : "Connecting..."}
+          </CardTitle>
+          <CardDescription className="text-base text-zinc-600">
+            {linkOnlyError 
+              ? linkOnlyError 
+              : "Verifying your link and preparing your questionnaire. Please wait..."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center pb-8">
+          {!linkOnlyError ? (
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+          ) : (
+            <Link href="/anonymous/sign-in" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+              {t("register.backToSignIn")}
+            </Link>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (resolvedInvite.mode === "workos") {
     const handleContinue = () => {

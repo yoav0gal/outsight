@@ -147,6 +147,7 @@ export const store = mutation({
       authType: "workos",
       loginIdentifier: args.email,
       loginIdentifierNormalized: args.email?.toLocaleLowerCase(),
+      privateLinkToken: role === "patient" ? crypto.randomUUID().replace(/-/g, "") : undefined,
     });
 
     if (acceptedInvitationId) {
@@ -169,10 +170,19 @@ export const viewer = query({
       return null;
     }
 
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      ...user,
+      authType: (identity.authType as "workos" | "patient_credentials" | "link_only" | undefined) ?? user.authType,
+    };
   },
 });
 
@@ -237,7 +247,16 @@ export const getPatient = query({
       throw new Error("Patient not found or unauthorized");
     }
 
-    return patient;
+    const invitation = await ctx.db
+      .query("invitations")
+      .filter((q) => q.eq(q.field("acceptedUserId"), patient._id))
+      .first();
+
+    return {
+      ...patient,
+      invitationToken: invitation?.token,
+      privateLinkToken: patient.privateLinkToken,
+    };
   },
 });
 
@@ -249,3 +268,36 @@ async function getCurrentUser(ctx: QueryCtx) {
     .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
     .unique();
 }
+
+export const listAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
+export const ensurePatientPrivateLinkToken = mutation({
+  args: { patientId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      throw new Error("Patient not found or unauthorized");
+    }
+
+    if (!patient.privateLinkToken) {
+      const token = crypto.randomUUID().replace(/-/g, "");
+      await ctx.db.patch(patient._id, { privateLinkToken: token });
+      return token;
+    }
+
+    return patient.privateLinkToken;
+  },
+});
+
+
+

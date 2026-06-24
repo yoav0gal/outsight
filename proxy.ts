@@ -1,26 +1,34 @@
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
+import { NextResponse } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 
-export default authkitMiddleware({
-  middlewareAuth: {
-    enabled: true,
-    unauthenticatedPaths: [
-      "/",
-      "/sign-in",
-      "/sign-up",
-      "/join",
-      "/api/auth/:path*",
-      "/anonymous",
-      "/anonymous/:path*",
-      "/patient-auth",
-      "/patient-auth/:path*",
-      "/patient/:path*",
-      "/admin",
-      "/admin/:path*",
-      "/api/admin/:path*",
-      "/api/patient-auth/:path*",
-    ],
-  },
-});
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
+  if (process.env.NEXT_PUBLIC_ENABLE_LOGIN === "false") {
+    return NextResponse.next();
+  }
+  return authkitMiddleware({
+    middlewareAuth: {
+      enabled: true,
+      unauthenticatedPaths: [
+        "/",
+        "/sign-in",
+        "/sign-up",
+        "/join",
+        "/p/:path*",
+        "/api/auth/:path*",
+        "/anonymous",
+        "/anonymous/:path*",
+        "/patient-auth",
+        "/patient-auth/:path*",
+        "/patient/:path*",
+        "/admin",
+        "/admin/:path*",
+        "/api/admin/:path*",
+        "/api/patient-auth/:path*",
+      ],
+    },
+  })(request, event);
+}
 
 export const config = {
   matcher: [
@@ -30,3 +38,4 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
+

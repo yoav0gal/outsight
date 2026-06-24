@@ -46,6 +46,8 @@
     "inviteCodeDesc": "Share this one-time link with your patient. They will choose a username and password the first time they open it.",
     "regularInviteTitle": "Sign in with Google link",
     "regularInviteDesc": "Share this one-time link with your patient. It will take them through a Google sign-in flow.",
+    "linkOnlyInviteTitle": "Direct link access",
+    "linkOnlyInviteDesc": "Share this direct access link with your patient. They will be logged in immediately to fill their latest questionnaire without creating an account.",
     "inviteLinkGenerated": "Patient Invitation Link Generated",
     "inviteLinkDesc": "Send this link to your patient. They can use it to create an account linked to your practice. The link expires after 24 hours.",
     "copy": "Copy",
@@ -72,6 +74,10 @@
         "password": {
           "title": "Username + password sign up",
           "description": "Create a local account with a username and password."
+        },
+        "linkOnly": {
+          "title": "Link-only access",
+          "description": "Direct link for filling the latest questionnaire. No account creation required."
         }
       },
       "cancel": "Cancel",
@@ -174,6 +180,8 @@
     "backToPatient": "Back to Patient",
     "unnamed": "Unnamed Patient",
     "anonymousAccount": "Anonymous patient account",
+    "copyPrivateLink": "Copy Private Link",
+    "copiedPrivateLink": "Private link copied to clipboard!",
     "tabs": {
       "overview": "Overview",
       "history": "History",
@@ -272,6 +280,8 @@
       "restoreError": "Failed to restore prescription",
       "deleteSuccess": "The prescription and its related data were permanently deleted.",
       "deleteError": "Failed to delete prescription",
+      "copyLink": "Copy Link",
+      "copiedLink": "Questionnaire link copied to clipboard!",
       "frequency": {
         "once": "Once",
         "daily": "Daily",
@@ -354,7 +364,11 @@
     "signOut": "Sign Out",
     "displayLanguage": "Display language",
     "anonymousPatient": "Anonymous patient account",
+    "linkOnlyPatient": "Link-only access",
     "practitioner": "Practitioner",
+    "selectDevUser": "Select Dev User",
+    "switchDevUser": "Switch Dev User",
+    "devUser": "Dev / QA User",
     "languages": {
       "en": "English",
       "he": "עברית"
@@ -409,6 +423,12 @@
       "descriptionWithName": "Continue with the Google sign-in flow to create the account for {name}.",
       "continue": "Continue with Google",
       "continueSignedIn": "Use my current account"
+    },
+    "privateLink": {
+      "connecting": "Connecting to portal...",
+      "verifying": "Verifying your private link. Please wait...",
+      "invalid": "This private link is invalid.",
+      "error": "Failed to log in. Please contact your practitioner for a new link."
     }
   },
   "CreateTemplate": {
@@ -440,13 +460,18 @@
     "questionType": "Type",
     "required": "Required",
     "removeQuestion": "Remove",
+    "moveToTop": "Move to Top",
+    "moveUp": "Move Up",
+    "moveDown": "Move Down",
+    "moveToBottom": "Move to Bottom",
     "types": {
       "short_text": "Short Text",
       "long_text": "Long Text",
       "multiple_choice": "Multiple Choice",
       "cards": "Cards",
       "boolean": "Yes / No",
-      "numeric_scale": "Numeric Scale"
+      "numeric_scale": "Numeric Scale",
+      "instructions": "Instructions (Text Only)"
     },
     "options": "Options",
     "optionEnglish": "Option (English)",

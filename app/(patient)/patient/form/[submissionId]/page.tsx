@@ -45,12 +45,19 @@ export default function QuestionnaireFormPage() {
   const locale = useLocale();
   const instanceId = params.submissionId as Id<"questionnaireInstances">;
 
+  const user = useQuery(api.users.viewer);
   const instance = useQuery(api.questionnaires.getInstance, { instanceId });
   const submitMutation = useMutation(api.questionnaires.submitInstance);
 
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.authType === "link_only" && instance && instance.status !== "pending") {
+      router.replace("/patient/home");
+    }
+  }, [user, instance, router]);
 
   // Initialize answers if we have them
   useEffect(() => {
@@ -105,7 +112,7 @@ export default function QuestionnaireFormPage() {
     
     // Validate required questions
     for (const q of instance.template.questions) {
-      if (q.required && (answers[q.id] === undefined || answers[q.id] === "")) {
+      if (q.type !== "instructions" && q.required && (answers[q.id] === undefined || answers[q.id] === "")) {
         setError(t("requiredField"));
         // Find the element and scroll to it ideally, but a generic error is okay for now
         return;
@@ -181,26 +188,34 @@ export default function QuestionnaireFormPage() {
         </div>
 
         <div className="space-y-8">
-          {instance.template.questions.map((question, index) => {
+          {(() => {
+            let questionNumber = 0;
+            return instance.template.questions.map((question) => {
+              const displayIndex = question.type !== "instructions" ? ++questionNumber : null;
               const answer = instance.answers?.find(a => a.questionId === question.id)?.value;
               
               return (
                 <Card key={question.id} className="border-zinc-200 shadow-sm rounded-3xl overflow-hidden opacity-80">
                   <CardHeader className="bg-white p-6 sm:p-8">
                     <CardTitle className="text-xl leading-relaxed font-bold text-zinc-900 flex items-start gap-3">
-                      <span className="text-indigo-400 font-mono text-lg mt-0.5">{index + 1}.</span>
-                      <span>{getPrompt(question)}</span>
+                      {displayIndex !== null && (
+                        <span className="text-indigo-400 font-mono text-lg mt-0.5">{displayIndex}.</span>
+                      )}
+                      <span className="whitespace-pre-wrap">{getPrompt(question)}</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-6 pb-8 sm:px-8 bg-zinc-50/50">
-                    <div className="p-4 bg-white rounded-xl border border-zinc-200 text-zinc-700 font-medium">
-                      {answer !== undefined ? getAnswerLabel(question, answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
-                    </div>
-                  </CardContent>
+                  {question.type !== "instructions" && (
+                    <CardContent className="px-6 pb-8 sm:px-8 bg-zinc-50/50">
+                      <div className="p-4 bg-white rounded-xl border border-zinc-200 text-zinc-700 font-medium">
+                        {answer !== undefined ? getAnswerLabel(question, answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
+                      </div>
+                    </CardContent>
+                  )}
                 </Card>
               );
-            })}
-          </div>
+            });
+          })()}
+        </div>
         </main>
     );
   }
@@ -227,173 +242,181 @@ export default function QuestionnaireFormPage() {
         </div>
 
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 fill-mode-both">
-          {instance.template.questions.map((question, index) => (
-            (() => {
-              const answer = answers[question.id];
-              const textAnswer = typeof answer === "string" ? answer : "";
-              const booleanAnswer = answer === true;
-              const numericAnswer = typeof answer === "number" ? answer : question.scaleConfig?.min ?? 0;
-              const choiceAnswer = typeof answer === "string" ? answer : "";
+          {(() => {
+            let questionNumber = 0;
+            return instance.template.questions.map((question) => (
+              (() => {
+                const displayIndex = question.type !== "instructions" ? ++questionNumber : null;
+                const answer = answers[question.id];
+                const textAnswer = typeof answer === "string" ? answer : "";
+                const booleanAnswer = answer === true;
+                const numericAnswer = typeof answer === "number" ? answer : question.scaleConfig?.min ?? 0;
+                const choiceAnswer = typeof answer === "string" ? answer : "";
 
-              return (
-            <Card key={question.id} className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-[0_6px_22px_rgba(15,23,42,0.08)] transition-shadow">
-              {question.type !== "cards" ? (
-                <CardHeader className="bg-white p-6 sm:p-8">
-                  <CardTitle className="flex items-start gap-3 text-lg font-bold leading-relaxed text-zinc-900">
-                    <span className="mt-0.5 font-mono text-lg text-indigo-400">{index + 1}.</span>
-                    <span>
-                      {getPrompt(question)}
-                      {question.required && <span className="ms-1 text-red-500">*</span>}
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-              ) : null}
-              <CardContent className={question.type === "cards" ? "space-y-5 p-4 sm:space-y-5 sm:p-5" : "bg-zinc-50/50 px-6 pb-8 sm:px-8"}>
-                {question.type === "cards" && question.options && (
-                  <>
-                    <div className="flex items-center justify-between gap-2">
-                      {choiceAnswer ? (
-                        <span className="inline-flex max-w-[52%] items-center rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-700 shadow-sm sm:px-3.5 sm:text-xs">
-                          <span className="min-w-0 truncate">{getAnswerLabel(question, choiceAnswer)}</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex max-w-[52%] items-center rounded-full border border-transparent px-3 py-1 text-[11px] font-medium text-transparent sm:px-3.5 sm:text-xs">
-                          .
-                        </span>
-                      )}
-                      <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-medium text-zinc-500 shadow-sm sm:px-3.5 sm:text-xs">
-                        {t("questionNumber", { index: index + 1 })}
-                      </span>
-                    </div>
-
-                    <h2 className="max-w-none text-start text-[clamp(1.12rem,3.9vw,1.7rem)] font-black leading-[1.14] tracking-tight text-zinc-950">
-                      {getPrompt(question)}
-                      {question.required ? <span className="ms-1 text-red-500">*</span> : null}
-                    </h2>
-                  </>
-                )}
-
-                {question.type === "short_text" && (
-                  <Input 
-                    value={textAnswer}
-                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                    placeholder={t("typeAnswer")}
-                    className="h-14 rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm"
-                  />
-                )}
-
-                {question.type === "long_text" && (
-                  <Textarea 
-                    value={textAnswer}
-                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                    placeholder={t("typeAnswer")}
-                    className="min-h-[120px] rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm resize-y p-4"
-                  />
-                )}
-
-                {question.type === "boolean" && (
-                  <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm w-fit">
-                    <Switch 
-                      checked={booleanAnswer}
-                      onCheckedChange={(checked) => handleAnswerChange(question.id, checked)}
-                    />
-                    <Label className="text-base font-medium cursor-pointer" onClick={() => handleAnswerChange(question.id, !booleanAnswer)}>
-                      {booleanAnswer ? t("yes") : t("no")}
-                    </Label>
-                  </div>
-                )}
-
-                {question.type === "cards" && question.options && (
-                  <div
-                    role="radiogroup"
-                    aria-label={getPrompt(question)}
-                    className="grid gap-1.5"
-                    style={{
-                      gridTemplateColumns: `repeat(${question.options.length}, minmax(0, 1fr))`,
-                    }}
-                  >
-                    {question.options.map((option, i) => {
-                      const isSelected = choiceAnswer === option;
-
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          role="radio"
-                          aria-checked={isSelected}
-                          onClick={() => handleAnswerChange(question.id, option)}
-                          className={`flex min-h-13 min-w-0 items-center justify-center rounded-[1.35rem] border px-2.5 py-2 text-center transition-colors select-none outline-none sm:min-h-14 sm:px-3 sm:py-2 ${
-                            isSelected
-                              ? "border-zinc-900 bg-zinc-100 text-zinc-900 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
-                              : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300"
-                          }`}
-                        >
-                          <span className="min-w-0 whitespace-normal wrap-break-word text-center text-[10.5px] font-medium leading-[1.15] sm:text-[12px] sm:leading-[1.2]">
-                            {getOptionLabel(question, i)}
+                return (
+                  <Card key={question.id} className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-[0_6px_22px_rgba(15,23,42,0.08)] transition-shadow">
+                    {question.type !== "cards" ? (
+                      <CardHeader className="bg-white p-6 sm:p-8">
+                        <CardTitle className="flex items-start gap-3 text-lg font-bold leading-relaxed text-zinc-900">
+                          {displayIndex !== null && (
+                            <span className="mt-0.5 font-mono text-lg text-indigo-400">{displayIndex}.</span>
+                          )}
+                          <span className="whitespace-pre-wrap">
+                            {getPrompt(question)}
+                            {question.type !== "instructions" && question.required && <span className="ms-1 text-red-500">*</span>}
                           </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                        </CardTitle>
+                      </CardHeader>
+                    ) : null}
+                    {question.type !== "instructions" && (
+                      <CardContent className={question.type === "cards" ? "space-y-5 p-4 sm:space-y-5 sm:p-5" : "bg-zinc-50/50 px-6 pb-8 sm:px-8"}>
+                        {question.type === "cards" && question.options && (
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              {choiceAnswer ? (
+                                <span className="inline-flex max-w-[52%] items-center rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-700 shadow-sm sm:px-3.5 sm:text-xs">
+                                  <span className="min-w-0 truncate">{getAnswerLabel(question, choiceAnswer)}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex max-w-[52%] items-center rounded-full border border-transparent px-3 py-1 text-[11px] font-medium text-transparent sm:px-3.5 sm:text-xs">
+                                  .
+                                </span>
+                              )}
+                              <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-medium text-zinc-500 shadow-sm sm:px-3.5 sm:text-xs">
+                                {t("questionNumber", { index: displayIndex! })}
+                              </span>
+                            </div>
 
-                {question.type === "multiple_choice" && question.options && (
-                  <RadioGroup 
-                    value={choiceAnswer}
-                    onValueChange={(val) => handleAnswerChange(question.id, val)}
-                    className="grid gap-3"
-                  >
-                    {question.options.map((option, i) => (
-                      <Label 
-                        key={i} 
-                        className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
-                          choiceAnswer === option 
-                            ? "border-indigo-600 bg-indigo-50/50 shadow-sm" 
-                            : "border-zinc-200 bg-white hover:border-indigo-300"
-                        }`}
-                      >
-                        <RadioGroupItem value={option} className="w-5 h-5 text-indigo-600" />
-                        <span className="text-base font-medium">{getOptionLabel(question, i)}</span>
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                )}
-
-                {question.type === "numeric_scale" && question.scaleConfig && (
-                  <div className="space-y-8 py-4 px-2">
-                    <Slider 
-                      value={[numericAnswer]}
-                      min={question.scaleConfig.min}
-                      max={question.scaleConfig.max}
-                      step={1}
-                      onValueChange={(vals) => handleAnswerChange(question.id, typeof vals === 'number' ? vals : vals[0])}
-                      className="w-full"
-                    />
-                    <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
-                      <span>
-                        {resolveLocalizedText(
-                          locale,
-                          question.scaleConfig.minLabel || String(question.scaleConfig.min),
-                          question.scaleConfig.minLabelTranslations
+                            <h2 className="max-w-none text-start text-[clamp(1.12rem,3.9vw,1.7rem)] font-black leading-[1.14] tracking-tight text-zinc-950 whitespace-pre-wrap">
+                              {getPrompt(question)}
+                              {question.required ? <span className="ms-1 text-red-500">*</span> : null}
+                            </h2>
+                          </>
                         )}
-                      </span>
-                      <span className="text-indigo-600 font-bold text-lg">{numericAnswer}</span>
-                      <span>
-                        {resolveLocalizedText(
-                          locale,
-                          question.scaleConfig.maxLabel || String(question.scaleConfig.max),
-                          question.scaleConfig.maxLabelTranslations
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                )}
 
-              </CardContent>
-            </Card>
-              );
-            })()
-          ))}
+                        {question.type === "short_text" && (
+                          <Input 
+                            value={textAnswer}
+                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                            placeholder={t("typeAnswer")}
+                            className="h-14 rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm"
+                          />
+                        )}
+
+                        {question.type === "long_text" && (
+                          <Textarea 
+                            value={textAnswer}
+                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                            placeholder={t("typeAnswer")}
+                            className="min-h-[120px] rounded-xl text-base bg-white border-zinc-200 focus:border-indigo-500 shadow-sm resize-y p-4"
+                          />
+                        )}
+
+                        {question.type === "boolean" && (
+                          <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm w-fit">
+                            <Switch 
+                              checked={booleanAnswer}
+                              onCheckedChange={(checked) => handleAnswerChange(question.id, checked)}
+                            />
+                            <Label className="text-base font-medium cursor-pointer" onClick={() => handleAnswerChange(question.id, !booleanAnswer)}>
+                              {booleanAnswer ? t("yes") : t("no")}
+                            </Label>
+                          </div>
+                        )}
+
+                        {question.type === "cards" && question.options && (
+                          <div
+                            role="radiogroup"
+                            aria-label={getPrompt(question)}
+                            className="grid gap-1.5"
+                            style={{
+                              gridTemplateColumns: `repeat(${question.options.length}, minmax(0, 1fr))`,
+                            }}
+                          >
+                            {question.options.map((option, i) => {
+                              const isSelected = choiceAnswer === option;
+
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={isSelected}
+                                  onClick={() => handleAnswerChange(question.id, option)}
+                                  className={`flex min-h-13 min-w-0 items-center justify-center rounded-[1.35rem] border px-2.5 py-2 text-center transition-colors select-none outline-none sm:min-h-14 sm:px-3 sm:py-2 ${
+                                    isSelected
+                                      ? "border-zinc-900 bg-zinc-100 text-zinc-900 shadow-[0_6px_18px_rgba(15,23,42,0.08)]"
+                                      : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300"
+                                  }`}
+                                >
+                                  <span className="min-w-0 whitespace-normal wrap-break-word text-center text-[10.5px] font-medium leading-[1.15] sm:text-[12px] sm:leading-[1.2]">
+                                    {getOptionLabel(question, i)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {question.type === "multiple_choice" && question.options && (
+                          <RadioGroup 
+                            value={choiceAnswer}
+                            onValueChange={(val) => handleAnswerChange(question.id, val)}
+                            className="grid gap-3"
+                          >
+                            {question.options.map((option, i) => (
+                              <Label 
+                                key={i} 
+                                className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
+                                  choiceAnswer === option 
+                                    ? "border-indigo-600 bg-indigo-50/50 shadow-sm" 
+                                    : "border-zinc-200 bg-white hover:border-indigo-300"
+                                }`}
+                              >
+                                <RadioGroupItem value={option} className="w-5 h-5 text-indigo-600" />
+                                <span className="text-base font-medium">{getOptionLabel(question, i)}</span>
+                              </Label>
+                            ))}
+                          </RadioGroup>
+                        )}
+
+                        {question.type === "numeric_scale" && question.scaleConfig && (
+                          <div className="space-y-8 py-4 px-2">
+                            <Slider 
+                              value={[numericAnswer]}
+                              min={question.scaleConfig.min}
+                              max={question.scaleConfig.max}
+                              step={1}
+                              onValueChange={(vals) => handleAnswerChange(question.id, typeof vals === 'number' ? vals : vals[0])}
+                              className="w-full"
+                            />
+                            <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
+                              <span>
+                                {resolveLocalizedText(
+                                  locale,
+                                  question.scaleConfig.minLabel || String(question.scaleConfig.min),
+                                  question.scaleConfig.minLabelTranslations
+                                )}
+                              </span>
+                              <span className="text-indigo-600 font-bold text-lg">{numericAnswer}</span>
+                              <span>
+                                {resolveLocalizedText(
+                                  locale,
+                                  question.scaleConfig.maxLabel || String(question.scaleConfig.max),
+                                  question.scaleConfig.maxLabelTranslations
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })()
+            ));
+          })()}
         </div>
 
         {error && (

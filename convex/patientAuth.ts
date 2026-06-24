@@ -73,6 +73,7 @@ export const registerPatientFromInvite = mutation({
       authType: "patient_credentials",
       loginIdentifier: args.username,
       loginIdentifierNormalized: args.usernameNormalized,
+      privateLinkToken: crypto.randomUUID().replace(/-/g, ""),
     });
 
     await ctx.db.insert("patientCredentials", {
@@ -142,17 +143,20 @@ export const createPatientSession = mutation({
     userId: v.id("users"),
     refreshTokenHash: v.string(),
     userAgent: v.optional(v.string()),
+    authType: v.optional(v.union(v.literal("patient_credentials"), v.literal("link_only"))),
   },
   handler: async (ctx, args) => {
     assertApiSecret(args.apiSecret);
 
     const user = await ctx.db.get(args.userId);
-    if (!user || user.authType !== "patient_credentials" || user.role !== "patient") {
+    if (!user || user.role !== "patient") {
       throw new Error("Patient account not found");
     }
 
     const now = Date.now();
     const sessionId = crypto.randomUUID();
+    const sessionAuthType: "patient_credentials" | "link_only" =
+      args.authType ?? (user.authType === "link_only" ? "link_only" : "patient_credentials");
 
     await ctx.db.insert("patientSessions", {
       userId: args.userId,
@@ -163,6 +167,7 @@ export const createPatientSession = mutation({
       lastSeenAt: now,
       expiresAt: now + PATIENT_REFRESH_SESSION_TTL_MS,
       userAgent: args.userAgent,
+      authType: sessionAuthType,
     });
 
     const credential = await ctx.db
@@ -203,9 +208,11 @@ export const getPatientSessionForRefreshToken = query({
     }
 
     const user = await ctx.db.get(session.userId);
-    if (!user || user.authType !== "patient_credentials" || user.role !== "patient") {
+    if (!user || user.role !== "patient") {
       return null;
     }
+
+    const authType = session.authType ?? user.authType ?? "patient_credentials";
 
     return {
       userId: user._id,
@@ -216,6 +223,7 @@ export const getPatientSessionForRefreshToken = query({
       refreshTokenHash: session.refreshTokenHash,
       expiresAt: session.expiresAt,
       revokedAt: session.revokedAt,
+      authType,
     };
   },
 });
@@ -271,5 +279,61 @@ export const revokePatientSession = mutation({
     });
 
     return null;
+  },
+});
+
+export const loginPatientLinkOnly = mutation({
+  args: {
+    apiSecret: v.string(),
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertApiSecret(args.apiSecret);
+    const invitation = await ctx.db
+      .query("invitations")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+    if (!invitation || invitation.mode !== "link_only") {
+      throw new Error("Invalid token");
+    }
+
+    const userId = invitation.acceptedUserId;
+    if (!userId) {
+      throw new Error("Patient not found");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user || user.authType !== "link_only") {
+      throw new Error("Patient not found");
+    }
+
+    return {
+      userId: user._id,
+      tokenIdentifier: user.tokenIdentifier,
+    };
+  },
+});
+
+export const loginPatientPrivateLink = mutation({
+  args: {
+    apiSecret: v.string(),
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertApiSecret(args.apiSecret);
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_private_link_token", (q) => q.eq("privateLinkToken", args.token))
+      .unique();
+
+    if (!user || user.role !== "patient") {
+      throw new Error("Invalid token");
+    }
+
+    return {
+      userId: user._id,
+      tokenIdentifier: user.tokenIdentifier,
+    };
   },
 });

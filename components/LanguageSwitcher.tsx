@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import { setLanguage } from "@/app/actions/language";
 import { Globe } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,11 +16,13 @@ import {
 export function LanguageSwitcher() {
   const [isPending, startTransition] = useTransition();
   const locale = useLocale();
+  const router = useRouter();
 
   const handleLanguageChange = (nextLocale: "en" | "he") => {
     if (locale === nextLocale) return;
-    startTransition(() => {
-      setLanguage(nextLocale);
+    startTransition(async () => {
+      await setLanguage(nextLocale);
+      router.refresh();
     });
   };
 

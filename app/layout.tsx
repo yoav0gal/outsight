@@ -41,7 +41,7 @@ export default async function RootLayout({
   const messages = await getMessages();
   const locale = await getLocale();
   const textInfo = (new Intl.Locale(locale) as LocaleWithTextInfo).getTextInfo?.();
-  const direction = textInfo?.direction === "rtl" ? "rtl" : "ltr";
+  const direction = textInfo?.direction === "rtl" || locale === "he" ? "rtl" : "ltr";
 
   return (
     <html lang={locale} dir={direction} className={cn( jetbrainsMono.variable, "font-sans", inter.variable)}>

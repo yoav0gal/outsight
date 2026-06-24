@@ -132,8 +132,11 @@ export default function LandingPage() {
           <span>{t("title")}</span>
         </Link>
         <div className="flex items-center gap-4">
-          {user ? (
-            <UserMenu />
+          {user || process.env.NEXT_PUBLIC_ENABLE_LOGIN === "false" ? (
+            <>
+              {process.env.NEXT_PUBLIC_ENABLE_LOGIN === "false" && !viewer && <LanguageSwitcher />}
+              <UserMenu />
+            </>
           ) : (
             <>
               <LanguageSwitcher />

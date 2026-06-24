@@ -20,7 +20,13 @@ export const validate = query({
       .withIndex("by_token", (q) => q.eq("token", args.token))
       .unique();
 
-    if (!invitation || invitation.status !== "pending" || isExpiredInvitation(invitation)) {
+    if (!invitation) {
+      return false;
+    }
+    if (invitation.mode === "link_only") {
+      return true;
+    }
+    if (invitation.status !== "pending" || isExpiredInvitation(invitation)) {
       return false;
     }
     return true;
@@ -37,8 +43,7 @@ export const getRegistrationInvite = query({
 
     if (
       !invitation ||
-      invitation.status !== "pending" ||
-      isExpiredInvitation(invitation)
+      (invitation.mode !== "link_only" && (invitation.status !== "pending" || isExpiredInvitation(invitation)))
     ) {
       return null;
     }
@@ -57,7 +62,7 @@ export const getRegistrationInvite = query({
 export const create = mutation({
   args: {
     patientName: v.string(),
-    mode: v.union(v.literal("workos"), v.literal("patient_credentials")),
+    mode: v.union(v.literal("workos"), v.literal("patient_credentials"), v.literal("link_only")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -68,13 +73,34 @@ export const create = mutation({
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const expiresAt = Date.now() + INVITE_TTL_MS;
 
+    let acceptedUserId = undefined;
+    let status: "pending" | "accepted" = "pending";
+    let acceptedAt = undefined;
+
+    if (args.mode === "link_only") {
+      const tokenIdentifier = `patient:link_only:${crypto.randomUUID()}`;
+      const userId = await ctx.db.insert("users", {
+        name: args.patientName.trim(),
+        role: "patient",
+        practitionerId: user._id,
+        authType: "link_only",
+        tokenIdentifier,
+        privateLinkToken: crypto.randomUUID().replace(/-/g, ""),
+      });
+      acceptedUserId = userId;
+      status = "accepted";
+      acceptedAt = Date.now();
+    }
+
     await ctx.db.insert("invitations", {
       token,
       practitionerId: user._id,
       patientName: args.patientName.trim(),
       mode: args.mode,
-      status: "pending",
+      status,
       expiresAt,
+      acceptedAt,
+      acceptedUserId,
     });
 
     return {

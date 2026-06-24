@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, GripVertical, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Plus, Trash2, X } from "lucide-react";
 
 import {
   createEmptyQuestion,
@@ -52,22 +52,22 @@ function hydrateQuestionTranslations(question: TemplateQuestion): TemplateQuesti
     ...question,
     promptTranslations: question.promptTranslations ?? {
       en: question.prompt,
-      he: question.prompt,
+      he: "",
     },
     optionTranslations: question.options?.map((option, index) => {
       const existingTranslations = question.optionTranslations?.[index];
-      return existingTranslations ?? { en: option, he: option };
+      return existingTranslations ?? { en: option, he: "" };
     }),
     scaleConfig: question.scaleConfig
       ? {
           ...question.scaleConfig,
           minLabelTranslations: question.scaleConfig.minLabelTranslations ?? {
             en: question.scaleConfig.minLabel ?? "",
-            he: question.scaleConfig.minLabel ?? "",
+            he: "",
           },
           maxLabelTranslations: question.scaleConfig.maxLabelTranslations ?? {
             en: question.scaleConfig.maxLabel ?? "",
-            he: question.scaleConfig.maxLabel ?? "",
+            he: "",
           },
         }
       : undefined,
@@ -158,6 +158,48 @@ export function TemplateEditorForm({
     setQuestions((currentQuestions) => {
       const nextQuestions = [...currentQuestions];
       nextQuestions.splice(index, 1);
+      return nextQuestions;
+    });
+  };
+
+  const handleMoveQuestionUp = (index: number) => {
+    if (index <= 0) return;
+    setQuestions((currentQuestions) => {
+      const nextQuestions = [...currentQuestions];
+      const temp = nextQuestions[index];
+      nextQuestions[index] = nextQuestions[index - 1];
+      nextQuestions[index - 1] = temp;
+      return nextQuestions;
+    });
+  };
+
+  const handleMoveQuestionDown = (index: number) => {
+    if (index >= questions.length - 1) return;
+    setQuestions((currentQuestions) => {
+      const nextQuestions = [...currentQuestions];
+      const temp = nextQuestions[index];
+      nextQuestions[index] = nextQuestions[index + 1];
+      nextQuestions[index + 1] = temp;
+      return nextQuestions;
+    });
+  };
+
+  const handleMoveQuestionToTop = (index: number) => {
+    if (index <= 0) return;
+    setQuestions((currentQuestions) => {
+      const nextQuestions = [...currentQuestions];
+      const [question] = nextQuestions.splice(index, 1);
+      nextQuestions.unshift(question);
+      return nextQuestions;
+    });
+  };
+
+  const handleMoveQuestionToBottom = (index: number) => {
+    if (index >= questions.length - 1) return;
+    setQuestions((currentQuestions) => {
+      const nextQuestions = [...currentQuestions];
+      const [question] = nextQuestions.splice(index, 1);
+      nextQuestions.push(question);
       return nextQuestions;
     });
   };
@@ -490,8 +532,51 @@ export function TemplateEditorForm({
                   key={question.id}
                   className="relative overflow-visible rounded-[1.5rem] border-zinc-200/70 bg-white shadow-sm"
                 >
-                  <div className="absolute start-4 top-4 cursor-grab text-zinc-400 hover:text-zinc-600">
-                    <GripVertical className="h-5 w-5" />
+                  <div className="absolute start-3 top-3 flex flex-col gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-zinc-500 hover:text-indigo-600 disabled:opacity-30 p-0"
+                      onClick={() => handleMoveQuestionToTop(questionIndex)}
+                      disabled={questionIndex === 0}
+                      title={t("moveToTop") || "Move to Top"}
+                    >
+                      <ChevronsUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-zinc-500 hover:text-indigo-600 disabled:opacity-30 p-0"
+                      onClick={() => handleMoveQuestionUp(questionIndex)}
+                      disabled={questionIndex === 0}
+                      title={t("moveUp") || "Move Up"}
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-zinc-500 hover:text-indigo-600 disabled:opacity-30 p-0"
+                      onClick={() => handleMoveQuestionDown(questionIndex)}
+                      disabled={questionIndex === questions.length - 1}
+                      title={t("moveDown") || "Move Down"}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-zinc-500 hover:text-indigo-600 disabled:opacity-30 p-0"
+                      onClick={() => handleMoveQuestionToBottom(questionIndex)}
+                      disabled={questionIndex === questions.length - 1}
+                      title={t("moveToBottom") || "Move to Bottom"}
+                    >
+                      <ChevronsDown className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                   <Button
                     type="button"
@@ -511,24 +596,49 @@ export function TemplateEditorForm({
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                           <div className="space-y-2">
                             <Label>{t("questionPromptEnglish")}</Label>
-                            <Input
-                              value={question.promptTranslations?.en ?? ""}
-                              onChange={(event) =>
-                                handleUpdatePrompt(questionIndex, "en", event.target.value)
-                              }
-                              required
-                            />
+                            {question.type === "instructions" ? (
+                              <Textarea
+                                value={question.promptTranslations?.en ?? ""}
+                                onChange={(event) =>
+                                  handleUpdatePrompt(questionIndex, "en", event.target.value)
+                                }
+                                required
+                                rows={3}
+                                className="resize-y"
+                              />
+                            ) : (
+                              <Input
+                                value={question.promptTranslations?.en ?? ""}
+                                onChange={(event) =>
+                                  handleUpdatePrompt(questionIndex, "en", event.target.value)
+                                }
+                                required
+                              />
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label>{t("questionPromptHebrew")}</Label>
-                            <Input
-                              dir="rtl"
-                              value={question.promptTranslations?.he ?? ""}
-                              onChange={(event) =>
-                                handleUpdatePrompt(questionIndex, "he", event.target.value)
-                              }
-                              required
-                            />
+                            {question.type === "instructions" ? (
+                              <Textarea
+                                dir="rtl"
+                                value={question.promptTranslations?.he ?? ""}
+                                onChange={(event) =>
+                                  handleUpdatePrompt(questionIndex, "he", event.target.value)
+                                }
+                                required
+                                rows={3}
+                                className="resize-y"
+                              />
+                            ) : (
+                              <Input
+                                dir="rtl"
+                                value={question.promptTranslations?.he ?? ""}
+                                onChange={(event) =>
+                                  handleUpdatePrompt(questionIndex, "he", event.target.value)
+                                }
+                                required
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -556,6 +666,9 @@ export function TemplateEditorForm({
                                 maxLabelTranslations: { en: "", he: "" },
                               };
                             }
+                            if (nextType === "instructions") {
+                              updates.required = false;
+                            }
                             handleUpdateQuestion(questionIndex, updates);
                           }}
                         >
@@ -569,23 +682,26 @@ export function TemplateEditorForm({
                             <SelectItem value="cards">{t("types.cards")}</SelectItem>
                             <SelectItem value="boolean">{t("types.boolean")}</SelectItem>
                             <SelectItem value="numeric_scale">{t("types.numeric_scale")}</SelectItem>
+                            <SelectItem value="instructions">{t("types.instructions")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={question.required}
-                        onCheckedChange={(checked) =>
-                          handleUpdateQuestion(questionIndex, { required: checked })
-                        }
-                        id={`required-${question.id}`}
-                      />
-                      <Label htmlFor={`required-${question.id}`} className="cursor-pointer">
-                        {t("required")}
-                      </Label>
-                    </div>
+                    {question.type !== "instructions" && (
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={question.required}
+                          onCheckedChange={(checked) =>
+                            handleUpdateQuestion(questionIndex, { required: checked })
+                          }
+                          id={`required-${question.id}`}
+                        />
+                        <Label htmlFor={`required-${question.id}`} className="cursor-pointer">
+                          {t("required")}
+                        </Label>
+                      </div>
+                    )}
 
                     {question.type === "multiple_choice" || question.type === "cards" ? (
                       <div className="space-y-3 rounded-xl border border-zinc-100 bg-zinc-50 p-4">

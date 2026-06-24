@@ -27,7 +27,7 @@ export interface PatientSessionUser {
   userId: string;
   tokenIdentifier: string;
   role: "patient";
-  authType: "patient_credentials";
+  authType: "patient_credentials" | "link_only";
   name?: string;
   accountName?: string;
   loginIdentifier?: string;
@@ -110,12 +110,12 @@ async function getPatientSigningKey() {
   return importPKCS8(getPatientAuthPrivateKeyPem(), "RS256");
 }
 
-export async function createPatientAccessToken(subject: string) {
+export async function createPatientAccessToken(subject: string, authType: "patient_credentials" | "link_only" = "patient_credentials") {
   const nowInSeconds = Math.floor(Date.now() / 1000);
 
   return new SignJWT({
     role: "patient",
-    authType: "patient_credentials",
+    authType: authType,
   } satisfies JWTPayload)
     .setProtectedHeader({
       alg: "RS256",
@@ -175,7 +175,7 @@ export async function getPatientSessionFromCookie(): Promise<PatientSessionUser 
     userId: session.userId,
     tokenIdentifier: session.tokenIdentifier,
     role: "patient",
-    authType: "patient_credentials",
+    authType: session.authType as "patient_credentials" | "link_only",
     name: session.name,
     accountName: session.accountName,
     loginIdentifier: session.loginIdentifier,

@@ -48,6 +48,7 @@ export function createPatientSession(args: {
   userId: Id<"users">;
   refreshTokenHash: string;
   userAgent?: string;
+  authType?: "patient_credentials" | "link_only";
 }) {
   const client = getConvexHttpClient();
   return client.mutation(api.patientAuth.createPatientSession, {

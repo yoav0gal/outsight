@@ -23,7 +23,8 @@ const questionValidator = v.object({
     v.literal("multiple_choice"),
     v.literal("cards"),
     v.literal("boolean"),
-    v.literal("numeric_scale")
+    v.literal("numeric_scale"),
+    v.literal("instructions")
   ),
   prompt: v.string(),
   promptTranslations: v.optional(localizedTextValidator),
@@ -70,7 +71,7 @@ type LocalizedText = {
 
 type TemplateQuestion = {
   id: string;
-  type: "short_text" | "long_text" | "multiple_choice" | "cards" | "boolean" | "numeric_scale";
+  type: "short_text" | "long_text" | "multiple_choice" | "cards" | "boolean" | "numeric_scale" | "instructions";
   prompt: string;
   promptTranslations?: {
     en?: string;
@@ -1373,9 +1374,40 @@ export const listPatientAssignments = query({
       .withIndex("by_patient", (q) => q.eq("patientId", args.patientId))
       .collect();
 
-    return assignments.sort((a, b) => b.createdAt - a.createdAt);
+    const assignmentsWithPending = await Promise.all(
+      assignments.map(async (assignment) => {
+        const pendingInstance = await ctx.db
+          .query("questionnaireInstances")
+          .withIndex("by_assignment", (q) => q.eq("assignmentId", assignment._id))
+          .filter((q) => q.eq(q.field("status"), "pending"))
+          .first();
+
+        return {
+          ...assignment,
+          pendingInstanceId: pendingInstance?._id,
+        };
+      })
+    );
+
+    return assignmentsWithPending.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
+
+async function getLatestPendingInstanceId(ctx: QueryCtx | MutationCtx, patientId: Id<"users">) {
+  const now = Date.now();
+  const instances = await ctx.db
+    .query("questionnaireInstances")
+    .withIndex("by_patient", (q) => q.eq("patientId", patientId))
+    .filter((q) => q.eq(q.field("status"), "pending"))
+    .collect();
+
+  const available = instances.filter((instance) => (instance.availableAt ?? 0) <= now);
+  if (available.length === 0) {
+    return null;
+  }
+  available.sort((a, b) => b.createdAt - a.createdAt);
+  return available[0]._id;
+}
 
 // 3. Instances / Submissions
 export const listPendingInstances = query({
@@ -1384,6 +1416,9 @@ export const listPendingInstances = query({
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "patient") throw new Error("Unauthorized");
     const now = Date.now();
+
+    const identity = await ctx.auth.getUserIdentity();
+    const isLinkOnly = identity?.authType === "link_only";
 
     const instances = await ctx.db
       .query("questionnaireInstances")
@@ -1401,6 +1436,12 @@ export const listPendingInstances = query({
         })
     );
 
+    if (isLinkOnly) {
+      if (results.length === 0) return [];
+      results.sort((a, b) => b.createdAt - a.createdAt);
+      return [results[0]];
+    }
+
     return results;
   },
 });
@@ -1410,6 +1451,11 @@ export const listPatientHistory = query({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Unauthorized");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity?.authType === "link_only") {
+      throw new Error("Unauthorized: Link-only session cannot access history.");
+    }
 
     let targetPatientId = user._id;
     if (user.role === "practitioner") {
@@ -1708,6 +1754,30 @@ export const getInstance = query({
       throw new Error("Unauthorized");
     }
 
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity?.authType === "link_only") {
+      if (user.role !== "patient" || instance.patientId !== user._id) {
+        throw new Error("Unauthorized");
+      }
+      const latestPendingId = await getLatestPendingInstanceId(ctx, user._id);
+      if (latestPendingId !== args.instanceId) {
+        const completedInstances = await ctx.db
+          .query("questionnaireInstances")
+          .withIndex("by_patient", (q) => q.eq("patientId", user._id))
+          .filter((q) => q.eq(q.field("status"), "completed"))
+          .collect();
+
+        if (completedInstances.length > 0) {
+          completedInstances.sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
+          if (completedInstances[0]._id !== args.instanceId) {
+            throw new Error("Unauthorized: Link-only access is restricted to the latest pending or most recently completed questionnaire only.");
+          }
+        } else {
+          throw new Error("Unauthorized: Link-only access is restricted to the latest pending questionnaire only.");
+        }
+      }
+    }
+
     const template = await ctx.db.get(instance.templateId);
     return attachScoreToInstance({ ...instance, template }, template);
   },
@@ -1765,6 +1835,14 @@ export const submitInstance = mutation({
     if (!instance) throw new Error("Instance not found");
     if (instance.patientId !== user._id) throw new Error("Unauthorized");
     if (instance.status !== "pending") throw new Error("Instance is not pending");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity?.authType === "link_only") {
+      const latestPendingId = await getLatestPendingInstanceId(ctx, user._id);
+      if (!latestPendingId || latestPendingId !== args.instanceId) {
+        throw new Error("Unauthorized: Link-only access is restricted to the latest pending questionnaire only.");
+      }
+    }
     const assignment = await ctx.db.get(instance.assignmentId);
     if (!assignment) throw new Error("Assignment not found");
     const now = Date.now();

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { resolveLocalizedText } from "@/lib/templateEditor";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function PatientHome() {
   const user = useQuery(api.users.viewer);
@@ -17,6 +19,48 @@ export default function PatientHome() {
   );
   const t = useTranslations("PatientHome");
   const locale = useLocale();
+  const router = useRouter();
+
+  const isLinkOnly = user?.authType === "link_only";
+
+  useEffect(() => {
+    if (isLinkOnly && pendingInstances && pendingInstances.length > 0) {
+      router.replace(`/patient/form/${pendingInstances[0]._id}`);
+    }
+  }, [isLinkOnly, pendingInstances, router]);
+
+  if (isLinkOnly) {
+    if (!pendingInstances) {
+      return (
+        <main className="flex-1 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        </main>
+      );
+    }
+
+    if (pendingInstances.length === 0) {
+      return (
+        <main className="flex-1 w-full max-w-md mx-auto p-6 flex flex-col items-center justify-center text-center gap-6 pt-16">
+          <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center justify-center w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="w-16 h-16 rounded-full bg-green-50 text-green-600 flex items-center justify-center mb-6">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <h3 className="text-2xl font-black text-zinc-950 mb-3">{t("caughtUp")}</h3>
+            <p className="text-zinc-500 text-sm font-semibold leading-relaxed max-w-[280px]">
+              {t("step1") || "You have completed all assigned questionnaires. Thank you!"}
+            </p>
+          </div>
+        </main>
+      );
+    }
+
+    return (
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </main>
+    );
+  }
+
   const patientDisplayName = user?.accountName ?? user?.loginIdentifier ?? user?.name;
 
   return (

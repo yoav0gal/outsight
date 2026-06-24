@@ -20,9 +20,15 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
 }
 
 function useAuthFromAuthKit() {
-  const { user, loading: isLoading } = useAuth();
+  const isLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_LOGIN !== "false";
+  const { user: workosUser, loading: isWorkosLoading } = useAuth();
   const { getAccessToken, refresh } = useAccessToken();
+
+  const user = isLoginEnabled ? workosUser : null;
+  const isLoading = isLoginEnabled ? isWorkosLoading : false;
+
   const pathname = usePathname();
+  const isPatientRoute = pathname.startsWith("/patient") || pathname.startsWith("/p/");
   const [patientStatus, setPatientStatus] = useState<"idle" | "loading" | "authenticated" | "unauthenticated">("idle");
   const patientTokenRef = useRef<string | null>(null);
 
@@ -47,9 +53,12 @@ function useAuthFromAuthKit() {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && !isPatientRoute) {
       patientTokenRef.current = null;
-      return;
+      const timer = setTimeout(() => {
+        setPatientStatus("unauthenticated");
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     let isMounted = true;
@@ -82,15 +91,17 @@ function useAuthFromAuthKit() {
     return () => {
       isMounted = false;
     };
-  }, [user, pathname]);
+  }, [user, pathname, isPatientRoute]);
 
-  const isAuthenticated = !!user || patientStatus === "authenticated";
+  const useWorkos = !!user && (!isPatientRoute || patientStatus !== "authenticated");
+
+  const isAuthenticated = useWorkos || patientStatus === "authenticated";
   const combinedIsLoading =
-    isLoading || (!user && (patientStatus === "idle" || patientStatus === "loading"));
+    isLoading || (!useWorkos && (patientStatus === "idle" || patientStatus === "loading"));
 
   const fetchAccessToken = useCallback(
     async ({ forceRefreshToken }: { forceRefreshToken?: boolean } = {}): Promise<string | null> => {
-      if (user) {
+      if (useWorkos) {
         try {
           if (forceRefreshToken) {
             return (await refresh()) ?? null;
@@ -114,7 +125,7 @@ function useAuthFromAuthKit() {
         return null;
       }
     },
-    [user, refresh, getAccessToken, refreshPatientToken],
+    [useWorkos, refresh, getAccessToken, refreshPatientToken],
   );
 
   return {

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { resolveLocalizedText } from "@/lib/templateEditor";
+import { useEffect } from "react";
 
 export default function PatientHistoryPage() {
   const router = useRouter();
@@ -19,6 +20,12 @@ export default function PatientHistoryPage() {
   const t = useTranslations("PatientHome");
   const tQ = useTranslations("Questionnaire");
   const locale = useLocale();
+
+  useEffect(() => {
+    if (user && user.authType === "link_only") {
+      router.replace("/patient/home");
+    }
+  }, [user, router]);
 
   return (
     <main className="flex-1 w-full max-w-2xl mx-auto p-4 sm:p-6 pb-12 flex flex-col gap-8">

@@ -27,11 +27,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function PractitionerMyPatients() {
   const patients = useQuery(api.users.listPatients);
   const createInvite = useMutation(api.invites.create);
-  const [inviteLink, setInviteLink] = useState<{ url: string; mode: "patient_credentials" | "workos" } | null>(null);
+  const [inviteLink, setInviteLink] = useState<{ url: string; mode: "patient_credentials" | "workos" | "link_only" } | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [patientName, setPatientName] = useState("");
-  const [inviteMode, setInviteMode] = useState<"patient_credentials" | "workos">("workos");
+  const [inviteMode, setInviteMode] = useState<"patient_credentials" | "workos" | "link_only">("workos");
   const [search, setSearch] = useState("");
   const t = useTranslations("PractitionerMyPatients");
 
@@ -102,10 +102,18 @@ export default function PractitionerMyPatients() {
           <div className="animate-in fade-in slide-in-from-top-4 rounded-[1.75rem] border border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.95),rgba(255,255,255,0.98))] p-6 duration-300">
             <h3 className="mb-2 flex items-center gap-2 font-bold text-indigo-900">
               <LinkIcon className="w-4 h-4" />
-              {inviteLink.mode === "patient_credentials" ? t("inviteCodeTitle") : t("regularInviteTitle")}
+              {inviteLink.mode === "link_only"
+                ? t("linkOnlyInviteTitle")
+                : inviteLink.mode === "patient_credentials"
+                  ? t("inviteCodeTitle")
+                  : t("regularInviteTitle")}
             </h3>
             <p className="mb-4 text-sm text-indigo-700">
-              {inviteLink.mode === "patient_credentials" ? t("inviteCodeDesc") : t("regularInviteDesc")}
+              {inviteLink.mode === "link_only"
+                ? t("linkOnlyInviteDesc")
+                : inviteLink.mode === "patient_credentials"
+                  ? t("inviteCodeDesc")
+                  : t("regularInviteDesc")}
             </p>
             <div className="flex flex-col gap-2 text-start sm:flex-row sm:items-center">
               <Input 
@@ -250,7 +258,7 @@ export default function PractitionerMyPatients() {
                 <Label className="text-sm font-semibold text-zinc-900">{t("inviteDialog.accountTypeLabel")}</Label>
                 <RadioGroup
                   value={inviteMode}
-                  onValueChange={(value) => setInviteMode(value as "patient_credentials" | "workos")}
+                  onValueChange={(value) => setInviteMode(value as "patient_credentials" | "workos" | "link_only")}
                   className="grid gap-3"
                 >
                   <label
@@ -304,6 +312,30 @@ export default function PractitionerMyPatients() {
                       <p className="text-sm leading-6 text-zinc-500">{t("inviteDialog.options.password.description")}</p>
                     </div>
                     <RadioGroupItem value="patient_credentials" id="invite-mode-password" className="mt-1" />
+                  </label>
+
+                  <label
+                    htmlFor="invite-mode-link-only"
+                    className={`grid cursor-pointer grid-cols-[auto_1fr_auto] items-start gap-4 rounded-[1.5rem] border p-4 text-start shadow-sm transition-all ${
+                      inviteMode === "link_only"
+                        ? "border-zinc-300 bg-white ring-1 ring-zinc-100"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl ${
+                        inviteMode === "link_only"
+                          ? "bg-zinc-100 text-zinc-700"
+                          : "bg-zinc-100 text-zinc-500"
+                      }`}
+                    >
+                      <LinkIcon className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-zinc-950">{t("inviteDialog.options.linkOnly.title")}</p>
+                      <p className="text-sm leading-6 text-zinc-500">{t("inviteDialog.options.linkOnly.description")}</p>
+                    </div>
+                    <RadioGroupItem value="link_only" id="invite-mode-link-only" className="mt-1" />
                   </label>
                 </RadioGroup>
               </div>

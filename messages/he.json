@@ -46,6 +46,8 @@
     "inviteCodeDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. בכניסה הראשונה הוא יבחר שם משתמש וסיסמה.",
     "regularInviteTitle": "קישור להתחברות עם Google",
     "regularInviteDesc": "שתף את הקישור החד-פעמי הזה עם המטופל. הוא יעביר אותו לזרימת התחברות דרך Google.",
+    "linkOnlyInviteTitle": "קישור גישה ישיר למטופל",
+    "linkOnlyInviteDesc": "שתף את הקישור הזה עם המטופל. הוא יחובר מיד למילוי השאלון האחרון שלו ללא צורך ביצירת חשבון.",
     "inviteLinkGenerated": "נוצר קישור הזמנה למטופל",
     "inviteLinkDesc": "שלח קישור זה למטופל שלך. הם יכולים להשתמש בו כדי ליצור חשבון המקושר לקליניקה שלך. הקישור יפוג אחרי 24 שעות.",
     "copy": "העתק",
@@ -72,6 +74,10 @@
         "password": {
           "title": "הרשמה עם שם משתמש וסיסמה",
           "description": "צור חשבון מקומי עם שם משתמש וסיסמה."
+        },
+        "linkOnly": {
+          "title": "קישור בלבד",
+          "description": "קישור ישיר למילוי השאלון האחרון. ללא צורך ביצירת חשבון."
         }
       },
       "cancel": "ביטול",
@@ -174,6 +180,8 @@
     "backToPatient": "חזרה למטופל",
     "unnamed": "מטופל ללא שם",
     "anonymousAccount": "חשבון מטופל אנונימי",
+    "copyPrivateLink": "העתק קישור פרטי",
+    "copiedPrivateLink": "הקישור הפרטי הועתק ללוח!",
     "tabs": {
       "overview": "סקירה",
       "history": "היסטוריה",
@@ -272,6 +280,8 @@
       "restoreError": "שחזור המרשם נכשל",
       "deleteSuccess": "המרשם וכל המידע הקשור אליו נמחקו לצמיתות.",
       "deleteError": "מחיקת המרשם נכשלה",
+      "copyLink": "העתק קישור",
+      "copiedLink": "קישור לשאלון הועתק ללוח!",
       "frequency": {
         "once": "פעם אחת",
         "daily": "יומי",
@@ -354,7 +364,11 @@
     "signOut": "התנתק",
     "displayLanguage": "שפת תצוגה",
     "anonymousPatient": "חשבון מטופל אנונימי",
+    "linkOnlyPatient": "גישה באמצעות קישור בלבד",
     "practitioner": "מטפל",
+    "selectDevUser": "בחר משתמש פיתוח",
+    "switchDevUser": "החלף משתמש פיתוח",
+    "devUser": "משתמש פיתוח / QA",
     "languages": {
       "en": "English",
       "he": "עברית"
@@ -409,6 +423,12 @@
       "descriptionWithName": "המשך לזרימת ההתחברות דרך Google כדי ליצור את החשבון עבור {name}.",
       "continue": "המשך עם Google",
       "continueSignedIn": "השתמש בחשבון הנוכחי שלי"
+    },
+    "privateLink": {
+      "connecting": "מתחבר לאזור האישי...",
+      "verifying": "מאמת את הקישור הפרטי שלך. אנא המתן...",
+      "invalid": "הקישור הפרטי הזה אינו תקין.",
+      "error": "ההתחברות נכשלה. אנא פנה למטפל שלך כדי לקבל קישור חדש."
     }
   },
   "CreateTemplate": {
@@ -440,13 +460,18 @@
     "questionType": "סוג השאלה",
     "required": "שאלת חובה",
     "removeQuestion": "הסר",
+    "moveToTop": "העבר להתחלה",
+    "moveUp": "העבר למעלה",
+    "moveDown": "העבר למטה",
+    "moveToBottom": "העבר לסוף",
     "types": {
       "short_text": "טקסט קצר",
       "long_text": "טקסט ארוך",
       "multiple_choice": "בחירה מרובה",
       "cards": "כרטיסים",
       "boolean": "כן / לא",
-      "numeric_scale": "סולם מספרי"
+      "numeric_scale": "סולם מספרי",
+      "instructions": "הנחיות / טקסט בלבד"
     },
     "options": "אפשרויות",
     "optionEnglish": "אפשרות באנגלית",

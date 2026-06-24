@@ -22,7 +22,8 @@ const questionValidator = v.object({
     v.literal("multiple_choice"),
     v.literal("cards"),
     v.literal("boolean"),
-    v.literal("numeric_scale")
+    v.literal("numeric_scale"),
+    v.literal("instructions")
   ),
   prompt: v.string(),
   promptTranslations: v.optional(localizedTextValidator),

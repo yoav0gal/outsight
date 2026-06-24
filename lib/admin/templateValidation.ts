@@ -192,6 +192,7 @@ function validateQuestion(question: unknown, templateIndex: number, questionInde
     "cards",
     "boolean",
     "numeric_scale",
+    "instructions",
   ];
 
   if (typeof candidate.id !== "string" || !candidate.id.trim()) {

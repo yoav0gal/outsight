@@ -175,7 +175,7 @@ function QuestionCard({
             {t("playground.question", { index: index + 1 })}
           </Badge>
           <div className="min-w-0 flex-1">
-            <p className="text-base font-semibold leading-6 text-zinc-950">
+            <p className="text-base font-semibold leading-6 text-zinc-950 whitespace-pre-wrap">
               {localizePrompt(question, locale)}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
@@ -388,7 +388,7 @@ export function QuestionnaireVisualizationLab({
                               {options[selectedIndex]}
                             </span>
                           </div>
-                          <p className="text-sm font-semibold leading-6 text-zinc-950">
+                          <p className="text-sm font-semibold leading-6 text-zinc-950 whitespace-pre-wrap">
                             {localizePrompt(question, locale)}
                           </p>
                           {renderOptionStrip(options, selectedIndex, t("playground.noOptions"), true)}
@@ -428,7 +428,7 @@ export function QuestionnaireVisualizationLab({
                                   >
                                     {t("playground.question", { index: index + 1 })}
                                   </Badge>
-                                  <p className="text-sm font-semibold leading-6 text-zinc-950">
+                                  <p className="text-sm font-semibold leading-6 text-zinc-950 whitespace-pre-wrap">
                                     {localizePrompt(question, locale)}
                                   </p>
                                 </div>
@@ -474,7 +474,7 @@ export function QuestionnaireVisualizationLab({
                             {options[selectedIndex]}
                           </span>
                         </div>
-                        <p className="text-base font-semibold leading-6 text-zinc-950">
+                        <p className="text-base font-semibold leading-6 text-zinc-950 whitespace-pre-wrap">
                           {localizePrompt(question, locale)}
                         </p>
                       </CardHeader>
@@ -521,7 +521,7 @@ export function QuestionnaireVisualizationLab({
                             className="rounded-2xl border border-zinc-200 bg-white p-4"
                           >
                             <div className="flex items-start justify-between gap-3">
-                              <p className="text-sm font-semibold leading-6 text-zinc-950">
+                              <p className="text-sm font-semibold leading-6 text-zinc-950 whitespace-pre-wrap">
                                 {localizePrompt(question, locale)}
                               </p>
                               <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-500">

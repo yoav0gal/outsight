@@ -20,19 +20,21 @@ export default defineSchema({
     tokenIdentifier: v.string(), // WorkOS user ID or subject
     role: v.union(v.literal("practitioner"), v.literal("patient")),
     practitionerId: v.optional(v.id("users")), // Only for patients
-    authType: v.optional(v.union(v.literal("workos"), v.literal("patient_credentials"))),
+    authType: v.optional(v.union(v.literal("workos"), v.literal("patient_credentials"), v.literal("link_only"))),
     loginIdentifier: v.optional(v.string()),
     loginIdentifierNormalized: v.optional(v.string()),
+    privateLinkToken: v.optional(v.string()),
   })
     .index("by_token", ["tokenIdentifier"])
-    .index("by_login_identifier", ["loginIdentifierNormalized"]),
+    .index("by_login_identifier", ["loginIdentifierNormalized"])
+    .index("by_private_link_token", ["privateLinkToken"]),
 
   invitations: defineTable({
     token: v.string(),
     practitionerId: v.id("users"),
     email: v.optional(v.string()), // Legacy field for older invites
     patientName: v.optional(v.string()),
-    mode: v.optional(v.union(v.literal("workos"), v.literal("patient_credentials"))),
+    mode: v.optional(v.union(v.literal("workos"), v.literal("patient_credentials"), v.literal("link_only"))),
     status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("revoked")),
     expiresAt: v.optional(v.number()),
     acceptedAt: v.optional(v.number()),
@@ -64,6 +66,7 @@ export default defineSchema({
     revokedAt: v.optional(v.number()),
     deviceLabel: v.optional(v.string()),
     userAgent: v.optional(v.string()),
+    authType: v.optional(v.union(v.literal("patient_credentials"), v.literal("link_only"))),
   })
     .index("by_user", ["userId"])
     .index("by_session", ["sessionId"]),
@@ -89,7 +92,8 @@ export default defineSchema({
           v.literal("multiple_choice"),
           v.literal("cards"),
           v.literal("boolean"),
-          v.literal("numeric_scale")
+          v.literal("numeric_scale"),
+          v.literal("instructions")
         ),
         prompt: v.string(),
         promptTranslations: v.optional(localizedTextValidator),

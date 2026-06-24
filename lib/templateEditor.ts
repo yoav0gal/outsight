@@ -4,7 +4,8 @@ export type QuestionType =
   | "multiple_choice"
   | "cards"
   | "boolean"
-  | "numeric_scale";
+  | "numeric_scale"
+  | "instructions";
 
 export type SupportedLocale = "en" | "he";
 

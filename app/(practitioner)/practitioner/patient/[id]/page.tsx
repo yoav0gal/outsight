@@ -16,6 +16,7 @@ import {
   ClipboardPenLine,
   FileText,
   History,
+  Link as LinkIcon,
 } from "lucide-react";
 
 import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
@@ -206,6 +207,17 @@ export default function PatientDetailsPage() {
   const [isRestoringAssignmentId, setIsRestoringAssignmentId] = useState<Id<"questionnaireAssignments"> | null>(null);
   const { showFeedback } = useFeedback();
 
+  const ensurePrivateLink = useMutation(api.users.ensurePatientPrivateLinkToken);
+  const [privateLinkToken, setPrivateLinkToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (patientId) {
+      ensurePrivateLink({ patientId })
+        .then((token) => setPrivateLinkToken(token))
+        .catch((err) => console.error("Failed to ensure private link token", err));
+    }
+  }, [patientId, ensurePrivateLink]);
+
   const questionnairesView = searchParams.get("questionnairesView") === "archived" ? "archived" : "active";
   const activeAssignments = (assignments ?? []).filter((assignment) => assignment.status === "active");
   const archivedAssignments = (assignments ?? []).filter((assignment) => assignment.status === "archived");
@@ -389,6 +401,7 @@ export default function PatientDetailsPage() {
       setIsRestoringAssignmentId(null);
     }
   };
+
 
   const latestSessionLabel = sessionHistory?.latestSessionDate
     ? new Date(sessionHistory.latestSessionDate).toLocaleDateString()
@@ -671,7 +684,7 @@ export default function PatientDetailsPage() {
                   </div>
 
                   <div className="flex shrink-0 flex-col items-center justify-center gap-2 self-stretch">
-                    {assignment.status === "archived" ? (
+                    {assignment.status === "archived" && (
                       <Button
                         type="button"
                         variant="outline"
@@ -688,7 +701,7 @@ export default function PatientDetailsPage() {
                           ? t("questionnaires.restoring")
                           : t("questionnaires.restorePrescription")}
                       </Button>
-                    ) : null}
+                    )}
                     <div className="flex flex-1 items-center">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
                         <ChevronRight className="h-4 w-4 rtl:rotate-180" />
@@ -726,9 +739,31 @@ export default function PatientDetailsPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
                   {patient.name || t("unnamed")}
                 </h1>
-                <p className="truncate text-sm font-medium text-zinc-500 sm:text-base">
-                  {patient.email ?? patient.loginIdentifier ?? t("anonymousAccount")}
-                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-x-3 gap-y-1.5 mt-1">
+                  <p className="truncate text-sm font-medium text-zinc-500 sm:text-base">
+                    {patient.email ?? patient.loginIdentifier ?? t("anonymousAccount")}
+                  </p>
+                  {(privateLinkToken || patient.privateLinkToken) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-fit h-7 px-2.5 rounded-lg border-zinc-200 text-xs font-bold transition-all hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 cursor-pointer"
+                      onClick={() => {
+                        const baseUrl = window.location.origin;
+                        const url = `${baseUrl}/p/${privateLinkToken || patient.privateLinkToken}`;
+                        navigator.clipboard.writeText(url);
+                        showFeedback({
+                          variant: "success",
+                          title: t("copiedPrivateLink"),
+                        });
+                      }}
+                    >
+                      <LinkIcon className="me-1.5 h-3.5 w-3.5" />
+                      {t("copyPrivateLink")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 

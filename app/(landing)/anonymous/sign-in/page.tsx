@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { ArrowLeft, Sprout } from "lucide-react";
@@ -12,13 +12,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-export default function AnonymousSignInPage() {
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("PatientAuth");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const redirectTo = searchParams.get("redirectTo") || "/patient/home";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,7 +48,7 @@ export default function AnonymousSignInPage() {
         return;
       }
 
-      router.push("/patient/home");
+      router.push(redirectTo);
       router.refresh();
     } catch (submitError) {
       console.error(submitError);
@@ -133,5 +136,17 @@ export default function AnonymousSignInPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function AnonymousSignInPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#fafbff_0%,_#f3f6fb_100%)]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      </main>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
