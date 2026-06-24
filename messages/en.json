@@ -461,6 +461,7 @@
     "questionPromptHebrew": "Question Prompt (Hebrew)",
     "questionType": "Type",
     "required": "Required",
+    "includedInScoring": "Included in scoring",
     "removeQuestion": "Remove",
     "moveToTop": "Move to Top",
     "moveUp": "Move Up",

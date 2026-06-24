@@ -17,6 +17,9 @@ import {
   FileText,
   History,
   Link as LinkIcon,
+  Minus,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 
 import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
@@ -144,6 +147,42 @@ function SummaryMetric({ icon: Icon, iconClassName, label, value }: SummaryMetri
         </div>
       </div>
     </div>
+  );
+}
+
+type TrendDirection = "up" | "down" | "flat";
+
+function computeTrend(recentScores: Array<{ value: number; max: number | null }>): TrendDirection | null {
+  if (recentScores.length < 2) return null;
+  const first = recentScores[0].value;
+  const last = recentScores[recentScores.length - 1].value;
+  if (last > first) return "up";
+  if (last < first) return "down";
+  return "flat";
+}
+
+function ScoreTrendBadge({ recentScores }: { recentScores: Array<{ value: number; max: number | null }> }) {
+  const trend = computeTrend(recentScores);
+  if (!trend) return null;
+
+  if (trend === "up") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+        <TrendingUp className="h-3.5 w-3.5" />
+      </span>
+    );
+  }
+  if (trend === "down") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
+        <TrendingDown className="h-3.5 w-3.5" />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-bold text-zinc-500">
+      <Minus className="h-3.5 w-3.5" />
+    </span>
   );
 }
 
@@ -631,6 +670,7 @@ export default function PatientDetailsPage() {
                     max: summary.latestScore.max,
                   })
               : t("questionnaires.noScoreYet");
+            const recentScores = summary?.recentScores ?? [];
 
             return (
               <Card
@@ -679,6 +719,7 @@ export default function PatientDetailsPage() {
                           <Activity className="h-4 w-4" />
                         </div>
                         <p className="truncate text-sm font-semibold text-zinc-700">{lastScoreLabel}</p>
+                        <ScoreTrendBadge recentScores={recentScores} />
                       </div>
                     </div>
                   </div>

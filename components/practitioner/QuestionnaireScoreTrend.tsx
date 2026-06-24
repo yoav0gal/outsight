@@ -45,22 +45,28 @@ export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps
     const innerWidth = CHART_WIDTH - PADDING_X * 2;
     const innerHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
-    const coordinates = orderedPoints.map((point, index) => {
-      const x =
-        orderedPoints.length === 1
-          ? CHART_WIDTH / 2
-          : PADDING_X + (innerWidth * index) / (orderedPoints.length - 1);
-      const y =
-        PADDING_TOP +
-        innerHeight -
-        clamp((point.score.value / safeMaxScore) * innerHeight, 0, innerHeight);
+    const coordinates = (() => {
+      const minTime = orderedPoints[0].timestamp;
+      const maxTime = orderedPoints[orderedPoints.length - 1].timestamp;
+      const timeSpan = maxTime - minTime;
 
-      return {
-        ...point,
-        x,
-        y,
-      };
-    });
+      return orderedPoints.map((point) => {
+        const x =
+          timeSpan === 0
+            ? CHART_WIDTH / 2
+            : PADDING_X + (innerWidth * (point.timestamp - minTime)) / timeSpan;
+        const y =
+          PADDING_TOP +
+          innerHeight -
+          clamp((point.score.value / safeMaxScore) * innerHeight, 0, innerHeight);
+
+        return {
+          ...point,
+          x,
+          y,
+        };
+      });
+    })();
 
     const path = coordinates
       .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)

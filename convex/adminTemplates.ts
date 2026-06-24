@@ -28,6 +28,7 @@ const questionValidator = v.object({
   prompt: v.string(),
   promptTranslations: v.optional(localizedTextValidator),
   required: v.boolean(),
+  includedInScoring: v.optional(v.boolean()),
   options: v.optional(v.array(v.string())),
   optionTranslations: v.optional(v.array(localizedTextValidator)),
   scaleConfig: v.optional(

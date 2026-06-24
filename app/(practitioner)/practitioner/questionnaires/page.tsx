@@ -89,7 +89,7 @@ function TemplateCard({
               <h3 className="line-clamp-1 text-base font-bold text-zinc-950">{title}</h3>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-zinc-500">
                 <span className="inline-flex items-center gap-1.5">
-                  {t("questionsCount", { count: template.questions.length })}
+                  {t("questionsCount", { count: template.questions.filter((q) => q.type !== "instructions").length })}
                 </span>
                 {template.archivedAt ? (
                   <span className="inline-flex items-center gap-1.5 text-amber-700">

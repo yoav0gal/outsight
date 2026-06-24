@@ -20,6 +20,7 @@ export interface TemplateQuestion {
   prompt: string;
   promptTranslations?: LocalizedText;
   required: boolean;
+  includedInScoring?: boolean; // Defaults to true when absent
   options?: string[];
   optionTranslations?: LocalizedText[];
   scaleConfig?: {

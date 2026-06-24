@@ -298,10 +298,10 @@ export function QuestionnaireVisualizationLab({
               <Card className="rounded-[1.5rem] border-zinc-200 bg-white/80 shadow-none">
                 <CardContent className="p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-                    {t("playground.questionCount", { count: template.questions.length })}
+                    {t("playground.questionCount", { count: template.questions.filter((q) => q.type !== "instructions").length })}
                   </p>
                   <p className="mt-2 text-lg font-semibold text-zinc-950">
-                    {template.questions.length}
+                    {template.questions.filter((q) => q.type !== "instructions").length}
                   </p>
                   <p className="mt-1 text-sm text-zinc-600">{t("playground.mobileNote")}</p>
                 </CardContent>

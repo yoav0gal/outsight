@@ -74,10 +74,13 @@ export const listPatientSessionReviews = query({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "practitioner") {
-      throw new Error("Unauthorized");
+      return { reviews: [], totalSessions: 0, latestSessionDate: null, latestSessionNumber: null };
     }
 
-    await getOwnedPatient(ctx, user._id, args.patientId);
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      return { reviews: [], totalSessions: 0, latestSessionDate: null, latestSessionNumber: null };
+    }
 
     const reviews = await ctx.db
       .query("sessionReviews")

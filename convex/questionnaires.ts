@@ -29,6 +29,7 @@ const questionValidator = v.object({
   prompt: v.string(),
   promptTranslations: v.optional(localizedTextValidator),
   required: v.boolean(),
+  includedInScoring: v.optional(v.boolean()),
   options: v.optional(v.array(v.string())),
   optionTranslations: v.optional(v.array(localizedTextValidator)),
   scaleConfig: v.optional(
@@ -757,7 +758,7 @@ export const listAssignableTemplates = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+    if (!user || user.role !== "practitioner") return [];
 
     const templates = await getActiveVisibleTemplates(ctx, user._id);
     const memberships = await getTemplateMemberships(ctx, user._id);
@@ -1362,11 +1363,18 @@ export const listPatientAssignments = query({
   args: { patientId: v.id("users") },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    if (!user) return [];
     
     // Ensure the caller is either the patient or their practitioner
     if (user.role === "patient" && user._id !== args.patientId) {
-      throw new Error("Unauthorized");
+      return [];
+    }
+
+    if (user.role === "practitioner") {
+      const patient = await ctx.db.get(args.patientId);
+      if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+        return [];
+      }
     }
 
     const assignments = await ctx.db
@@ -1450,16 +1458,21 @@ export const listPatientHistory = query({
   args: { patientId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    if (!user) return [];
 
     const identity = await ctx.auth.getUserIdentity();
     if (identity?.authType === "link_only") {
-      throw new Error("Unauthorized: Link-only session cannot access history.");
+      return [];
     }
 
     let targetPatientId = user._id;
     if (user.role === "practitioner") {
-      if (!args.patientId) throw new Error("Patient ID required for practitioners");
+      if (!args.patientId) return [];
+      
+      const patient = await ctx.db.get(args.patientId);
+      if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+        return [];
+      }
       targetPatientId = args.patientId;
     } else {
       targetPatientId = user._id;
@@ -1492,7 +1505,12 @@ export const listPractitionerPatientHistorySummaries = query({
   args: { patientId: v.id("users") },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+    if (!user || user.role !== "practitioner") return [];
+
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      return [];
+    }
 
     const [instances, viewRows] = await Promise.all([
       ctx.db
@@ -1520,6 +1538,7 @@ export const listPractitionerPatientHistorySummaries = query({
         lastEntryAt: number;
         latestInstanceId: Id<"questionnaireInstances">;
         latestStatus: "completed" | "expired";
+        allInstances: Array<{ id: Id<"questionnaireInstances">; timestamp: number }>;
       }
     >();
 
@@ -1536,11 +1555,13 @@ export const listPractitionerPatientHistorySummaries = query({
           lastEntryAt: historyTimestamp,
           latestInstanceId: instance._id,
           latestStatus: instance.status,
+          allInstances: [{ id: instance._id, timestamp: historyTimestamp }],
         });
         continue;
       }
 
       existing.totalEntries += 1;
+      existing.allInstances.push({ id: instance._id, timestamp: historyTimestamp });
       if (historyTimestamp > lastViewedAt) {
         existing.unreadEntries += 1;
       }
@@ -1554,9 +1575,16 @@ export const listPractitionerPatientHistorySummaries = query({
 
     const results = await Promise.all(
       Array.from(summaries.values()).map(async (summary) => {
-        const [template, latestInstance] = await Promise.all([
+        // Sort all instances by timestamp desc, take up to 4 most recent
+        const recentIds = [...summary.allInstances]
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 4)
+          .map((i) => i.id);
+
+        const [template, latestInstance, ...recentInstances] = await Promise.all([
           ctx.db.get(summary.templateId),
           ctx.db.get(summary.latestInstanceId),
+          ...recentIds.map((id) => ctx.db.get(id)),
         ]);
 
         const latestScore =
@@ -1564,10 +1592,21 @@ export const listPractitionerPatientHistorySummaries = query({
             ? attachScoreToInstance(latestInstance, template).score
             : null;
 
+        // Collect scored recent instances (oldest→newest) for trend
+        const recentScores = (recentInstances as (typeof latestInstance)[])
+          .filter((inst): inst is NonNullable<typeof inst> => inst !== null)
+          .map((inst) => (template ? attachScoreToInstance(inst, template).score : null))
+          .filter((score): score is NonNullable<typeof score> => score !== null && score.mode === "standard")
+          .map((score) => ({ value: (score as { value: number; max: number | null }).value, max: (score as { value: number; max: number | null }).max }))
+          .reverse(); // oldest first
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { allInstances: _allInstances, ...summaryWithoutInstances } = summary;
         return {
-          ...summary,
+          ...summaryWithoutInstances,
           lastViewedAt: viewsByTemplateId.get(summary.templateId),
           latestScore,
+          recentScores,
           template,
         };
       })
@@ -1585,6 +1624,11 @@ export const listPractitionerPatientTemplateHistory = query({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "practitioner") return null;
+
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      return null;
+    }
 
     const [template, instances, historyView, assignments] = await Promise.all([
       ctx.db.get(args.templateId),

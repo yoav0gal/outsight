@@ -118,7 +118,7 @@ function TemplateCard({
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
                 <FileText className="me-1 size-3.5" />
-                {t("questionsCount", { count: template.questions.length })}
+                {t("questionsCount", { count: template.questions.filter((q) => q.type !== "instructions").length })}
               </Badge>
             </div>
           </div>

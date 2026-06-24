@@ -10,6 +10,7 @@
 
 import type * as adminTemplates from "../adminTemplates.js";
 import type * as crons from "../crons.js";
+import type * as devSeed from "../devSeed.js";
 import type * as invites from "../invites.js";
 import type * as patientAuth from "../patientAuth.js";
 import type * as questionnaires from "../questionnaires.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   adminTemplates: typeof adminTemplates;
   crons: typeof crons;
+  devSeed: typeof devSeed;
   invites: typeof invites;
   patientAuth: typeof patientAuth;
   questionnaires: typeof questionnaires;

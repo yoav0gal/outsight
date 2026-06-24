@@ -461,6 +461,7 @@
     "questionPromptHebrew": "תוכן השאלה בעברית",
     "questionType": "סוג השאלה",
     "required": "שאלת חובה",
+    "includedInScoring": "נכלל בניקוד",
     "removeQuestion": "הסר",
     "moveToTop": "העבר להתחלה",
     "moveUp": "העבר למעלה",

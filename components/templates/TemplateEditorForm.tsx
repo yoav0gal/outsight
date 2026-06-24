@@ -689,17 +689,31 @@ export function TemplateEditorForm({
                     </div>
 
                     {question.type !== "instructions" && (
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={question.required}
-                          onCheckedChange={(checked) =>
-                            handleUpdateQuestion(questionIndex, { required: checked })
-                          }
-                          id={`required-${question.id}`}
-                        />
-                        <Label htmlFor={`required-${question.id}`} className="cursor-pointer">
-                          {t("required")}
-                        </Label>
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={question.required}
+                            onCheckedChange={(checked) =>
+                              handleUpdateQuestion(questionIndex, { required: checked })
+                            }
+                            id={`required-${question.id}`}
+                          />
+                          <Label htmlFor={`required-${question.id}`} className="cursor-pointer">
+                            {t("required")}
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={question.includedInScoring !== false}
+                            onCheckedChange={(checked) =>
+                              handleUpdateQuestion(questionIndex, { includedInScoring: checked })
+                            }
+                            id={`includedInScoring-${question.id}`}
+                          />
+                          <Label htmlFor={`includedInScoring-${question.id}`} className="cursor-pointer">
+                            {t("includedInScoring")}
+                          </Label>
+                        </div>
                       </div>
                     )}
 

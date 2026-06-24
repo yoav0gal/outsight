@@ -20,7 +20,7 @@ interface AdminTemplateSummary {
   titleTranslations?: LocalizedText;
   descriptionTranslations?: LocalizedText;
   tags: string[];
-  questions: Array<{ id: string }>;
+  questions: Array<{ id: string; type?: string }>;
   archivedAt?: number;
 }
 
@@ -397,7 +397,7 @@ export function AdminTemplatesDashboard({
 
                       <div className="mt-auto flex items-center justify-between gap-3 border-t border-zinc-100 pt-4">
                         <span className="text-sm font-medium text-zinc-600">
-                          {t("dashboard.questionsCount", { count: template.questions.length })}
+                          {t("dashboard.questionsCount", { count: template.questions.filter((q) => q.type !== "instructions").length })}
                         </span>
                         <div className="flex items-center gap-2">
                           <Link href={`/admin/templates/${template._id}`}>

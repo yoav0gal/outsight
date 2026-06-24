@@ -210,11 +210,13 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     : "";
   const scoreTrendPoints = templateHistory.history
     .filter((instance) => instance.score)
-    .map((instance, index) => {
+    .map((instance) => {
       const timestamp = instance.submittedAt ?? instance.expiresAt ?? instance.createdAt;
+      const date = new Date(timestamp);
+      const label = date.toLocaleDateString(locale, { day: "numeric", month: "numeric" });
       return {
         id: instance._id,
-        label: String(index + 1),
+        label,
         timestamp,
         score: {
           value: instance.score!.value,
