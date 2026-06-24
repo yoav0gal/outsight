@@ -428,7 +428,7 @@ export default function PatientDetailsPage() {
   if (patient === null) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <h2 className="text-2xl font-bold text-zinc-900 mb-2">Patient Not Found</h2>
+        <h2 className="text-2xl font-bold text-zinc-900 mb-2">{t("patientNotFound")}</h2>
         <Button onClick={() => router.push("/practitioner/my-patients")} variant="outline">
           {t("backToDashboard")}
         </Button>

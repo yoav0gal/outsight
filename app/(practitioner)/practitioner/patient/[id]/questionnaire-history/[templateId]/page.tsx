@@ -181,6 +181,17 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
     );
   }
 
+  if (patient === null || templateHistory === null) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center p-8 text-center gap-4">
+        <h2 className="text-2xl font-bold text-zinc-900">{t("patientNotFound")}</h2>
+        <Button onClick={() => router.push("/practitioner/my-patients")} variant="outline">
+          {t("backToDashboard")}
+        </Button>
+      </main>
+    );
+  }
+
   const assignment = (templateHistory as { assignment?: AssignmentDoc | null }).assignment;
   const hasHistory = templateHistory.history.length > 0;
   const localizedTemplateTitle = templateHistory.template

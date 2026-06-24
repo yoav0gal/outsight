@@ -177,6 +177,7 @@
   },
   "PractitionerPatient": {
     "backToDashboard": "Back to My Patients",
+    "patientNotFound": "Patient Not Found or Unauthorized",
     "backToPatient": "Back to Patient",
     "unnamed": "Unnamed Patient",
     "anonymousAccount": "Anonymous patient account",

@@ -1584,7 +1584,7 @@ export const listPractitionerPatientTemplateHistory = query({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+    if (!user || user.role !== "practitioner") return null;
 
     const [template, instances, historyView, assignments] = await Promise.all([
       ctx.db.get(args.templateId),

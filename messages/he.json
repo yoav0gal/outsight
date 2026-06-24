@@ -177,6 +177,7 @@
   },
   "PractitionerPatient": {
     "backToDashboard": "חזרה למטופלים שלי",
+    "patientNotFound": "המטופל לא נמצא או שאינך מורשה לצפות בו",
     "backToPatient": "חזרה למטופל",
     "unnamed": "מטופל ללא שם",
     "anonymousAccount": "חשבון מטופל אנונימי",
