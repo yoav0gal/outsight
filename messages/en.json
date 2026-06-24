@@ -343,6 +343,7 @@
     "next": "Next",
     "previous": "Previous",
     "requiredField": "This question is required",
+    "optionalSuffix": " (optional)",
     "typeAnswer": "Type your answer here...",
     "noAnswer": "No answer provided",
     "yes": "Yes",

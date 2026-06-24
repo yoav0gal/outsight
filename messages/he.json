@@ -343,6 +343,7 @@
     "next": "הבא",
     "previous": "הקודם",
     "requiredField": "שאלה זו חובה",
+    "optionalSuffix": " (רשות)",
     "typeAnswer": "הקלד את תשובתך כאן...",
     "noAnswer": "לא סופקה תשובה",
     "yes": "כן",

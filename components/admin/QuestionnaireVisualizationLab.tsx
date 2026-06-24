@@ -44,7 +44,12 @@ interface QuestionnaireVisualizationLabProps {
 }
 
 function localizePrompt(question: QuestionnaireQuestion, locale: string) {
-  return resolveLocalizedText(locale, question.prompt, question.promptTranslations);
+  const prompt = resolveLocalizedText(locale, question.prompt, question.promptTranslations);
+  if (question.type !== "instructions" && !question.required) {
+    const suffix = locale === "he" ? " (רשות)" : " (optional)";
+    return prompt + suffix;
+  }
+  return prompt;
 }
 
 function localizeOptions(question: QuestionnaireQuestion, locale: string, sharedOptions: string[]) {

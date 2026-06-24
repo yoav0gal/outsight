@@ -86,7 +86,11 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                       )}
                       <span className="whitespace-pre-wrap">
                         {getPrompt(question)}
-                        {question.type !== "instructions" && !hasAnswer && question.required && <span className="ms-1 text-red-500">*</span>}
+                        {question.type !== "instructions" && !question.required && (
+                          <span className="text-zinc-400 font-normal text-base ms-1">
+                            {t("optionalSuffix")}
+                          </span>
+                        )}
                       </span>
                     </CardTitle>
                   </CardHeader>
@@ -113,7 +117,11 @@ export function QuestionnairePreview({ questions, title, description, answers }:
 
                          <h2 className="max-w-none text-start text-[clamp(1.12rem,3.9vw,1.7rem)] font-black leading-[1.14] tracking-tight text-zinc-950 whitespace-pre-wrap">
                           {getPrompt(question)}
-                          {question.required ? <span className="ms-1 text-red-500">*</span> : null}
+                          {!question.required && (
+                            <span className="text-zinc-400 font-normal text-lg ms-1">
+                              {t("optionalSuffix")}
+                            </span>
+                          )}
                         </h2>
 
                         <div
