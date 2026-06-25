@@ -173,7 +173,11 @@
     "takeQuestionnaire": "התחל שאלון",
     "availableForYou": "זמין עבורך",
     "history": "היסטוריה",
-    "noHistory": "אין תשובות עבר"
+    "noHistory": "אין תשובות עבר",
+    "myQuestionnaires": "השאלונים שלי",
+    "fillNewEntry": "מילוי שאלון נוסף",
+    "alreadySubmittedToday": "כבר מילאת שאלון זה היום. תוכל למלא שאלון חדש מחר.",
+    "completedToday": "מולא היום"
   },
   "PractitionerPatient": {
     "backToDashboard": "חזרה למטופלים שלי",
@@ -360,7 +364,18 @@
       "pending": "לביצוע",
       "completed": "הושלם",
       "expired": "הוחמץ"
-    }
+    },
+    "editAnswers": "ערוך תשובות",
+    "saveChanges": "שמור שינויים",
+    "saving": "שומר...",
+    "deleteEntry": "מחק רשומה",
+    "deleteEntryConfirmTitle": "למחוק את הרשומה הזו?",
+    "deleteEntryConfirmDescription": "הפעולה תמחק לצמיתות את התשובות של המטופל לשאלון זה מההיסטוריה שלו. לא ניתן לשחזר זאת.",
+    "successUpdate": "התשובות עודכנו בהצלחה",
+    "successDelete": "הרשומה נמחקה בהצלחה",
+    "editError": "עדכון התשובות נכשל",
+    "deleteError": "מחיקת הרשומה נכשלה",
+    "createError": "יצירת שאלון חדש נכשלה"
   },
   "UserMenu": {
     "signOut": "התנתק",

@@ -69,6 +69,12 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { showFeedback } = useFeedback();
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedAnswers, setEditedAnswers] = useState<Record<string, string | number | boolean | string[]>>({});
+  const [isSavingEdits, setIsSavingEdits] = useState(false);
+  const [isDeleteSubmissionOpen, setIsDeleteSubmissionOpen] = useState(false);
+  const [isDeletingSubmission, setIsDeletingSubmission] = useState(false);
+
   const patient = useQuery(api.users.getPatient, { id: patientId });
   const templateHistory = useQuery(api.questionnaires.listPractitionerPatientTemplateHistory, {
     patientId,
@@ -78,6 +84,21 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
   const archiveQuestionnaireAssignment = useMutation(api.questionnaires.archiveQuestionnaireAssignment);
   const unarchiveQuestionnaireAssignment = useMutation(api.questionnaires.unarchiveQuestionnaireAssignment);
   const deleteQuestionnaireAssignment = useMutation(api.questionnaires.deleteQuestionnaireAssignment);
+  const updateInstanceAnswers = useMutation(api.questionnaires.updateInstanceAnswers);
+  const deleteInstance = useMutation(api.questionnaires.deleteInstance);
+
+  useEffect(() => {
+    if (selectedSubmission?.answers) {
+      setEditedAnswers(
+        Object.fromEntries(
+          selectedSubmission.answers.map((answer) => [answer.questionId, answer.value])
+        )
+      );
+    } else {
+      setEditedAnswers({});
+    }
+    setIsEditing(false);
+  }, [selectedSubmission]);
 
   useEffect(() => {
     if (!templateHistory?.lastEntryAt || !templateHistory.unreadEntries) return;
@@ -168,6 +189,61 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleSaveEdits = async () => {
+    if (!selectedSubmission) return;
+    setIsSavingEdits(true);
+    try {
+      const formattedAnswers = Object.entries(editedAnswers).map(([questionId, value]) => ({
+        questionId,
+        value,
+      }));
+
+      await updateInstanceAnswers({
+        instanceId: selectedSubmission._id,
+        answers: formattedAnswers,
+      });
+
+      showFeedback({
+        variant: "success",
+        title: tQ("successUpdate") || "Answers updated successfully",
+      });
+      setSelectedSubmission(null);
+    } catch (error) {
+      console.error(error);
+      showFeedback({
+        variant: "error",
+        title: tQ("editError") || "Failed to update answers",
+      });
+    } finally {
+      setIsSavingEdits(false);
+    }
+  };
+
+  const handleDeleteSubmission = async () => {
+    if (!selectedSubmission) return;
+    setIsDeletingSubmission(true);
+    try {
+      await deleteInstance({
+        instanceId: selectedSubmission._id,
+      });
+
+      showFeedback({
+        variant: "success",
+        title: tQ("successDelete") || "Entry deleted successfully",
+      });
+      setIsDeleteSubmissionOpen(false);
+      setSelectedSubmission(null);
+    } catch (error) {
+      console.error(error);
+      showFeedback({
+        variant: "error",
+        title: tQ("deleteError") || "Failed to delete entry",
+      });
+    } finally {
+      setIsDeletingSubmission(false);
     }
   };
 
@@ -411,6 +487,52 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[2rem] border-none p-0 shadow-2xl sm:max-w-[700px]">
           {selectedSubmission ? (
             <div className="bg-zinc-50/30 p-8 sm:p-12">
+              <div className="mb-6 flex justify-end gap-2">
+                {!isEditing ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl flex items-center gap-2 text-zinc-600 hover:text-indigo-600 transition-colors"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>{tQ("editAnswers") || "Edit Answers"}</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl flex items-center gap-2 text-zinc-600 hover:text-red-600 transition-colors"
+                      onClick={() => setIsDeleteSubmissionOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>{tQ("deleteEntry") || "Delete Entry"}</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl flex items-center gap-2 text-zinc-600"
+                      onClick={() => setIsEditing(false)}
+                      disabled={isSavingEdits}
+                    >
+                      {tActions("cancel")}
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="rounded-xl flex items-center gap-2 font-bold"
+                      onClick={handleSaveEdits}
+                      disabled={isSavingEdits}
+                    >
+                      {isSavingEdits ? "..." : (tQ("saveChanges") || "Save Changes")}
+                    </Button>
+                  </>
+                )}
+              </div>
+
               <header className="mb-12 text-center sm:text-start">
                 <Badge
                   className={`mb-4 border-none ${
@@ -440,17 +562,27 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
 
               <QuestionnairePreview
                 questions={templateHistory.template?.questions ?? []}
-                answers={Object.fromEntries(
-                  (selectedSubmission.answers ?? []).map((answer) => [
-                    answer.questionId,
-                    answer.value,
-                  ])
-                )}
+                answers={editedAnswers}
+                isEditable={isEditing}
+                onAnswerChange={(qId, val) => {
+                  setEditedAnswers((prev) => ({ ...prev, [qId]: val }));
+                }}
               />
             </div>
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <DestructiveActionDialog
+        open={isDeleteSubmissionOpen}
+        onOpenChange={setIsDeleteSubmissionOpen}
+        title={tQ("deleteEntryConfirmTitle") || "Delete this entry?"}
+        description={tQ("deleteEntryConfirmDescription") || "This will permanently delete the patient's answers for this questionnaire from their history. This cannot be undone."}
+        cancelLabel={tActions("cancel")}
+        confirmLabel={tActions("delete")}
+        onConfirm={handleDeleteSubmission}
+        isPending={isDeletingSubmission}
+      />
     </main>
   );
 }

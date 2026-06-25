@@ -15,9 +15,18 @@ interface QuestionnairePreviewProps {
   title?: string;
   description?: string;
   answers?: Record<string, string | number | boolean | string[]>;
+  isEditable?: boolean;
+  onAnswerChange?: (questionId: string, value: string | number | boolean | string[]) => void;
 }
 
-export function QuestionnairePreview({ questions, title, description, answers }: QuestionnairePreviewProps) {
+export function QuestionnairePreview({
+  questions,
+  title,
+  description,
+  answers,
+  isEditable = false,
+  onAnswerChange,
+}: QuestionnairePreviewProps) {
   const t = useTranslations("Questionnaire");
   const locale = useLocale();
 
@@ -77,7 +86,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
             const isCardsQuestion = question.type === "cards" && cardOptions.length > 0;
 
             return (
-              <Card key={question.id} className={`overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-[0_6px_22px_rgba(15,23,42,0.08)] ${hasAnswer ? 'opacity-90' : ''}`}>
+              <Card key={question.id} className={`overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-[0_6px_22px_rgba(15,23,42,0.08)] ${(hasAnswer && !isEditable) ? 'opacity-90' : ''}`}>
                 {question.type !== "cards" ? (
                   <CardHeader className="bg-white p-6 sm:p-8">
                     <CardTitle className="flex items-start gap-3 text-xl font-bold leading-relaxed text-zinc-900">
@@ -133,6 +142,25 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                           {cardOptions.map((option, optionIndex) => {
                             const isSelected = answer === option;
 
+                            if (isEditable) {
+                              return (
+                                <button
+                                  key={optionIndex}
+                                  type="button"
+                                  onClick={() => onAnswerChange?.(question.id, option)}
+                                  className={`flex min-h-14 min-w-0 items-center justify-center rounded-[1.5rem] border px-3 py-2 text-center transition-all cursor-pointer outline-none sm:min-h-15 sm:px-3.5 sm:py-2.5 ${
+                                    isSelected
+                                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-[0_6px_18px_rgba(99,102,241,0.16)]"
+                                      : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300"
+                                  }`}
+                                >
+                                  <span className="min-w-0 whitespace-normal break-words text-center text-[11px] font-medium leading-[1.2] sm:text-[13px] sm:leading-[1.25]">
+                                    {getOptionLabel(question, optionIndex)}
+                                  </span>
+                                </button>
+                              );
+                            }
+
                             return (
                                 <div
                                   key={optionIndex}
@@ -150,7 +178,7 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                           })}
                         </div>
                       </>
-                    ) : hasAnswer ? (
+                    ) : (hasAnswer && !isEditable) ? (
                       <div className="rounded-xl border border-zinc-200 bg-white p-4 text-lg font-bold text-zinc-700 shadow-inner">
                         {answer !== undefined ? getAnswerLabel(question, answer) : <span className="text-zinc-400 italic">{t("noAnswer")}</span>}
                       </div>
@@ -158,35 +186,57 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                       <>
                         {question.type === "short_text" && (
                           <Input 
-                            disabled
+                            disabled={!isEditable}
+                            value={typeof answer === "string" ? answer : ""}
+                            onChange={(e) => onAnswerChange?.(question.id, e.target.value)}
                             placeholder={t("typeAnswer")}
-                            className="h-14 rounded-xl text-base bg-white border-zinc-200 shadow-sm opacity-50"
+                            className={`h-14 rounded-xl text-base bg-white border-zinc-200 shadow-sm ${!isEditable ? "opacity-50" : "focus:border-indigo-500"}`}
                           />
                         )}
 
                         {question.type === "long_text" && (
                           <Textarea 
-                            disabled
+                            disabled={!isEditable}
+                            value={typeof answer === "string" ? answer : ""}
+                            onChange={(e) => onAnswerChange?.(question.id, e.target.value)}
                             placeholder={t("typeAnswer")}
-                            className="min-h-[120px] rounded-xl text-base bg-white border-zinc-200 shadow-sm resize-none p-4 opacity-50"
+                            className={`min-h-[120px] rounded-xl text-base bg-white border-zinc-200 shadow-sm p-4 ${!isEditable ? "opacity-50 resize-none" : "focus:border-indigo-500 resize-y"}`}
                           />
                         )}
 
                         {question.type === "boolean" && (
-                          <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm w-fit opacity-50">
-                            <Switch disabled />
-                            <Label className="text-base font-medium">
-                              {t("yes")} / {t("no")}
+                          <div className={`flex items-center gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-sm w-fit ${!isEditable ? "opacity-50" : ""}`}>
+                            <Switch 
+                              disabled={!isEditable}
+                              checked={answer === true}
+                              onCheckedChange={(checked) => onAnswerChange?.(question.id, checked)}
+                            />
+                            <Label 
+                              className={`text-base font-medium ${isEditable ? "cursor-pointer" : ""}`}
+                              onClick={() => isEditable && onAnswerChange?.(question.id, answer !== true)}
+                            >
+                              {answer === true ? t("yes") : t("no")}
                             </Label>
                           </div>
                         )}
 
                         {question.type === "multiple_choice" && question.options && (
-                          <RadioGroup disabled className="grid gap-3">
+                          <RadioGroup 
+                            disabled={!isEditable} 
+                            value={typeof answer === "string" ? answer : ""}
+                            onValueChange={(val) => onAnswerChange?.(question.id, val)}
+                            className="grid gap-3"
+                          >
                             {question.options.map((option, i) => (
                               <Label 
                                 key={i} 
-                                className="flex items-center gap-4 p-4 rounded-xl border border-zinc-200 bg-white opacity-50"
+                                className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                                  !isEditable 
+                                    ? "border-zinc-200 bg-white opacity-50" 
+                                    : answer === option 
+                                      ? "border-indigo-600 bg-indigo-50/50 shadow-sm cursor-pointer" 
+                                      : "border-zinc-200 bg-white hover:border-indigo-300 cursor-pointer"
+                                }`}
                               >
                                 <RadioGroupItem value={option} className="w-5 h-5 text-indigo-600" />
                                 <span className="text-base font-medium">{getOptionLabel(question, i)}</span>
@@ -196,13 +246,14 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                         )}
 
                         {question.type === "numeric_scale" && question.scaleConfig && (
-                          <div className="space-y-8 py-4 px-2 opacity-50">
+                          <div className={`space-y-8 py-4 px-2 ${!isEditable ? "opacity-50" : ""}`}>
                             <Slider 
-                              disabled
-                              value={[question.scaleConfig.min]}
+                              disabled={!isEditable}
+                              value={[typeof answer === "number" ? answer : question.scaleConfig.min]}
                               min={question.scaleConfig.min}
                               max={question.scaleConfig.max}
                               step={1}
+                              onValueChange={(vals) => onAnswerChange?.(question.id, typeof vals === 'number' ? vals : vals[0])}
                               className="w-full"
                             />
                             <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
@@ -213,7 +264,9 @@ export function QuestionnairePreview({ questions, title, description, answers }:
                                   question.scaleConfig.minLabelTranslations
                                 )}
                               </span>
-                              <span className="text-indigo-600 font-bold text-lg">{question.scaleConfig.min}</span>
+                              <span className="text-indigo-600 font-bold text-lg">
+                                {typeof answer === "number" ? answer : question.scaleConfig.min}
+                              </span>
                               <span>
                                 {resolveLocalizedText(
                                   locale,

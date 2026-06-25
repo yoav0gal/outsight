@@ -173,7 +173,11 @@
     "takeQuestionnaire": "Start Questionnaire",
     "availableForYou": "Available for you",
     "history": "History",
-    "noHistory": "No past responses found."
+    "noHistory": "No past responses found.",
+    "myQuestionnaires": "My Questionnaires",
+    "fillNewEntry": "Fill Another Entry",
+    "alreadySubmittedToday": "You have already completed this questionnaire today. You can fill a new one tomorrow.",
+    "completedToday": "Completed today"
   },
   "PractitionerPatient": {
     "backToDashboard": "Back to My Patients",
@@ -360,7 +364,18 @@
       "pending": "To Do",
       "completed": "Completed",
       "expired": "Missed"
-    }
+    },
+    "editAnswers": "Edit Answers",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "deleteEntry": "Delete Entry",
+    "deleteEntryConfirmTitle": "Delete this entry?",
+    "deleteEntryConfirmDescription": "This will permanently delete the patient's answers for this questionnaire from their history. This cannot be undone.",
+    "successUpdate": "Answers updated successfully",
+    "successDelete": "Entry deleted successfully",
+    "editError": "Failed to update answers",
+    "deleteError": "Failed to delete entry",
+    "createError": "Failed to create new questionnaire"
   },
   "UserMenu": {
     "signOut": "Sign Out",

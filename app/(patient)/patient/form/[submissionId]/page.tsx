@@ -48,14 +48,18 @@ export default function QuestionnaireFormPage() {
   const user = useQuery(api.users.viewer);
   const instance = useQuery(api.questionnaires.getInstance, { instanceId });
   const submitMutation = useMutation(api.questionnaires.submitInstance);
+  const updateMutation = useMutation(api.questionnaires.updateInstanceAnswers);
 
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingAnswers, setIsEditingAnswers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.authType === "link_only" && instance && instance.status !== "pending") {
-      router.replace("/patient/home");
+      if (!instance.isLatestCompleted) {
+        router.replace("/patient/home");
+      }
     }
   }, [user, instance, router]);
 
@@ -126,15 +130,22 @@ export default function QuestionnaireFormPage() {
         value: answers[questionId],
       }));
 
-      await submitMutation({
-        instanceId,
-        answers: formattedAnswers,
-      });
-
-      router.replace("/patient/home");
+      if (isEditingAnswers) {
+        await updateMutation({
+          instanceId,
+          answers: formattedAnswers,
+        });
+        setIsEditingAnswers(false);
+      } else {
+        await submitMutation({
+          instanceId,
+          answers: formattedAnswers,
+        });
+        router.replace("/patient/home");
+      }
     } catch (err) {
       console.error(err);
-      setError("Failed to submit answers.");
+      setError(isEditingAnswers ? t("editError") : "Failed to submit answers.");
     } finally {
       setIsSubmitting(false);
     }
@@ -153,27 +164,36 @@ export default function QuestionnaireFormPage() {
       <main className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
         <h2 className="text-2xl font-bold text-zinc-900 mb-2">{t("notFound")}</h2>
-        <Button onClick={() => router.push("/patient/home")} variant="outline" className="mt-4 rounded-xl">
+        <Button onClick={() => router.push("/patient/home?noRedirect=true")} variant="outline" className="mt-4 rounded-xl">
           {t("goBack")}
         </Button>
       </main>
     );
   }
 
-  if (instance.status !== "pending") {
+  if (instance.status !== "pending" && !isEditingAnswers) {
     const scoreLabel = formatScoreLabel(t, instance.score);
 
     return (
       <main className="mx-auto flex-1 w-full max-w-5xl p-6 pt-0 pb-10 sm:px-8 sm:pt-0 sm:pb-16 lg:px-10">
-        <div className="mb-2 flex items-center">
+        <div className="mb-2 flex items-center justify-between">
           <Button 
             variant="ghost" 
-            onClick={() => router.back()}
+            onClick={() => router.push("/patient/home?noRedirect=true")}
             className="flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
           >
             <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
             <span>{t("back")}</span>
           </Button>
+
+          {instance.isLatestCompleted && (
+            <Button
+              onClick={() => setIsEditingAnswers(true)}
+              className="rounded-xl font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-none shadow-none"
+            >
+              {t("editAnswers")}
+            </Button>
+          )}
         </div>
         <div className="mb-10 text-center sm:text-start">
           <Badge className={`mb-4 ${instance.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -232,7 +252,7 @@ export default function QuestionnaireFormPage() {
       <div className="mb-2 flex items-center">
         <Button 
           variant="ghost" 
-          onClick={() => router.back()}
+          onClick={() => router.push("/patient/home?noRedirect=true")}
           className="flex items-center gap-2 text-zinc-500 hover:text-indigo-600 transition-colors -ms-4"
         >
           <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
@@ -441,14 +461,24 @@ export default function QuestionnaireFormPage() {
           </div>
         )}
 
-        <div className="mt-12 flex justify-end animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 fill-mode-both">
+        <div className="mt-12 flex justify-end gap-3 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 fill-mode-both">
+          {isEditingAnswers && (
+            <Button
+              variant="outline"
+              onClick={() => setIsEditingAnswers(false)}
+              disabled={isSubmitting}
+              className="h-14 rounded-2xl font-bold text-lg px-8 border-zinc-200"
+            >
+              {t("cancel") || "Cancel"}
+            </Button>
+          )}
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting}
             size="lg"
             className="w-full sm:w-auto px-10 h-14 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-200"
           >
-            {isSubmitting ? "..." : t("submit")}
+            {isSubmitting ? "..." : (isEditingAnswers ? t("saveChanges") : t("submit"))}
           </Button>
         </div>
       </main>

@@ -1390,9 +1390,27 @@ export const listPatientAssignments = query({
           .filter((q) => q.eq(q.field("status"), "pending"))
           .first();
 
+        const completedInstances = await ctx.db
+          .query("questionnaireInstances")
+          .withIndex("by_assignment", (q) => q.eq("assignmentId", assignment._id))
+          .filter((q) => q.eq(q.field("status"), "completed"))
+          .collect();
+
+        completedInstances.sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
+        const lastSubmittedAt = completedInstances[0]?.submittedAt;
+        const lastCompletedInstanceId = completedInstances[0]?._id;
+
+        const template = await ctx.db.get(assignment.templateId);
+
         return {
           ...assignment,
+          template: template ? {
+            title: template.title,
+            titleTranslations: template.titleTranslations,
+          } : null,
           pendingInstanceId: pendingInstance?._id,
+          lastSubmittedAt,
+          lastCompletedInstanceId,
         };
       })
     );
@@ -1823,7 +1841,26 @@ export const getInstance = query({
     }
 
     const template = await ctx.db.get(instance.templateId);
-    return attachScoreToInstance({ ...instance, template }, template);
+    const attached = attachScoreToInstance({ ...instance, template }, template);
+
+    let isLatestCompleted = false;
+    if (instance.status === "completed") {
+      const completedInstances = await ctx.db
+        .query("questionnaireInstances")
+        .withIndex("by_patient", (q) => q.eq("patientId", instance.patientId))
+        .filter((q) => q.eq(q.field("status"), "completed"))
+        .collect();
+
+      if (completedInstances.length > 0) {
+        completedInstances.sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
+        isLatestCompleted = completedInstances[0]._id === instance._id;
+      }
+    }
+
+    return {
+      ...attached,
+      isLatestCompleted,
+    };
   },
 });
 
@@ -2064,5 +2101,118 @@ export const createTestInstance = mutation({
     });
 
     return instanceId;
+  },
+});
+
+export const updateInstanceAnswers = mutation({
+  args: {
+    instanceId: v.id("questionnaireInstances"),
+    answers: v.array(answerEntryValidator),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const instance = await ctx.db.get(args.instanceId);
+    if (!instance) throw new Error("Instance not found");
+
+    if (user.role === "patient") {
+      if (instance.patientId !== user._id) throw new Error("Unauthorized");
+      if (instance.status !== "completed") throw new Error("Only completed questionnaires can be edited");
+
+      const completedInstances = await ctx.db
+        .query("questionnaireInstances")
+        .withIndex("by_patient", (q) => q.eq("patientId", user._id))
+        .filter((q) => q.eq(q.field("status"), "completed"))
+        .collect();
+
+      if (completedInstances.length > 0) {
+        completedInstances.sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
+        if (completedInstances[0]._id !== args.instanceId) {
+          throw new Error("Only the last completed questionnaire can be edited");
+        }
+      } else {
+        throw new Error("No completed questionnaire found");
+      }
+    } else if (user.role === "practitioner") {
+      const patient = await ctx.db.get(instance.patientId);
+      if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+        throw new Error("Unauthorized");
+      }
+    } else {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.patch(args.instanceId, {
+      answers: args.answers,
+    });
+  },
+});
+
+export const deleteInstance = mutation({
+  args: {
+    instanceId: v.id("questionnaireInstances"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") throw new Error("Unauthorized");
+
+    const instance = await ctx.db.get(args.instanceId);
+    if (!instance) throw new Error("Instance not found");
+
+    const patient = await ctx.db.get(instance.patientId);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.delete(args.instanceId);
+  },
+});
+
+export const createPatientOnDemandInstance = mutation({
+  args: {
+    assignmentId: v.id("questionnaireAssignments"),
+    localStartOfDay: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "patient") throw new Error("Unauthorized");
+
+    const assignment = await ctx.db.get(args.assignmentId);
+    if (!assignment) throw new Error("Assignment not found");
+    if (assignment.patientId !== user._id) throw new Error("Unauthorized");
+    if (assignment.status !== "active") throw new Error("Assignment is not active");
+
+    const completedInstances = await ctx.db
+      .query("questionnaireInstances")
+      .withIndex("by_assignment", (q) => q.eq("assignmentId", args.assignmentId))
+      .filter((q) => q.eq(q.field("status"), "completed"))
+      .collect();
+
+    const submittedToday = completedInstances.some(
+      (inst) => inst.submittedAt !== undefined && inst.submittedAt >= args.localStartOfDay
+    );
+
+    if (submittedToday) {
+      throw new Error("Already submitted today");
+    }
+
+    const pendingInstance = await ctx.db
+      .query("questionnaireInstances")
+      .withIndex("by_assignment", (q) => q.eq("assignmentId", args.assignmentId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .first();
+
+    if (pendingInstance) {
+      return pendingInstance._id;
+    }
+
+    const now = Date.now();
+    const newInstanceId = await createPendingInstanceForAssignment(ctx, assignment, {
+      createdAt: now,
+      availableAt: now,
+    });
+
+    return newInstanceId;
   },
 });
