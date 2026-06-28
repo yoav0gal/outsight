@@ -758,7 +758,6 @@ export default function PatientDetailsPage() {
                       <ClientDateTime
                         date={review.sessionDate}
                         mode="toLocaleDateString"
-                        options={{ year: "2-digit", month: "2-digit", day: "2-digit" }}
                       />
                       <span className="text-zinc-300">•</span>
                       <span>{t(`history.durationOptions.${durationKey}`)}</span>
@@ -908,14 +907,6 @@ export default function PatientDetailsPage() {
                             <ClientDateTime
                               date={summary.lastEntryAt}
                               mode="toLocaleString"
-                              options={{
-                                year: "2-digit",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: false,
-                              }}
                             />
                           ) : (
                             metaLabel

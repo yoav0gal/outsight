@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 type ScorePoint = {
   id: string;
@@ -29,6 +29,7 @@ function clamp(value: number, min: number, max: number) {
 
 export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps) {
   const t = useTranslations("PractitionerPatient");
+  const locale = useLocale();
   const [hoveredPointId, setHoveredPointId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -198,7 +199,7 @@ export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps
                 fontWeight="600"
               >
                 {mounted
-                  ? new Date(point.timestamp).toLocaleDateString(undefined, {
+                  ? new Date(point.timestamp).toLocaleDateString(locale === "he" ? "he-IL" : undefined, {
                       day: "numeric",
                       month: "numeric",
                     })
@@ -229,7 +230,7 @@ export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps
             </p>
             <p className="mt-1 text-xs font-medium text-zinc-500">
               {t("questionnaires.lastAdded", {
-                date: new Date(hoveredPoint.timestamp).toLocaleString(),
+                date: new Date(hoveredPoint.timestamp).toLocaleString(locale === "he" ? "he-IL" : undefined),
               })}
             </p>
           </div>

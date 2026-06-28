@@ -44,19 +44,20 @@ type AssignmentDoc = Doc<"questionnaireAssignments">;
 
 function ClientLastAdded({ date }: { date: number | string | Date }) {
   const t = useTranslations("PractitionerPatient");
+  const locale = useLocale();
   const [formatted, setFormatted] = useState("");
 
   useEffect(() => {
     let active = true;
     requestAnimationFrame(() => {
       if (active) {
-        setFormatted(new Date(date).toLocaleString());
+        setFormatted(new Date(date).toLocaleString(locale === "he" ? "he-IL" : undefined));
       }
     });
     return () => {
       active = false;
     };
-  }, [date]);
+  }, [date, locale]);
 
   if (!formatted) return null;
   return <span>{t("questionnaires.lastAdded", { date: formatted })}</span>;
@@ -64,19 +65,20 @@ function ClientLastAdded({ date }: { date: number | string | Date }) {
 
 function ClientSubmittedOn({ date }: { date: number | string | Date }) {
   const tQ = useTranslations("Questionnaire");
+  const locale = useLocale();
   const [formatted, setFormatted] = useState("");
 
   useEffect(() => {
     let active = true;
     requestAnimationFrame(() => {
       if (active) {
-        setFormatted(new Date(date).toLocaleString());
+        setFormatted(new Date(date).toLocaleString(locale === "he" ? "he-IL" : undefined));
       }
     });
     return () => {
       active = false;
     };
-  }, [date]);
+  }, [date, locale]);
 
   if (!formatted) return null;
   return <span>{tQ("submittedOn", { date: formatted })}</span>;

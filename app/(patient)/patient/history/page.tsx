@@ -78,7 +78,6 @@ export default function PatientHistoryPage() {
                         <ClientDateTime 
                           date={date} 
                           mode="toLocaleDateString" 
-                          options={{ year: 'numeric', month: 'short', day: 'numeric' }} 
                         />
                       </div>
                     </div>
