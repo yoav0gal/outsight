@@ -63,6 +63,7 @@ export const create = mutation({
   args: {
     patientName: v.string(),
     mode: v.union(v.literal("workos"), v.literal("patient_credentials"), v.literal("link_only")),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -86,6 +87,7 @@ export const create = mutation({
         authType: "link_only",
         tokenIdentifier,
         privateLinkToken: crypto.randomUUID().replace(/-/g, ""),
+        email: args.email?.trim() || undefined,
       });
       acceptedUserId = userId;
       status = "accepted";
@@ -101,6 +103,7 @@ export const create = mutation({
       expiresAt,
       acceptedAt,
       acceptedUserId,
+      email: args.email?.trim() || undefined,
     });
 
     return {

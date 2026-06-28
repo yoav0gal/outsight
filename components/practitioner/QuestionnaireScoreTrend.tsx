@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 type ScorePoint = {
@@ -30,6 +30,19 @@ function clamp(value: number, min: number, max: number) {
 export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps) {
   const t = useTranslations("PractitionerPatient");
   const [hoveredPointId, setHoveredPointId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    requestAnimationFrame(() => {
+      if (active) {
+        setMounted(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const chart = useMemo(() => {
     if (!points.length) {
@@ -184,7 +197,12 @@ export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps
                 fontSize="12"
                 fontWeight="600"
               >
-                {point.label}
+                {mounted
+                  ? new Date(point.timestamp).toLocaleDateString(undefined, {
+                      day: "numeric",
+                      month: "numeric",
+                    })
+                  : ""}
               </text>
             </g>
           ))}
@@ -194,7 +212,7 @@ export function QuestionnaireScoreTrend({ points }: QuestionnaireScoreTrendProps
           <div
             className="pointer-events-none absolute top-3 z-10 min-w-44 rounded-2xl border border-zinc-200 bg-white/95 px-4 py-3 text-start shadow-lg backdrop-blur-sm"
             style={{
-              insetInlineStart: `${((hoveredPoint.x / CHART_WIDTH) * 100).toFixed(2)}%`,
+              left: `${((hoveredPoint.x / CHART_WIDTH) * 100).toFixed(2)}%`,
               transform: "translateX(-50%)",
             }}
           >

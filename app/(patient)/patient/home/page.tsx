@@ -58,7 +58,7 @@ function PatientHomeContent() {
             </div>
             <h3 className="text-2xl font-black text-zinc-950 mb-3">{t("caughtUp")}</h3>
             <p className="text-zinc-500 text-sm font-semibold leading-relaxed max-w-[280px] mx-auto">
-              {t("step1") || "You have completed all assigned questionnaires. Thank you!"}
+              {t("step1") || "You have finished answering all the questions, thank you very much!"}
             </p>
           </div>
         ) : (

@@ -86,8 +86,10 @@ function groupQuestions(questions: QuestionnaireQuestion[]) {
   const groups = new Map<string, Array<{ question: QuestionnaireQuestion; index: number }>>();
 
   questions.forEach((question, index) => {
-    const [prefix] = question.prompt.split(":");
-    const groupLabel = prefix?.trim() || question.id.split("_")[0] || "Other";
+    const promptStr = typeof question.prompt === "string" ? question.prompt : "";
+    const [prefix] = promptStr.split(":");
+    const idPrefix = typeof question.id === "string" ? question.id.split("_")[0] : "";
+    const groupLabel = prefix?.trim() || idPrefix || "Other";
 
     const current = groups.get(groupLabel) ?? [];
     current.push({ question, index });
@@ -135,7 +137,7 @@ function renderOptionStrip(
 
         return (
           <div
-            key={option}
+            key={optionIndex}
             className={cn(
               "flex min-h-10 min-w-0 items-center justify-center rounded-full border px-2 py-2 text-center font-medium transition-colors",
               isActive

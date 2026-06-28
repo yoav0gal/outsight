@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ClientDateTime } from "@/components/ui/clientDateTime";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
@@ -40,6 +41,46 @@ type HistoryInstance = Doc<"questionnaireInstances"> & {
   score?: ScoreSummary | null;
 };
 type AssignmentDoc = Doc<"questionnaireAssignments">;
+
+function ClientLastAdded({ date }: { date: number | string | Date }) {
+  const t = useTranslations("PractitionerPatient");
+  const [formatted, setFormatted] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    requestAnimationFrame(() => {
+      if (active) {
+        setFormatted(new Date(date).toLocaleString());
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [date]);
+
+  if (!formatted) return null;
+  return <span>{t("questionnaires.lastAdded", { date: formatted })}</span>;
+}
+
+function ClientSubmittedOn({ date }: { date: number | string | Date }) {
+  const tQ = useTranslations("Questionnaire");
+  const [formatted, setFormatted] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    requestAnimationFrame(() => {
+      if (active) {
+        setFormatted(new Date(date).toLocaleString());
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [date]);
+
+  if (!formatted) return null;
+  return <span>{tQ("submittedOn", { date: formatted })}</span>;
+}
 
 function formatScoreLabel(
   t: (key: string, values?: Record<string, string | number>) => string,
@@ -332,9 +373,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
         </p>
         {templateHistory.lastEntryAt ? (
           <p className="mt-4 text-sm font-semibold text-zinc-600">
-            {t("questionnaires.lastAdded", {
-              date: new Date(templateHistory.lastEntryAt).toLocaleString(),
-            })}
+            <ClientLastAdded date={templateHistory.lastEntryAt} />
           </p>
         ) : null}
         <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -423,7 +462,7 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
                     ) : null}
                     <div className="flex items-center gap-2 text-sm font-medium text-zinc-500">
                       <Calendar className="h-4 w-4" />
-                      <span>{new Date(historyAt).toLocaleString()}</span>
+                      <ClientDateTime date={historyAt} mode="toLocaleString" />
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -546,13 +585,9 @@ export default function PractitionerPatientQuestionnaireHistoryPage() {
                 <h2 className="mb-2 text-4xl font-black tracking-tight text-zinc-950">
                   {localizedTemplateTitle}
                 </h2>
-                <p className="font-medium text-zinc-500">
-                  {tQ("submittedOn", {
-                    date: new Date(
-                      selectedSubmission.submittedAt ?? selectedSubmission.createdAt
-                    ).toLocaleString(),
-                  })}
-                </p>
+                <div className="font-medium text-zinc-500">
+                  <ClientSubmittedOn date={selectedSubmission.submittedAt ?? selectedSubmission.createdAt} />
+                </div>
                 {selectedSubmissionScoreLabel ? (
                   <p className="mt-3 text-sm font-semibold text-indigo-700">
                     {selectedSubmissionScoreLabel}

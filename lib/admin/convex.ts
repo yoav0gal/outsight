@@ -151,4 +151,42 @@ export function deleteSystemTemplateAdmin(templateId: string) {
     templateId,
   });
 }
+
+export interface AdminTherapeuticTool {
+  _id: string;
+  _creationTime: number;
+  key: string;
+  nameEn: string;
+  nameHe: string;
+  isActive: boolean;
+  order: number;
+}
+
+export function listToolsAdmin() {
+  return callConvexFunction<AdminTherapeuticTool[]>("query", "therapeuticTools:listToolsAdmin", {});
+}
+
+export function upsertToolAdmin(values: {
+  id?: string;
+  key: string;
+  nameEn: string;
+  nameHe: string;
+  isActive: boolean;
+  order: number;
+}) {
+  return callConvexFunction<string>("mutation", "therapeuticTools:upsertToolAdmin", values);
+}
+
+export function deleteToolAdmin(id: string) {
+  return callConvexFunction<boolean>("mutation", "therapeuticTools:deleteToolAdmin", { id });
+}
+
+export function reorderToolsAdmin(orderedIds: string[]) {
+  return callConvexFunction<boolean>("mutation", "therapeuticTools:reorderToolsAdmin", { orderedIds });
+}
+
+export function seedToolsAdmin() {
+  return callConvexFunction<boolean>("mutation", "therapeuticTools:seedToolsAdmin", {});
+}
+
 import type { LocalizedText, TemplateQuestion, TemplateScoring } from "@/lib/templateEditor";

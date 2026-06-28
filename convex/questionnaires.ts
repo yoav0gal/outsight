@@ -1907,6 +1907,7 @@ export const submitInstance = mutation({
   args: {
     instanceId: v.id("questionnaireInstances"),
     answers: v.array(answerEntryValidator),
+    localStartOfDay: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -1928,6 +1929,22 @@ export const submitInstance = mutation({
     if (!assignment) throw new Error("Assignment not found");
     const now = Date.now();
 
+    // Check if they already submitted an instance of this assignment today
+    const checkStartOfDay = args.localStartOfDay ?? (now - 20 * 60 * 60 * 1000);
+    const completedInstances = await ctx.db
+      .query("questionnaireInstances")
+      .withIndex("by_assignment", (q) => q.eq("assignmentId", instance.assignmentId))
+      .filter((q) => q.eq(q.field("status"), "completed"))
+      .collect();
+
+    const submittedToday = completedInstances.some(
+      (inst) => inst.submittedAt !== undefined && inst.submittedAt >= checkStartOfDay
+    );
+
+    if (submittedToday) {
+      throw new Error("Already submitted today");
+    }
+
     await ctx.db.patch(args.instanceId, {
       status: "completed",
       answers: args.answers,
@@ -1935,6 +1952,10 @@ export const submitInstance = mutation({
     });
 
     if (assignment.frequency === "onDemand") {
+      const availableAt = args.localStartOfDay !== undefined
+        ? args.localStartOfDay + 24 * 60 * 60 * 1000
+        : now + 24 * 60 * 60 * 1000;
+
       await createPendingInstanceForAssignment(
         ctx,
         {
@@ -1945,7 +1966,7 @@ export const submitInstance = mutation({
         },
         {
           createdAt: now,
-          availableAt: now + 10 * 60 * 1000,
+          availableAt,
         }
       );
     }
@@ -2117,23 +2138,7 @@ export const updateInstanceAnswers = mutation({
     if (!instance) throw new Error("Instance not found");
 
     if (user.role === "patient") {
-      if (instance.patientId !== user._id) throw new Error("Unauthorized");
-      if (instance.status !== "completed") throw new Error("Only completed questionnaires can be edited");
-
-      const completedInstances = await ctx.db
-        .query("questionnaireInstances")
-        .withIndex("by_patient", (q) => q.eq("patientId", user._id))
-        .filter((q) => q.eq(q.field("status"), "completed"))
-        .collect();
-
-      if (completedInstances.length > 0) {
-        completedInstances.sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
-        if (completedInstances[0]._id !== args.instanceId) {
-          throw new Error("Only the last completed questionnaire can be edited");
-        }
-      } else {
-        throw new Error("No completed questionnaire found");
-      }
+      throw new Error("Unauthorized: Patients cannot edit completed questionnaires");
     } else if (user.role === "practitioner") {
       const patient = await ctx.db.get(instance.patientId);
       if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {

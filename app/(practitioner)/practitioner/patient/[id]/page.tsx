@@ -5,7 +5,8 @@ import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { type ComponentType, type ReactNode, useEffect, useState } from "react";
+import { type ComponentType, type ReactNode, useCallback, useEffect, useState } from "react";
+import { ClientDateTime } from "@/components/ui/clientDateTime";
 import {
   ArchiveRestore,
   Activity,
@@ -20,6 +21,8 @@ import {
   Minus,
   TrendingDown,
   TrendingUp,
+  Edit3,
+  Search,
 } from "lucide-react";
 
 import { TemplateSearchPicker } from "@/components/practitioner/TemplateSearchPicker";
@@ -50,13 +53,54 @@ interface SessionReviewFormState {
   sessionDate: string;
   title: string;
   review: string;
+  duration: number;
+  therapeuticTools: string[];
+  tasks: string;
+  remarks: string;
 }
 
 const EMPTY_SESSION_FORM: SessionReviewFormState = {
   sessionDate: "",
   title: "",
   review: "",
+  duration: 1,
+  therapeuticTools: [],
+  tasks: "",
+  remarks: "",
 };
+
+const PREDEFINED_THERAPEUTIC_TOOLS = [
+  "cognitiveRestructuring",
+  "behavioralActivation",
+  "exposureTherapy",
+  "thoughtRecord",
+  "mindfulnessWiseMind",
+  "distressToleranceTIPP",
+  "distressToleranceDistraction",
+  "emotionRegulationOppositeAction",
+  "emotionRegulationCheckFacts",
+  "interpersonalDearMan",
+  "interpersonalFastGive",
+  "defusionACT",
+  "valuesACT",
+  "acceptanceACT",
+  "guidedMeditation",
+  "breathingExercises",
+  "groundingTechniques",
+  "socraticQuestioning",
+  "somaticTracking",
+  "emptyChairGestalt",
+  "emdrBilateral",
+  "rolePlay",
+  "progressiveMuscleRelaxation",
+  "selfCompassion",
+  "motivationalInterviewing",
+  "gratitudeJournaling",
+  "sleepHygiene",
+  "conflictResolution",
+  "innerChild",
+  "psychoeducation",
+] as const;
 
 function formatDateInputValue(timestamp: number) {
   const date = new Date(timestamp);
@@ -87,6 +131,10 @@ function buildSessionForm(review?: SessionReviewDoc | null): SessionReviewFormSt
     sessionDate: formatDateInputValue(review.sessionDate),
     title: review.title ?? "",
     review: review.review,
+    duration: review.duration ?? 1,
+    therapeuticTools: review.therapeuticTools ?? [],
+    tasks: review.tasks ?? "",
+    remarks: review.remarks ?? "",
   };
 }
 
@@ -108,30 +156,12 @@ function buildPatientQuestionnaireUrl(
   return query ? `/practitioner/patient/${patientId}?${query}` : `/practitioner/patient/${patientId}`;
 }
 
-function formatCompactDateTime(timestamp: number) {
-  return new Intl.DateTimeFormat(undefined, {
-    year: "2-digit",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(timestamp));
-}
-
-function formatCompactDate(timestamp: number) {
-  return new Intl.DateTimeFormat(undefined, {
-    year: "2-digit",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(timestamp));
-}
 
 interface SummaryMetricProps {
   icon: ComponentType<{ className?: string }>;
   iconClassName: string;
   label: string;
-  value: string | number;
+  value: ReactNode;
 }
 
 function SummaryMetric({ icon: Icon, iconClassName, label, value }: SummaryMetricProps) {
@@ -167,14 +197,14 @@ function ScoreTrendBadge({ recentScores }: { recentScores: Array<{ value: number
 
   if (trend === "up") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
         <TrendingUp className="h-3.5 w-3.5" />
       </span>
     );
   }
   if (trend === "down") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
         <TrendingDown className="h-3.5 w-3.5" />
       </span>
     );
@@ -229,6 +259,7 @@ export default function PatientDetailsPage() {
   const assignableTemplates = useQuery(api.questionnaires.listAssignableTemplates);
   const history = useQuery(api.questionnaires.listPractitionerPatientHistorySummaries, { patientId });
   const sessionHistory = useQuery(api.sessionReviews.listPatientSessionReviews, { patientId });
+  const databaseTools = useQuery(api.therapeuticTools.listToolsPublic);
   const assignMutation = useMutation(api.questionnaires.assign);
   const createSessionReview = useMutation(api.sessionReviews.createSessionReview);
   const updateSessionReview = useMutation(api.sessionReviews.updateSessionReview);
@@ -243,11 +274,41 @@ export default function PatientDetailsPage() {
   const [sessionForm, setSessionForm] = useState<SessionReviewFormState>(buildSessionForm());
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isSavingSession, setIsSavingSession] = useState(false);
+  const [toolsSearchQuery, setToolsSearchQuery] = useState("");
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+  const getDraftKey = useCallback((reviewId?: Id<"sessionReviews"> | null) => {
+    return reviewId
+      ? `session_review_draft_${patientId}_${reviewId}`
+      : `session_review_draft_${patientId}_new`;
+  }, [patientId]);
+
+  const resolveToolLabel = useCallback(
+    (toolKey: string) => {
+      const dbTool = databaseTools?.find((tool) => tool.key === toolKey);
+      if (dbTool) {
+        return locale === "he" ? dbTool.nameHe : dbTool.nameEn;
+      }
+      try {
+        if ((PREDEFINED_THERAPEUTIC_TOOLS as readonly string[]).includes(toolKey)) {
+          return t(`history.tools.${toolKey}`);
+        }
+      } catch {}
+      return toolKey;
+    },
+    [databaseTools, locale, t]
+  );
   const [isRestoringAssignmentId, setIsRestoringAssignmentId] = useState<Id<"questionnaireAssignments"> | null>(null);
   const { showFeedback } = useFeedback();
 
   const ensurePrivateLink = useMutation(api.users.ensurePatientPrivateLinkToken);
   const [privateLinkToken, setPrivateLinkToken] = useState<string | null>(null);
+
+  const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
+  const [editPatientName, setEditPatientName] = useState("");
+  const [editPatientEmail, setEditPatientEmail] = useState("");
+  const [isSavingPatient, setIsSavingPatient] = useState(false);
+  const updatePatientMutation = useMutation(api.users.updatePatient);
 
   useEffect(() => {
     if (patientId) {
@@ -292,18 +353,103 @@ export default function PatientDetailsPage() {
   const questionnaireViewLabel =
     questionnairesView === "archived" ? t("questionnaires.archivedTitle") : t("questionnaires.active");
 
+  const openEditPatientDialog = () => {
+    if (!patient) return;
+    setEditPatientName(patient.name || "");
+    setEditPatientEmail(patient.email || "");
+    setIsEditPatientOpen(true);
+  };
+
+  const handleSavePatientDetails = async () => {
+    if (!editPatientName.trim()) {
+      showFeedback({
+        variant: "error",
+        title: t("editPatientModal.nameRequired"),
+      });
+      return;
+    }
+
+    setIsSavingPatient(true);
+    try {
+      await updatePatientMutation({
+        id: patientId,
+        name: editPatientName.trim(),
+        email: editPatientEmail.trim() || undefined,
+      });
+      setIsEditPatientOpen(false);
+      showFeedback({
+        variant: "success",
+        title: t("editPatientModal.success"),
+      });
+    } catch (err) {
+      console.error(err);
+      showFeedback({
+        variant: "error",
+        title: t("editPatientModal.error"),
+      });
+    } finally {
+      setIsSavingPatient(false);
+    }
+  };
+
   const openCreateSessionDialog = () => {
     setSelectedSessionReview(null);
-    setSessionForm(buildSessionForm());
+    const key = getDraftKey(null);
+    const savedDraft = localStorage.getItem(key);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        setSessionForm(parsed);
+        setHasRestoredDraft(true);
+      } catch (e) {
+        console.error("Failed to parse session review draft", e);
+        setSessionForm(buildSessionForm());
+        setHasRestoredDraft(false);
+      }
+    } else {
+      setSessionForm(buildSessionForm());
+      setHasRestoredDraft(false);
+    }
+    setToolsSearchQuery("");
     setSessionError(null);
     setIsSessionDialogOpen(true);
   };
 
   const openEditSessionDialog = (review: SessionReviewDoc) => {
     setSelectedSessionReview(review);
-    setSessionForm(buildSessionForm(review));
+    const key = getDraftKey(review._id);
+    const savedDraft = localStorage.getItem(key);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        setSessionForm(parsed);
+        setHasRestoredDraft(true);
+      } catch (e) {
+        console.error("Failed to parse session review draft", e);
+        setSessionForm(buildSessionForm(review));
+        setHasRestoredDraft(false);
+      }
+    } else {
+      setSessionForm(buildSessionForm(review));
+      setHasRestoredDraft(false);
+    }
+    setToolsSearchQuery("");
     setSessionError(null);
     setIsSessionDialogOpen(true);
+  };
+
+  useEffect(() => {
+    if (isSessionDialogOpen) {
+      const key = getDraftKey(selectedSessionReview?._id);
+      localStorage.setItem(key, JSON.stringify(sessionForm));
+    }
+  }, [sessionForm, isSessionDialogOpen, selectedSessionReview, getDraftKey]);
+
+  const handleDiscardDraft = () => {
+    const key = getDraftKey(selectedSessionReview?._id);
+    localStorage.removeItem(key);
+    setSessionForm(buildSessionForm(selectedSessionReview));
+    setHasRestoredDraft(false);
   };
 
   const handleAssign = async () => {
@@ -362,6 +508,10 @@ export default function PatientDetailsPage() {
         sessionDate: parsedSessionDate,
         title: sessionForm.title,
         review: sessionForm.review,
+        duration: sessionForm.duration,
+        therapeuticTools: sessionForm.therapeuticTools,
+        tasks: sessionForm.tasks,
+        remarks: sessionForm.remarks,
       };
 
       if (selectedSessionReview) {
@@ -384,6 +534,9 @@ export default function PatientDetailsPage() {
         });
       }
 
+      const draftKey = getDraftKey(selectedSessionReview?._id);
+      localStorage.removeItem(draftKey);
+      setHasRestoredDraft(false);
       setIsSessionDialogOpen(false);
       setSelectedSessionReview(null);
       setSessionForm(buildSessionForm());
@@ -442,9 +595,11 @@ export default function PatientDetailsPage() {
   };
 
 
-  const latestSessionLabel = sessionHistory?.latestSessionDate
-    ? new Date(sessionHistory.latestSessionDate).toLocaleDateString()
-    : t("history.noLastSession");
+  const latestSessionLabel = sessionHistory?.latestSessionDate ? (
+    <ClientDateTime date={sessionHistory.latestSessionDate} mode="toLocaleDateString" />
+  ) : (
+    t("history.noLastSession")
+  );
   const defaultTab = searchParams.get("tab") === "history" ? "history" : "questionnaires";
   const [mobileTab, setMobileTab] = useState<"history" | "questionnaires">(defaultTab);
   const historyByTemplateId = new Map(
@@ -589,27 +744,70 @@ export default function PatientDetailsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {sessionHistory.reviews.map((review) => (
-            <article
-              key={review._id}
-              className="group cursor-pointer rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/40 p-4 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
-              onClick={() => openEditSessionDialog(review)}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 space-y-1">
-                  <h3 className="line-clamp-1 text-base font-bold text-zinc-950">
-                    {review.title?.trim() || t("history.untitled")}
-                  </h3>
-                  <p className="text-sm font-medium text-zinc-500">
-                    {formatCompactDate(review.sessionDate)}
-                  </p>
+          {sessionHistory.reviews.map((review) => {
+            const durationKey = review.duration === 1.5 ? "1_5" : String(review.duration ?? 1);
+            return (
+              <article
+                key={review._id}
+                className="group cursor-pointer rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/40 p-5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+                onClick={() => openEditSessionDialog(review)}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1 space-y-1.5 text-start">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-zinc-500">
+                      <ClientDateTime
+                        date={review.sessionDate}
+                        mode="toLocaleDateString"
+                        options={{ year: "2-digit", month: "2-digit", day: "2-digit" }}
+                      />
+                      <span className="text-zinc-300">•</span>
+                      <span>{t(`history.durationOptions.${durationKey}`)}</span>
+                    </div>
+
+                    <h3 className="line-clamp-1 text-base font-bold text-zinc-950">
+                      {review.title?.trim() || t("history.untitled")}
+                    </h3>
+
+                    <p className="line-clamp-2 text-xs text-zinc-600 leading-relaxed font-medium">
+                      {review.review}
+                    </p>
+
+                    {review.therapeuticTools && review.therapeuticTools.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1.5">
+                        {review.therapeuticTools.map((tool) => (
+                          <Badge
+                            key={tool}
+                            variant="secondary"
+                            className="bg-indigo-50/60 text-indigo-700 hover:bg-indigo-50/60 border-none rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide"
+                          >
+                            {resolveToolLabel(tool)}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {review.tasks && (
+                      <div className="mt-3 flex items-start gap-1.5 rounded-xl bg-zinc-100/50 px-3 py-2 text-xs text-zinc-600 font-medium">
+                        <span className="font-bold text-zinc-700 shrink-0">{t("history.tasks")}:</span>
+                        <span className="truncate">{review.tasks}</span>
+                      </div>
+                    )}
+
+                    {review.remarks && (
+                      <div className="mt-1 flex items-start gap-1.5 px-3 text-xs text-zinc-400 italic">
+                        <span className="font-bold text-zinc-500 shrink-0">{t("history.remarks")}:</span>
+                        <span className="truncate">{review.remarks}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
+                    <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                  </div>
                 </div>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition-colors group-hover:text-zinc-700">
-                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </SectionShell>
@@ -657,11 +855,7 @@ export default function PatientDetailsPage() {
           {visibleAssignments.map((assignment) => {
             const tpl = templates?.find((template) => template._id === assignment.templateId);
             const summary = historyByTemplateId.get(assignment.templateId);
-            const metaLabel = summary?.lastEntryAt
-              ? t("questionnaires.lastAdded", {
-                  date: new Date(summary.lastEntryAt).toLocaleString(),
-                })
-              : t("questionnaires.noResponsesYet");
+            const metaLabel = t("questionnaires.noResponsesYet");
             const lastScoreLabel = summary?.latestScore
               ? summary.latestScore.max === null
                 ? t("questionnaires.score", { value: summary.latestScore.value })
@@ -709,7 +903,24 @@ export default function PatientDetailsPage() {
                         <span title={t("questionnaires.lastAddedIndicator")}>
                           <CalendarDays className="h-4 w-4 text-zinc-400" />
                         </span>
-                        <span>{summary?.lastEntryAt ? formatCompactDateTime(summary.lastEntryAt) : metaLabel}</span>
+                        <span>
+                          {summary?.lastEntryAt ? (
+                            <ClientDateTime
+                              date={summary.lastEntryAt}
+                              mode="toLocaleString"
+                              options={{
+                                year: "2-digit",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                              }}
+                            />
+                          ) : (
+                            metaLabel
+                          )}
+                        </span>
                       </div>
                     </div>
 
@@ -804,6 +1015,16 @@ export default function PatientDetailsPage() {
                       {t("copyPrivateLink")}
                     </Button>
                   )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-fit h-7 px-2.5 rounded-lg border-zinc-200 text-xs font-bold transition-all hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 cursor-pointer"
+                    onClick={openEditPatientDialog}
+                  >
+                    <Edit3 className="me-1.5 h-3.5 w-3.5" />
+                    {t("editPatient")}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -866,7 +1087,7 @@ export default function PatientDetailsPage() {
           }
         }}
       >
-        <DialogContent className="rounded-[2rem] border-none bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,1))] p-0 shadow-2xl sm:max-w-[640px]">
+        <DialogContent className="max-h-[95vh] overflow-y-auto rounded-[2rem] border-none bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,1))] p-0 shadow-2xl sm:max-w-[640px]">
           <div className="rounded-[2rem] border border-zinc-100/80 p-8 sm:p-10">
             <DialogHeader className="space-y-3 text-start">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
@@ -880,31 +1101,66 @@ export default function PatientDetailsPage() {
               </DialogDescription>
             </DialogHeader>
 
+            {hasRestoredDraft && (
+              <div className="mt-6 flex items-center justify-between gap-2 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-800 animate-in fade-in duration-300">
+                <span className="font-semibold">{t("history.draftRestored")}</span>
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="font-bold underline hover:text-amber-950 cursor-pointer"
+                >
+                  {t("history.discardDraft")}
+                </button>
+              </div>
+            )}
+
             <div className="mt-8 grid gap-5">
-              <div className="grid gap-2">
-                <Label htmlFor="sessionDate" className="text-sm font-semibold text-zinc-800">
-                  {t("history.sessionDate")}
-                </Label>
-                <Input
-                  id="sessionDate"
-                  type="date"
-                  value={sessionForm.sessionDate}
-                  onChange={(event) =>
-                    setSessionForm((current) => ({ ...current, sessionDate: event.target.value }))
-                  }
-                  className="h-11 rounded-xl border-zinc-200 bg-white px-3 text-sm"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="sessionDate" className="text-sm font-semibold text-zinc-800">
+                    {t("history.sessionDate")}
+                  </Label>
+                  <Input
+                    id="sessionDate"
+                    type="date"
+                    value={sessionForm.sessionDate}
+                    onChange={(event) =>
+                      setSessionForm((current) => ({ ...current, sessionDate: event.target.value }))
+                    }
+                    className="h-11 rounded-xl border-zinc-200 bg-white px-3 text-sm"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="sessionDuration" className="text-sm font-semibold text-zinc-800">
+                    {t("history.duration")}
+                  </Label>
+                  <Select
+                    value={String(sessionForm.duration)}
+                    onValueChange={(val) =>
+                      setSessionForm((current) => ({ ...current, duration: Number(val) }))
+                    }
+                  >
+                    <SelectTrigger id="sessionDuration" className="h-11 rounded-xl border-zinc-200 bg-white text-sm">
+                      <SelectValue placeholder={t("history.duration")} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="1" className="rounded-lg">{t("history.durationOptions.1")}</SelectItem>
+                      <SelectItem value="1.5" className="rounded-lg">{t("history.durationOptions.1.5")}</SelectItem>
+                      <SelectItem value="2" className="rounded-lg">{t("history.durationOptions.2")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="sessionTitle" className="text-sm font-semibold text-zinc-800">
-                  {t("history.sessionTitle")}
+                  {t("history.goal")}
                 </Label>
                 <Input
                   id="sessionTitle"
                   value={sessionForm.title}
                   maxLength={120}
-                  placeholder={t("history.sessionTitlePlaceholder")}
+                  placeholder={t("history.goalPlaceholder")}
                   onChange={(event) =>
                     setSessionForm((current) => ({ ...current, title: event.target.value }))
                   }
@@ -924,7 +1180,111 @@ export default function PatientDetailsPage() {
                   onChange={(event) =>
                     setSessionForm((current) => ({ ...current, review: event.target.value }))
                   }
-                  className="min-h-44 rounded-2xl border-zinc-200 bg-white px-4 py-3 text-sm leading-6"
+                  className="min-h-32 rounded-2xl border-zinc-200 bg-white px-4 py-3 text-sm leading-6"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-zinc-800">
+                    {t("history.therapeuticTools")}
+                  </Label>
+                  {sessionForm.therapeuticTools.length > 0 && (
+                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      {t("history.selectedToolsCount", { count: sessionForm.therapeuticTools.length })}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+                    <Input
+                      type="text"
+                      placeholder={t("history.toolsSearchPlaceholder")}
+                      value={toolsSearchQuery}
+                      onChange={(e) => setToolsSearchQuery(e.target.value)}
+                      className="ps-9 h-10 rounded-xl border-zinc-200 bg-white text-xs"
+                    />
+                  </div>
+                  <div className="h-36 overflow-y-auto rounded-xl border border-zinc-200/80 bg-zinc-50/40 p-2 space-y-1">
+                    {databaseTools === undefined ? (
+                      <div className="text-center py-6 text-xs text-zinc-400 font-medium">
+                        {locale === "he" ? "טוען כלים..." : "Loading tools..."}
+                      </div>
+                    ) : (
+                      databaseTools
+                        .filter((tool) => {
+                          const name = locale === "he" ? tool.nameHe : tool.nameEn;
+                          return name.toLowerCase().includes(toolsSearchQuery.toLowerCase());
+                        })
+                        .map((tool) => {
+                          const isChecked = sessionForm.therapeuticTools.includes(tool.key);
+                          const name = locale === "he" ? tool.nameHe : tool.nameEn;
+                          return (
+                            <label
+                              key={tool.key}
+                              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors text-xs font-semibold ${
+                                isChecked
+                                  ? "bg-indigo-50/70 text-indigo-700"
+                                  : "text-zinc-600 hover:bg-zinc-100/60"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                className="h-3.5 w-3.5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                                onChange={() => {
+                                  const newTools = isChecked
+                                    ? sessionForm.therapeuticTools.filter((t) => t !== tool.key)
+                                    : [...sessionForm.therapeuticTools, tool.key];
+                                  setSessionForm((current) => ({ ...current, therapeuticTools: newTools }));
+                                }}
+                              />
+                              <span>{name}</span>
+                            </label>
+                          );
+                        })
+                    )}
+                    {databaseTools !== undefined &&
+                      databaseTools.filter((tool) => {
+                        const name = locale === "he" ? tool.nameHe : tool.nameEn;
+                        return name.toLowerCase().includes(toolsSearchQuery.toLowerCase());
+                      }).length === 0 && (
+                        <div className="text-center py-6 text-xs text-zinc-400 font-medium">
+                          {t("history.noToolsFound")}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="sessionTasks" className="text-sm font-semibold text-zinc-800">
+                  {t("history.tasks")}
+                </Label>
+                <Textarea
+                  id="sessionTasks"
+                  value={sessionForm.tasks}
+                  placeholder={t("history.tasksPlaceholder")}
+                  onChange={(event) =>
+                    setSessionForm((current) => ({ ...current, tasks: event.target.value }))
+                  }
+                  className="min-h-24 rounded-2xl border-zinc-200 bg-white px-4 py-3 text-sm leading-6"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="sessionRemarks" className="text-sm font-semibold text-zinc-800">
+                  {t("history.remarks")}
+                </Label>
+                <Textarea
+                  id="sessionRemarks"
+                  value={sessionForm.remarks}
+                  placeholder={t("history.remarksPlaceholder")}
+                  onChange={(event) =>
+                    setSessionForm((current) => ({ ...current, remarks: event.target.value }))
+                  }
+                  className="min-h-24 rounded-2xl border-zinc-200 bg-white px-4 py-3 text-sm leading-6"
                 />
               </div>
 
@@ -949,6 +1309,54 @@ export default function PatientDetailsPage() {
                 className="rounded-xl px-6 font-bold shadow-md shadow-indigo-100"
               >
                 {isSavingSession ? t("history.saving") : t("history.save")}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen}>
+        <DialogContent className="overflow-hidden rounded-[1.9rem] border border-zinc-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.94))] p-0 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:max-w-xl">
+          <div className="space-y-6 p-6 sm:p-7">
+            <DialogHeader className="text-start">
+              <DialogTitle className="text-2xl font-black tracking-tight text-zinc-950">
+                {t("editPatientModal.title")}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <Label htmlFor="edit-patient-name" className="text-sm font-semibold text-zinc-900">
+                {t("editPatientModal.nameLabel")}
+              </Label>
+              <Input
+                id="edit-patient-name"
+                value={editPatientName}
+                onChange={(event) => setEditPatientName(event.target.value)}
+                placeholder={t("editPatientModal.namePlaceholder")}
+                className="h-12 rounded-2xl border-zinc-200 bg-white text-base shadow-sm focus-visible:ring-indigo-500"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="edit-patient-email" className="text-sm font-semibold text-zinc-900">
+                {t("editPatientModal.emailLabel")}
+              </Label>
+              <Input
+                id="edit-patient-email"
+                type="email"
+                value={editPatientEmail}
+                onChange={(event) => setEditPatientEmail(event.target.value)}
+                placeholder={t("editPatientModal.emailPlaceholder")}
+                className="h-12 rounded-2xl border-zinc-200 bg-white text-base shadow-sm focus-visible:ring-indigo-500"
+              />
+            </div>
+
+            <DialogFooter className="gap-2 sm:justify-between">
+              <Button variant="outline" onClick={() => setIsEditPatientOpen(false)} className="rounded-2xl border-zinc-200">
+                {t("editPatientModal.cancel")}
+              </Button>
+              <Button onClick={handleSavePatientDetails} disabled={isSavingPatient || !editPatientName.trim()} className="rounded-2xl px-5">
+                {isSavingPatient ? t("editPatientModal.saving") : t("editPatientModal.submit")}
               </Button>
             </DialogFooter>
           </div>

@@ -15,6 +15,7 @@ import type * as invites from "../invites.js";
 import type * as patientAuth from "../patientAuth.js";
 import type * as questionnaires from "../questionnaires.js";
 import type * as sessionReviews from "../sessionReviews.js";
+import type * as therapeuticTools from "../therapeuticTools.js";
 import type * as users from "../users.js";
 
 import type {
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   patientAuth: typeof patientAuth;
   questionnaires: typeof questionnaires;
   sessionReviews: typeof sessionReviews;
+  therapeuticTools: typeof therapeuticTools;
   users: typeof users;
 }>;
 

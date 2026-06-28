@@ -182,9 +182,23 @@ export default defineSchema({
     sessionDate: v.number(),
     title: v.optional(v.string()),
     review: v.string(),
+    duration: v.optional(v.number()),
+    therapeuticTools: v.optional(v.array(v.string())),
+    tasks: v.optional(v.string()),
+    remarks: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_patient", ["patientId"])
     .index("by_practitioner_patient", ["practitionerId", "patientId"]),
+
+  therapeuticTools: defineTable({
+    key: v.string(),
+    nameEn: v.string(),
+    nameHe: v.string(),
+    isActive: v.boolean(),
+    order: v.number(),
+  })
+    .index("by_key", ["key"])
+    .index("by_order", ["order"]),
 });

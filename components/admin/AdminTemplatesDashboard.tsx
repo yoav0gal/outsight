@@ -211,6 +211,11 @@ export function AdminTemplatesDashboard({
               <p className="mt-3 text-base leading-7 text-zinc-600">{t("dashboard.description")}</p>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/admin/tools">
+                <Button variant="outline" className="rounded-xl border-zinc-200 bg-white">
+                  {t("tools.title")}
+                </Button>
+              </Link>
               <Link href="/admin/questionnaire-visual-lab">
                 <Button variant="outline" className="rounded-xl border-zinc-200 bg-white">
                   {t("dashboard.playground")}

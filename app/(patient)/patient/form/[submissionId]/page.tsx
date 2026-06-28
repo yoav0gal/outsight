@@ -48,18 +48,14 @@ export default function QuestionnaireFormPage() {
   const user = useQuery(api.users.viewer);
   const instance = useQuery(api.questionnaires.getInstance, { instanceId });
   const submitMutation = useMutation(api.questionnaires.submitInstance);
-  const updateMutation = useMutation(api.questionnaires.updateInstanceAnswers);
 
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEditingAnswers, setIsEditingAnswers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.authType === "link_only" && instance && instance.status !== "pending") {
-      if (!instance.isLatestCompleted) {
-        router.replace("/patient/home");
-      }
+      router.replace("/patient/home");
     }
   }, [user, instance, router]);
 
@@ -118,7 +114,6 @@ export default function QuestionnaireFormPage() {
     for (const q of instance.template.questions) {
       if (q.type !== "instructions" && q.required && (answers[q.id] === undefined || answers[q.id] === "")) {
         setError(t("requiredField"));
-        // Find the element and scroll to it ideally, but a generic error is okay for now
         return;
       }
     }
@@ -130,22 +125,19 @@ export default function QuestionnaireFormPage() {
         value: answers[questionId],
       }));
 
-      if (isEditingAnswers) {
-        await updateMutation({
-          instanceId,
-          answers: formattedAnswers,
-        });
-        setIsEditingAnswers(false);
-      } else {
-        await submitMutation({
-          instanceId,
-          answers: formattedAnswers,
-        });
-        router.replace("/patient/home");
-      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const localStartOfDay = today.getTime();
+
+      await submitMutation({
+        instanceId,
+        answers: formattedAnswers,
+        localStartOfDay,
+      });
+      router.replace("/patient/home");
     } catch (err) {
       console.error(err);
-      setError(isEditingAnswers ? t("editError") : "Failed to submit answers.");
+      setError("Failed to submit answers.");
     } finally {
       setIsSubmitting(false);
     }
@@ -171,7 +163,7 @@ export default function QuestionnaireFormPage() {
     );
   }
 
-  if (instance.status !== "pending" && !isEditingAnswers) {
+  if (instance.status !== "pending") {
     const scoreLabel = formatScoreLabel(t, instance.score);
 
     return (
@@ -185,15 +177,6 @@ export default function QuestionnaireFormPage() {
             <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
             <span>{t("back")}</span>
           </Button>
-
-          {instance.isLatestCompleted && (
-            <Button
-              onClick={() => setIsEditingAnswers(true)}
-              className="rounded-xl font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-none shadow-none"
-            >
-              {t("editAnswers")}
-            </Button>
-          )}
         </div>
         <div className="mb-10 text-center sm:text-start">
           <Badge className={`mb-4 ${instance.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -462,23 +445,13 @@ export default function QuestionnaireFormPage() {
         )}
 
         <div className="mt-12 flex justify-end gap-3 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 fill-mode-both">
-          {isEditingAnswers && (
-            <Button
-              variant="outline"
-              onClick={() => setIsEditingAnswers(false)}
-              disabled={isSubmitting}
-              className="h-14 rounded-2xl font-bold text-lg px-8 border-zinc-200"
-            >
-              {t("cancel") || "Cancel"}
-            </Button>
-          )}
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting}
             size="lg"
             className="w-full sm:w-auto px-10 h-14 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-200"
           >
-            {isSubmitting ? "..." : (isEditingAnswers ? t("saveChanges") : t("submit"))}
+            {isSubmitting ? "..." : t("submit")}
           </Button>
         </div>
       </main>

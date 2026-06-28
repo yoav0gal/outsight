@@ -112,6 +112,10 @@ export const createSessionReview = mutation({
     sessionDate: v.number(),
     title: v.optional(v.string()),
     review: v.string(),
+    duration: v.optional(v.number()),
+    therapeuticTools: v.optional(v.array(v.string())),
+    tasks: v.optional(v.string()),
+    remarks: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const practitioner = await getCurrentUser(ctx);
@@ -138,6 +142,10 @@ export const createSessionReview = mutation({
       sessionDate: normalizeSessionDate(args.sessionDate),
       title: normalizeTitle(args.title),
       review: normalizeReview(args.review),
+      duration: args.duration ?? 1,
+      therapeuticTools: args.therapeuticTools ?? [],
+      tasks: args.tasks?.trim() || undefined,
+      remarks: args.remarks?.trim() || undefined,
       createdAt: now,
       updatedAt: now,
     });
@@ -150,6 +158,10 @@ export const updateSessionReview = mutation({
     sessionDate: v.number(),
     title: v.optional(v.string()),
     review: v.string(),
+    duration: v.optional(v.number()),
+    therapeuticTools: v.optional(v.array(v.string())),
+    tasks: v.optional(v.string()),
+    remarks: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const practitioner = await getCurrentUser(ctx);
@@ -168,6 +180,10 @@ export const updateSessionReview = mutation({
       sessionDate: normalizeSessionDate(args.sessionDate),
       title: normalizeTitle(args.title),
       review: normalizeReview(args.review),
+      duration: args.duration ?? 1,
+      therapeuticTools: args.therapeuticTools ?? [],
+      tasks: args.tasks?.trim() || undefined,
+      remarks: args.remarks?.trim() || undefined,
       updatedAt: Date.now(),
     });
   },

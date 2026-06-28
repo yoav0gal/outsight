@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { resolveLocalizedText } from "@/lib/templateEditor";
 import { useEffect } from "react";
+import { ClientDateTime } from "@/components/ui/clientDateTime";
 
 export default function PatientHistoryPage() {
   const router = useRouter();
@@ -54,11 +55,6 @@ export default function PatientHistoryPage() {
           history.map((instance) => {
             const tpl = instance.template;
             const date = instance.submittedAt || instance.expiresAt || instance.createdAt;
-            const formattedDate = new Date(date).toLocaleDateString(undefined, { 
-              year: 'numeric', 
-              month: 'short', 
-              day: 'numeric' 
-            });
 
             return (
               <Card 
@@ -79,7 +75,11 @@ export default function PatientHistoryPage() {
                       </h3>
                       <div className="flex items-center gap-2 text-xs text-zinc-400 font-bold uppercase tracking-wider mt-0.5">
                         <Calendar className="w-3 h-3" />
-                        <span>{formattedDate}</span>
+                        <ClientDateTime 
+                          date={date} 
+                          mode="toLocaleDateString" 
+                          options={{ year: 'numeric', month: 'short', day: 'numeric' }} 
+                        />
                       </div>
                     </div>
                   </div>

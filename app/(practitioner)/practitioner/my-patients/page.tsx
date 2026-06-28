@@ -31,6 +31,7 @@ export default function PractitionerMyPatients() {
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [patientName, setPatientName] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
   const [inviteMode, setInviteMode] = useState<"patient_credentials" | "workos" | "link_only">("workos");
   const [search, setSearch] = useState("");
   const t = useTranslations("PractitionerMyPatients");
@@ -67,10 +68,15 @@ export default function PractitionerMyPatients() {
 
     setLoading(true);
     try {
-      const invitation = await createInvite({ patientName: normalizedPatientName, mode: inviteMode });
+      const invitation = await createInvite({
+        patientName: normalizedPatientName,
+        mode: inviteMode,
+        email: patientEmail.trim() || undefined,
+      });
       const baseUrl = window.location.origin;
       setInviteLink({ url: `${baseUrl}/join?token=${invitation.token}`, mode: invitation.mode });
       setPatientName("");
+      setPatientEmail("");
       setInviteMode("workos");
       setIsDialogOpen(false);
     } catch (err) {
@@ -234,7 +240,14 @@ export default function PractitionerMyPatients() {
           )}
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setPatientName("");
+            setPatientEmail("");
+            setInviteMode("workos");
+          }
+        }}>
           <DialogContent className="overflow-hidden rounded-[1.9rem] border border-zinc-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.94))] p-0 shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:max-w-xl">
             <div className="space-y-6 p-6 sm:p-7">
               <DialogHeader className="text-start">
@@ -250,6 +263,20 @@ export default function PractitionerMyPatients() {
                   value={patientName}
                   onChange={(event) => setPatientName(event.target.value)}
                   placeholder={t("inviteDialog.patientNamePlaceholder")}
+                  className="h-12 rounded-2xl border-zinc-200 bg-white text-base shadow-sm focus-visible:ring-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="patient-email" className="text-sm font-semibold text-zinc-900">
+                  {t("inviteDialog.patientEmailLabel")}
+                </Label>
+                <Input
+                  id="patient-email"
+                  type="email"
+                  value={patientEmail}
+                  onChange={(event) => setPatientEmail(event.target.value)}
+                  placeholder={t("inviteDialog.patientEmailPlaceholder")}
                   className="h-12 rounded-2xl border-zinc-200 bg-white text-base shadow-sm focus-visible:ring-indigo-500"
                 />
               </div>

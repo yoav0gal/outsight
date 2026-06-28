@@ -181,30 +181,26 @@ export function normalizeLocalizedTextArray(values?: LocalizedText[]) {
   return values.map((value) => normalizeLocalizedText(value) ?? {});
 }
 
-export function resolveFallbackText(value?: string, translations?: LocalizedText) {
-  const trimmedValue = value?.trim();
-  return (
-    translations?.en?.trim() ||
-    translations?.he?.trim() ||
-    trimmedValue ||
-    ""
-  );
+export function resolveFallbackText(value?: unknown, translations?: LocalizedText) {
+  const trimmedValue = typeof value === "string" ? value.trim() : "";
+  const enVal = typeof translations?.en === "string" ? translations.en.trim() : "";
+  const heVal = typeof translations?.he === "string" ? translations.he.trim() : "";
+  return enVal || heVal || trimmedValue || "";
 }
 
 export function resolveLocalizedText(
   locale: string,
-  value?: string,
+  value?: unknown,
   translations?: LocalizedText
 ) {
   const normalizedLocale: SupportedLocale = locale === "en" ? "en" : "he";
   const alternateLocale: SupportedLocale = normalizedLocale === "en" ? "he" : "en";
 
-  return (
-    translations?.[normalizedLocale]?.trim() ||
-    translations?.[alternateLocale]?.trim() ||
-    value?.trim() ||
-    ""
-  );
+  const normVal = typeof translations?.[normalizedLocale] === "string" ? translations[normalizedLocale]!.trim() : "";
+  const altVal = typeof translations?.[alternateLocale] === "string" ? translations[alternateLocale]!.trim() : "";
+  const mainVal = typeof value === "string" ? value.trim() : "";
+
+  return normVal || altVal || mainVal || "";
 }
 
 function buildNormalizedOptions(options?: string[], optionTranslations?: LocalizedText[]) {

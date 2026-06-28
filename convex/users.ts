@@ -299,5 +299,49 @@ export const ensurePatientPrivateLinkToken = mutation({
   },
 });
 
+export const updatePatient = mutation({
+  args: {
+    id: v.id("users"),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "practitioner") {
+      throw new Error("Unauthorized");
+    }
+
+    const patient = await ctx.db.get(args.id);
+    if (!patient || patient.role !== "patient" || patient.practitionerId !== user._id) {
+      throw new Error("Patient not found or unauthorized");
+    }
+
+    const updates: { name?: string; email?: string } = {};
+    if (args.name !== undefined) {
+      updates.name = args.name.trim();
+    }
+    if (args.email !== undefined) {
+      updates.email = args.email.trim() || undefined;
+    }
+
+    await ctx.db.patch(patient._id, updates);
+
+    // Update corresponding invitation if exists
+    const invitation = await ctx.db
+      .query("invitations")
+      .filter((q) => q.eq(q.field("acceptedUserId"), patient._id))
+      .first();
+    if (invitation) {
+      const inviteUpdates: { patientName?: string; email?: string } = {};
+      if (args.name !== undefined) inviteUpdates.patientName = args.name.trim();
+      if (args.email !== undefined) inviteUpdates.email = args.email.trim() || undefined;
+      await ctx.db.patch(invitation._id, inviteUpdates);
+    }
+
+    return patient._id;
+  },
+});
+
+
 
 
